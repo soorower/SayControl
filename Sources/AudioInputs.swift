@@ -9,6 +9,11 @@ struct AudioInput: Equatable {
     let id: AudioDeviceID
     let name: String
     let uid: String
+    /// An iPhone's microphone over Continuity, by cable or over the air.
+    /// macOS lets the phone's mic sleep the moment nothing is listening, so
+    /// every take from it waits ~3–4 s in engine.start() while the phone
+    /// wakes (measured by cable, even 5 s after the last take).
+    var isContinuity = false
 }
 
 enum AudioInputs {
@@ -45,7 +50,8 @@ enum AudioInputs {
             var streamSize: UInt32 = 0
             guard AudioObjectGetPropertyDataSize(id, &streams, 0, nil, &streamSize) == noErr, streamSize > 0,
                   isUsable(id), let name = string(id, kAudioObjectPropertyName) else { return nil }
-            return AudioInput(id: id, name: name, uid: string(id, kAudioDevicePropertyDeviceUID) ?? name)
+            return AudioInput(id: id, name: name, uid: string(id, kAudioDevicePropertyDeviceUID) ?? name,
+                              isContinuity: isContinuity(id))
         }
     }
 
@@ -57,20 +63,25 @@ enum AudioInputs {
         return value
     }
 
-    /// Only a microphone that can be picked right now. An iPhone over
-    /// Continuity shows up as a device before it is connected, and picking
-    /// it stalls while macOS reaches for the phone; virtual and aggregate
-    /// devices are other apps' plumbing, not microphones.
+    /// Only a microphone that can be picked right now; virtual and
+    /// aggregate devices are other apps' plumbing, not microphones.
     private static func isUsable(_ id: AudioDeviceID) -> Bool {
         if uint32(id, kAudioDevicePropertyDeviceIsAlive) == 0 { return false }
         switch uint32(id, kAudioDevicePropertyTransportType) {
-        case kAudioDeviceTransportTypeContinuityCaptureWired,
-             kAudioDeviceTransportTypeContinuityCaptureWireless,
-             kAudioDeviceTransportTypeVirtual,
-             kAudioDeviceTransportTypeAggregate:
+        case kAudioDeviceTransportTypeVirtual, kAudioDeviceTransportTypeAggregate:
             return false
         default:
             return true
+        }
+    }
+
+    private static func isContinuity(_ id: AudioDeviceID) -> Bool {
+        switch uint32(id, kAudioDevicePropertyTransportType) {
+        case kAudioDeviceTransportTypeContinuityCaptureWired,
+             kAudioDeviceTransportTypeContinuityCaptureWireless:
+            return true
+        default:
+            return false
         }
     }
 

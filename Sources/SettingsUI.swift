@@ -385,6 +385,9 @@ final class MicChip: NSView {
             item.target = self
             item.representedObject = input.id
             item.state = input.id == current ? .on : .off
+            if input.isContinuity {
+                item.toolTip = "Your iPhone's mic sleeps between takes, so each dictation takes a few seconds to start."
+            }
             menu.addItem(item)
         }
         menu.popUp(positioning: nil, at: NSPoint(x: 0, y: bounds.height + Theme.m(4)), in: self)
