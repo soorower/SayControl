@@ -29,8 +29,16 @@ enum HowTab: Int, CaseIterable {
     var title: String { ["Dictation", "Controls", "Command mode"][rawValue] }
     var subtitle: String { ["Just talk", "Say it mid-sentence", "Change text you’ve written"][rawValue] }
     var symbol: String { ["mic", "bolt", "wand.and.stars"][rawValue] }
-    /// Spoken controls and command mode are Pro's (Account.proFeatures).
+    /// Spoken controls and command mode are Pro's on the cloud, and free
+    /// off it (Account.controlsFree, Account.commandModeFree).
     var isPro: Bool { self != .dictation }
+    var unlocked: Bool {
+        switch self {
+        case .dictation: return true
+        case .controls:  return Account.controlsFree
+        case .command:   return Account.commandModeFree
+        }
+    }
     /// Mockup pixels. A tab's demos share one height, so the list doesn't
     /// jump as the dial turns.
     var stageHeight: CGFloat { [72, 104, 150][rawValue] }
@@ -810,7 +818,7 @@ private final class TabButton: NSView {
     }
     required init?(coder: NSCoder) { fatalError() }
 
-    func syncPlan() { pro?.isHidden = Account.proFeatures }
+    func syncPlan() { pro?.isHidden = tab.unlocked }
 
     func set(picked: Bool, animated: Bool) {
         self.picked = picked
@@ -937,7 +945,7 @@ private final class HowPage: NSView {
             f.lineBreakMode = .byTruncatingTail
             f.setContentCompressionResistancePriority(.init(250), for: .horizontal)
             let tag = ProTag(quiet: true)
-            tag.toolTip = "Part of Pro. Dictation, Dictionary, Phrases and Tones are on every plan."
+            tag.toolTip = "Part of Pro on SayControl Cloud, and free on a model on this Mac or your own key."
             introPro = tag
             intro = Theme.hstack([f, tag], spacing: How.px(10))
         }
@@ -1030,7 +1038,7 @@ private final class HowPage: NSView {
         ])
     }
 
-    func syncPlan() { introPro?.isHidden = Account.proFeatures }
+    func syncPlan() { introPro?.isHidden = tab.unlocked }
 
     // MARK: Start, place, stop
 

@@ -142,8 +142,8 @@ final class AboutSheet: FloatingPanel {
         // tile Privacy gives the same promise.
         let facts = RowGroup()
         for (symbol, hue, line) in Config.retail ? [
-            ("lock.fill", Theme.Hue.green, "Cloud dictation sends your audio out to be written down, and we don't keep it."),
-            ("creditcard", .slate, "Free has \(Account.grouped(Account.freeWordsPerWeek)) cloud words a week. Pro is $\(Account.proDollarsPerMonth) a month, unlimited."),
+            ("lock.fill", Theme.Hue.green, "Cloud dictation sends your audio out to be written down, and we don't keep it. A model on this Mac keeps it here."),
+            ("creditcard", .slate, "Free has \(Account.grouped(Account.freeWordsPerWeek)) cloud words a week. Pro is $\(Account.proDollarsPerMonth) a month, unlimited. Models on this Mac and your own keys cost nothing."),
             ("eye.slash", .slate, "No telemetry. Your dictionary, phrases and history stay on this Mac."),
         ] : [
             ("key", Theme.Hue.amber, "Your audio goes to your own key. Nothing else leaves this Mac."),

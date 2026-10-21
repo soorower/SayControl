@@ -15,11 +15,10 @@
 // Account and Billing are the shapes of a plan that has no server behind it
 // yet; see Account.swift. Everything else writes straight to ~/.config/sayctrl.
 //
-// The user-facing build (Config.retail) has no Model section at all: no
-// providers, no key boxes, no list of models. Billing becomes Plans — Free,
-// Pro and Enterprise across, then the one local model picked for this Mac.
-// The developers' build keeps the lot, so models can be weighed against
-// each other.
+// The user-facing build (Config.retail) has Models too since 2026-10-22:
+// SayControl Cloud, a model on this Mac or the user's own key. Billing
+// becomes Plans. The developers' build adds its own tools (the voice mesh,
+// the Own GPU provider), so models can be weighed against each other.
 import Cocoa
 import AVFoundation
 
@@ -53,7 +52,6 @@ final class SettingsSheet: PaneView {
     /// user, since Free is a plan too.
     static func shows(_ key: String) -> Bool {
         switch key {
-        case "model":   return !Config.retail
         case "account": return Account.available
         case "billing": return Account.available || Config.retail
         default:        return true
@@ -253,9 +251,6 @@ final class SettingsSheet: PaneView {
     }
 
     func select(tab key: String) {
-        // A user's copy has no Model section: anything still asking for it
-        // lands on Plan.
-        let key = (Config.retail && key == "model") ? "billing" : key
         guard let i = Self.tabKeys.firstIndex(of: key) else { return }
         // A section with no row in the rail is not a place to land.
         if !Self.shows(key) { return }
@@ -393,7 +388,7 @@ final class SettingsSheet: PaneView {
         shortcuts.add(FormRow("Command mode", "Hold both, then say what to change.",
                               controls: [ShortcutRow(.commandModifier)], icon: Self.tile("command", .blue),
                               tip: "Hold both and say what to do to the text you have selected.",
-                              badge: Account.plan == "pro" ? nil : ProTag()))
+                              badge: Account.commandModeFree ? nil : ProTag()))
         shortcuts.add(FormRow("Cancel", "Throws away what you just said.",
                               controls: [ShortcutRow(.fixed, parts: [KeyPart("esc", symbol: "escape")])],
                               icon: Self.tile("escape", .slate)))
@@ -632,6 +627,7 @@ final class SettingsSheet: PaneView {
         var groups: [NSView] = [PlanHero(state, actions: heroActions(state))]
         let compare = RowGroup("Compare plans")
         compare.replaceBox(with: CompareTable(state, free: freeHead(state), pro: proHead(state)))
+        compare.foot("Plans are for SayControl Cloud. With a model on this Mac or your own key, command mode, spoken controls and Ask are free.")
         groups.append(compare)
         groups.append(enterpriseGroup())
         if state.isPro {
@@ -988,7 +984,7 @@ final class SettingsSheet: PaneView {
         files.add(clipsRow!)
         refreshClips()
         files.add(FormRow("Config folder",
-                          Config.retail ? "Dictionary, phrases and the log." : "Keys, dictionary, phrases and the log.",
+                          "Keys, dictionary, phrases and the log.",
                           controls: [FlatButton("Open") { NSWorkspace.shared.open(Config.shared.dir) }],
                           icon: Self.tile("folder", .slate),
                           tip: (Config.shared.dir.path as NSString).abbreviatingWithTildeInPath))
@@ -1010,7 +1006,7 @@ final class SettingsSheet: PaneView {
         if Config.shared.cloudOn {
             card.set("icloud.and.arrow.up", .slate, "Sent to be written down", "Through SayControl's servers, and not kept.",
                      tip: "Cloud dictation streams your audio while you speak and sends back the words. Neither is stored.")
-        } else if Config.retail {
+        } else if Config.retail && Config.shared.cloud {
             card.set("icloud.and.arrow.up", .slate, "Sent to be written down", "Once you're signed in, through SayControl's servers, and not kept.")
         } else if Config.shared.provider == .local && !Config.shared.meshEnabled {
             card.set("lock.fill", .green, "Your voice stays here", "The local model never sends it anywhere.")

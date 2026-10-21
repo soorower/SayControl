@@ -629,9 +629,7 @@ private final class TonePlaceRow: NSView {
             return "Auto cleanup is on None, so tones are paused and your words paste as heard."
         }
         if !cfg.hasModelAccess {
-            return Config.retail
-                ? "Tones come with a SayControl plan. Until then, your words paste as heard."
-                : "Tones need an OpenRouter or Cerebras key. Until then, your words paste as heard."
+            return "Off SayControl Cloud, tones run on your own polish key, in Settings › Models. Until then, your words paste as heard."
         }
         if !cfg.refineStyle { return "Tones are off, so every app gets the same plain cleanup." }
         return nil
@@ -1214,16 +1212,12 @@ final class TonesPane: PaneView {
             // The same id the paste path posts a missing key under, so the
             // two never stack.
             alerts.clear("tones")
-            alerts.post(Config.retail
-                ? AppAlert(id: "polish", title: "Tones need a SayControl plan",
-                           message: "Auto cleanup, tones and your rules run on the polish pass, which comes with a SayControl plan.",
-                           severe: false)
-                : AppAlert(id: "polish", title: "Polish has no key",
-                           message: "Auto cleanup, tones and your rules need an OpenRouter or Cerebras key.",
-                           actionTitle: "Open Settings", action: {
-                               SettingsUI.shared.select("settings")
-                               NotificationCenter.default.post(name: .sayctrlOpenSettingsTab, object: "model")
-                           }))
+            alerts.post(AppAlert(id: "polish", title: "Polish has no key",
+                                 message: "Off SayControl Cloud, auto cleanup, tones and your rules run on your own polish key.",
+                                 actionTitle: "Open Settings", action: {
+                                     SettingsUI.shared.select("settings")
+                                     NotificationCenter.default.post(name: .sayctrlOpenSettingsTab, object: "model")
+                                 }))
         } else if cfg.refine && !cfg.refineStyle {
             alerts.post(AppAlert(id: "tones", title: "Tones are off",
                                  message: "Every app gets the same plain cleanup.",

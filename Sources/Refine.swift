@@ -259,10 +259,10 @@ final class Refiner {
     /// slow (rawFallback above).
     func polish(_ text: String, completion: @escaping (String) -> Void) {
         guard Config.shared.refineEnabled else {
-            if Config.shared.refine, !Config.retail {
+            if Config.shared.refine {
                 AppAlerts.shared.post(AppAlert(
                     id: "polish", title: "Polish has no key",
-                    message: "Auto cleanup, tones and your rules need an OpenRouter or Cerebras key. Your words pasted as spoken.",
+                    message: "Off SayControl Cloud, auto cleanup, tones and your rules run on your own polish key. Your words pasted as spoken.",
                     actionTitle: "Open Settings", action: Self.openModelSettings))
             }
             return completion(rawFallback(text))
@@ -421,13 +421,15 @@ final class Refiner {
             alert = AppAlert(id: "polish", title: "Polish failed",
                              message: "Your words pasted as spoken. \(text)")
         }
-        // A user's copy has no key to check: polish comes with the cloud
-        // minutes, so what went wrong on our side is ours to say plainly.
-        if Config.retail && alert.severe {
+        // A user's copy polishing on the cloud has no key to check, so what
+        // went wrong on our side is ours to say plainly. On their own key,
+        // the key is theirs to fix.
+        let ours = Config.retail && Config.shared.cloudOn && Config.shared.modelsViaCloud
+        if ours && alert.severe {
             alert = AppAlert(id: "polish", title: "Polish isn't available right now",
                              message: "Your words pasted as spoken. It will be back on the next dictation that gets through.")
         }
-        if alert.severe && !Config.retail {
+        if alert.severe && !ours {
             alert.actionTitle = "Open Settings"
             alert.action = openModelSettings
         }
@@ -454,8 +456,7 @@ final class Refiner {
     static let testSample = "um so I think we should uh ship it on friday no wait after the review"
     func tryPolish(_ sample: String, completion: @escaping (Result<String, Error>, Int) -> Void) {
         guard Config.shared.hasModelAccess else {
-            return completion(.failure(err(Config.retail ? "Polish comes with a SayControl plan."
-                                                         : "Add a key for polish first.")), 0)
+            return completion(.failure(err("Add a key for polish first.")), 0)
         }
         let started = Date()
         request(sample) { result in
@@ -937,10 +938,10 @@ final class Refiner {
                          completion: @escaping (Result<String, Error>) -> Void) {
         let agentCall = Self.agentPurposes.contains(purpose)
         var viaCloud = Config.shared.modelsViaCloud || (agentCall && Config.shared.agentCloud)
-        // What the cloud would turn away goes to this Mac's own key, when the
-        // developers' build has one: dictated words no cloud take heard (no
-        // receipt), or an agent call outside a counted conversation.
-        if viaCloud, !Config.retail, Config.shared.refineKey != nil,
+        // What the cloud would turn away goes to this Mac's own key, when
+        // there is one: dictated words no cloud take heard (no receipt), or
+        // an agent call outside a counted conversation.
+        if viaCloud, Config.shared.refineKey != nil,
            (Self.heardPurposes.contains(purpose) && Cloud.shared.receipts.isEmpty)
             || (agentCall && AgentBridge.shared.conversationID == nil) {
             viaCloud = false

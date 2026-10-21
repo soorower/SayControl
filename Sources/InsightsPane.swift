@@ -875,8 +875,8 @@ final class InsightsPane: PaneView {
         sinceFmt.dateFormat = "d MMM"
         controlsNote.stringValue = tally.total == 0 ? "" : "\(Insights.number(tally.total)) since \(sinceFmt.string(from: tally.since))"
         // On Free the controls are Pro's: the tag says why nothing counts.
-        controlsPro.isHidden = Account.proFeatures
-        controlsEmpty.stringValue = Account.proFeatures
+        controlsPro.isHidden = Account.controlsFree
+        controlsEmpty.stringValue = Account.controlsFree
             ? "Say these in the middle of a sentence — “take a screenshot”, “copy the link”, “open Claude” — and each one is counted here."
             : "Screenshots, links, files, opening apps and the rest come with Pro. Each one you use is counted here."
         controlsEmpty.isHidden = tally.total > 0

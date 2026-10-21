@@ -257,7 +257,7 @@ final class ModelsPage: NSView {
                 self?.setSource(.cloud)
             },
             SourceCard(symbol: "laptopcomputer", hue: .green, title: "This Mac", line: "Private, and works offline.",
-                       meta: "Free, no account", metaSymbol: "wifi.slash", picked: source == .mac) { [weak self] in
+                       meta: "Free on any plan", metaSymbol: "wifi.slash", picked: source == .mac) { [weak self] in
                 self?.setSource(.mac)
             },
             SourceCard(symbol: "key", hue: .amber, title: "API key", line: "Your provider, any model it has.",

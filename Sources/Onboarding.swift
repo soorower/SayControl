@@ -595,10 +595,10 @@ final class OnboardingWindow: NSObject, NSWindowDelegate {
         let was = !who.isHidden
         fillSignIn()
         guard Account.signedIn, !was else { return }
-        // A new account talks through the cloud plan it just got — always in
-        // a user's copy, which has nothing else; in the developers' build
-        // only when there's no other engine.
-        if Config.retail || !VoiceEngine.readyWithoutCloud, !Config.shared.cloud, !Onboarding.demo {
+        // A new account talks through the cloud plan it just got when nothing
+        // else can write the words down; a model on this Mac or a key the
+        // user picked in Settings › Models stays their choice.
+        if !VoiceEngine.readyWithoutCloud, !Config.shared.cloud, !Onboarding.demo {
             Config.shared.setFlag("CLOUD", true)
             Config.shared.log("Onboarding: signed in with no other engine, cloud dictation on")
         }

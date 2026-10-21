@@ -585,7 +585,7 @@ final class Config {
         let env = dir.appendingPathComponent(".env")
         guard !FileManager.default.fileExists(atPath: env.path) else { return }
         let keyLine = Config.retail
-            ? "# Sign in and SayControl's cloud does the listening. No keys to add."
+            ? "# Sign in and SayControl's cloud does the listening, or pick a model on this Mac or your own key in Settings › Models."
             : "# Add your own OpenRouter key in Settings › Models (nothing ships with one)."
         let text = """
         # SayControl settings — edit here or from the settings window.
@@ -687,16 +687,14 @@ final class Config {
     /// their audio at a provider they have no key for.
     var provider: Provider {
         get {
-            // The user-facing build's only provider is this Mac, whatever the
-            // file says: there is no provider a user could hold a key for. The
-            // cloud plan (`cloudOn`) sits above this, not among these.
-            if Config.retail { return .local }
             // SAYCTRL_* is the name now; KOTHA_* and OPENWISPR_* still work.
             let raw = ProcessInfo.processInfo.environment["SAYCTRL_PROVIDER"]
                 ?? ProcessInfo.processInfo.environment["KOTHA_PROVIDER"]
                 ?? ProcessInfo.processInfo.environment["OPENWISPR_PROVIDER"]
                 ?? env()["PROVIDER"] ?? ""
-            return Provider(rawValue: raw.lowercased()) ?? .openrouter
+            // A user's copy starts on this Mac: the cloud (`cloudOn`) sits
+            // above this, and an install from before the choice holds no key.
+            return Provider(rawValue: raw.lowercased()) ?? (Config.retail ? .local : .openrouter)
         }
         set { set("PROVIDER", newValue.rawValue) }
     }
@@ -807,15 +805,13 @@ final class Config {
     var hasModelAccess: Bool { modelsViaCloud || refineKey != nil }
 
     /// SayControl's cloud does the listening and the polish, once signed in.
-    /// A user's copy is cloud-only (2026-10-03): always on, with no switch
-    /// and nothing on this Mac to fall back to — an old "off" in the
-    /// settings file is ignored. The developers' build starts on its own
-    /// keys and turns the cloud on under Settings › Account; there a take
-    /// runs on the provider below once the plan is spent.
+    /// A user's copy starts on it, and Settings › Models moves it to a model
+    /// on this Mac or a provider on the user's own key (2026-10-22; it was
+    /// cloud-only from 2026-10-03). The developers' build starts on its own
+    /// keys; there a take runs on the provider below once the plan is spent.
     var cloud: Bool {
         if let v = ProcessInfo.processInfo.environment["SAYCTRL_CLOUD"] { return v == "1" }
-        if Config.retail { return true }
-        return flag("CLOUD", default: false)
+        return flag("CLOUD", default: Config.retail)
     }
     var cloudOn: Bool { Account.available && cloud && Cloud.shared.signedIn }
 
@@ -861,10 +857,10 @@ final class Config {
     /// transcription is on the cloud. The cloud polishes only takes it heard
     /// (their receipt goes with the words), so a take from this Mac or a
     /// key polishes on your key whatever this says (Refine.perform). A
-    /// user's copy is all cloud.
+    /// user's copy says so here: off the cloud, polish is their key or none.
     var modelsViaCloud: Bool {
         guard Account.available, Cloud.shared.signedIn else { return false }
-        if Config.retail { return cloudOn }
+        if Config.retail { return cloudOn && flag("POLISH_CLOUD", default: true) }
         return flag("POLISH_CLOUD", default: true)
     }
     /// Who polishes on this Mac's own key, and with what.
@@ -932,11 +928,13 @@ final class Config {
     var agentVoice: Bool { flag("AGENT_VOICE", default: false) }
     /// The agent voice runs on SayControl's cloud — counted conversations,
     /// the server's voice and model — rather than on keys in .env. A
-    /// user's copy does whenever it is signed in; the developers' build
-    /// follows its cloud switch, or AGENT_CLOUD=1 for the voice alone, so
-    /// the plan's counting can be tried with dictation still on its own keys.
+    /// user's copy does whenever it is signed in, wherever dictation runs:
+    /// the agent voice is the cloud's alone. The developers' build follows
+    /// its cloud switch, or AGENT_CLOUD=1 for the voice alone, so the plan's
+    /// counting can be tried with dictation still on its own keys.
     var agentCloud: Bool {
-        cloudOn || (!Config.retail && flag("AGENT_CLOUD", default: false) && Account.available && Cloud.shared.signedIn)
+        if Config.retail { return Account.available && Cloud.shared.signedIn }
+        return cloudOn || (flag("AGENT_CLOUD", default: false) && Account.available && Cloud.shared.signedIn)
     }
     /// After the summary, keep the ear open for a spoken reply without a
     /// key press. Off leaves the dictation key as the only way to answer.
@@ -1101,6 +1099,17 @@ final class Config {
         guard Config.retail, env()["LOG_COUNTS_ONLY"] != "1" else { return }
         clearLog()
         set("LOG_COUNTS_ONLY", "1")
+    }
+
+    /// A user's copy before Settings › Models was cloud-only and ignored
+    /// CLOUD and POLISH_CLOUD, so whatever an old file says about them was
+    /// never the user's choice. Once, both go back to the cloud; from then
+    /// on the Models page decides.
+    func settleRoutesFromCloudOnly() {
+        guard Config.retail, env()["ROUTES_CHOSEN"] != "1" else { return }
+        setFlag("CLOUD", true)
+        setFlag("POLISH_CLOUD", true)
+        set("ROUTES_CHOSEN", "1")
     }
 
     // MARK: - Launch at login

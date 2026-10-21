@@ -1624,8 +1624,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// Why polish or a command cannot run right now, for the HUD. A user is
     /// told what buys it; a developer, which box to fill.
     var noPolishReason: String {
-        Config.retail ? "AI polish comes with SayControl cloud — sign in, or switch it back on in Settings → Plans"
-                      : "Needs an AI-polish key — add one in Settings"
+        Config.retail && Config.shared.cloudOn
+            ? "AI polish comes with SayControl cloud — switch it back on in Settings › Models"
+            : "Needs a polish key — add one in Settings › Models"
     }
     func modelName() -> String { takeOnCloud ? "SayControl cloud" : Config.shared.model }
     func log(_ msg: String) { Config.shared.log(msg) }
@@ -1682,9 +1683,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         LocalEngine.shared.migrateSelection()
         // Local dictation should be instant on the first hold of fn, not after
         // a multi-second model load.
-        // A user's copy never dictates on this Mac, so there's no model to
-        // load into memory at launch.
-        if !shooting && !Config.retail { LocalEngine.shared.warmUp() }
+        // A user's copy loads one only when it dictates on this Mac.
+        if !shooting && (!Config.retail || Config.shared.transcriptionSource == .mac) { LocalEngine.shared.warmUp() }
         // Whatever the last run left open on the cloud is closed, and the
         // first take's token fetched, before anyone presses fn.
         if !shooting { Cloud.shared.launch() }
@@ -1752,6 +1752,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let background = CommandLine.arguments.contains("--background") || openedAtLogin
         Config.shared.removeLegacyLaunchAgent()
         Config.shared.clearWordsFromOldLog()
+        Config.shared.settleRoutesFromCloudOnly()
         // Signed out, the welcome is the only way in: it is the sign-in.
         // Set up once, but a required switch is off now (a reinstall that
         // came with a new signature, or a switch turned off in System
@@ -2434,7 +2435,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// the HID tap both hear the event.
     func armCommandModeLate() {
         guard state == .recording, pendingCommand == nil else { return }
-        guard Account.proFeatures else {
+        guard Account.commandModeFree else {
             hud.show("Command mode comes with Pro", autohide: 2.5)
             return
         }
@@ -2742,9 +2743,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // On the cloud until the plan is spent. Then Free gets a few extra
         // takes, sent whole when you let go to the server's cheaper upload
         // model; after those, nothing until the week starts again. A user's
-        // copy never falls back to a model on this Mac (cloud-only since
-        // 2026-10-03); the developers' build still does, as if the cloud
-        // were off.
+        // copy on the cloud never falls back to a model on this Mac by
+        // itself (Settings › Models is where they move); the developers'
+        // build still does, as if the cloud were off.
         let spent = Config.shared.cloudOn && Cloud.shared.spent
         let cloud = Config.shared.cloudOn && !spent
         let extraTake = spent && !Account.proFeatures && Cloud.shared.graceLeft > 0
@@ -2755,7 +2756,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // Spent: ask the server now and then, so an upgrade or a new week
         // puts the next take back on the cloud.
         if spent { Cloud.shared.refreshAccountIfStale() }
-        if Config.retail, !cloud, !extraTake {
+        if Config.retail, Config.shared.transcriptionSource == .cloud, !cloud, !extraTake {
             let why = !Config.shared.cloudOn ? "Cloud dictation is off"
                 : Cloud.shared.usage?.words.left == 0
                     ? "This week's free words are used up. They refill \(PlanState.refillDay)"
@@ -2768,13 +2769,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         // The plan decides the controls for the whole take: the live checks
         // read this on every word, so it's set once here.
-        Commands.controlsOn = Account.proFeatures
+        Commands.controlsOn = Account.controlsFree
         guard cloud || extraTake || apiKey() != nil else {
-            // Unreachable in the user-facing build — Local always has its
-            // placeholder key — so the sentence is only ever a developer's.
-            hud.show("⚠️ No API key — add one in Settings", autohide: 2.5)
+            // Local always has its placeholder key, so this is a provider
+            // picked under API key with none saved for it.
+            hud.show("⚠️ No API key — add one in Settings › Models", autohide: 2.5)
             playSound("SayCtrlMiss")
-            SettingsUI.shared.present(selecting: "settings")
+            SettingsUI.shared.showSettings(tab: "model")
             return
         }
         popup.hide()
@@ -2814,7 +2815,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         pendingCommand = nil
         if commandArmed {
             commandArmed = false
-            if !Account.proFeatures {
+            if !Account.commandModeFree {
                 hud.show("Command mode comes with Pro — continuing as dictation", autohide: 2.5)
                 log("Command mode: Free plan — continuing as dictation")
             } else if !Config.shared.hasModelAccess {
@@ -3887,8 +3888,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             completion(.failure(NSError(domain: "SayCtrl", code: 2, userInfo: [NSLocalizedDescriptionKey: msg])))
         }
         guard Config.shared.cloudOn else {
-            // A user's copy has nothing else to hear with.
-            if Config.retail { return fail("Sign in to transcribe again") }
+            // Signed out, a user's copy has nothing to hear with.
+            if Config.retail && !Cloud.shared.signedIn { return fail("Sign in to transcribe again") }
             return transcribe(fileURL: fileURL, completion: completion)
         }
         if Cloud.shared.spent {
@@ -5064,10 +5065,36 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// and remembers which paid provider you left, for the trip back. The
     /// HUD always says where you landed.
     func executeModelSwitch(toLocal: Bool) {
-        // A user's copy has one way to dictate: the cloud.
+        // A user's copy moves between the two places it has without a key:
+        // the cloud and this Mac (the one picked here, else the biggest).
         if Config.retail {
-            hud.show("SayControl dictates in the cloud — there's no model on this Mac to switch to", autohide: 3)
-            log("Model switch: asked for \(toLocal ? "local" : "cloud") in the user build — cloud-only")
+            let source = Config.shared.transcriptionSource
+            if toLocal {
+                guard source != .mac else {
+                    hud.show("Already on this Mac — \(LocalEngine.shared.selectedEntry()?.name ?? Config.shared.model)", autohide: 2.4)
+                    return
+                }
+                guard let entry = LocalEngine.shared.selectedEntry() else {
+                    hud.show("⚠️ No model on this Mac yet — download one in Settings › Models", autohide: 3.5)
+                    playSound("SayCtrlMiss")
+                    log("Model switch: no local model installed, still on \(source)")
+                    return
+                }
+                Config.shared.set(Provider.local.modelVar, entry.id)
+                Config.shared.setTranscriptionSource(.mac)
+                LocalEngine.shared.warmUp()
+                hud.show("Switched to this Mac — \(entry.name)", autohide: 2.8)
+            } else {
+                guard source != .cloud else {
+                    hud.show("Already on SayControl Cloud", autohide: 2.4)
+                    return
+                }
+                Config.shared.setTranscriptionSource(.cloud)
+                hud.show("Switched to SayControl Cloud", autohide: 2.8)
+            }
+            playSound("SayCtrlMatch")
+            flashSuccess()
+            log("Model switch: \(source) → \(Config.shared.transcriptionSource)")
             return
         }
         let current = Config.shared.provider

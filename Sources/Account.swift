@@ -54,6 +54,14 @@ enum Account {
     /// app saying so first.
     static var proFeatures: Bool { !available || plan == "pro" }
 
+    /// Pro is what the cloud sells, so off it nothing is locked (owner,
+    /// 2026-10-22): words heard on this Mac or by a provider on your own key
+    /// get the spoken controls and Ask whatever the plan.
+    static var controlsFree: Bool { proFeatures || !Config.shared.cloudOn }
+    /// Command mode is a polish call, so it is free when that call goes to
+    /// your own key: a take off the cloud, or polish set to your key.
+    static var commandModeFree: Bool { proFeatures || !(Config.shared.cloudOn && Config.shared.modelsViaCloud) }
+
     /// The plans as the server serves them (SayCtrl-Cloud src/plans.ts). The
     /// usage the server reports carries its own limits; these are for the
     /// screens that describe a plan you are not on.
