@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!--
+	The hardened runtime (required for notarisation) closes every door by
+	default; these are the two the app actually walks through. Nothing here
+	is the sandbox — SayCtrl is not sandboxed, it only runs hardened.
+	-->
+
+	<!-- The microphone. Without this the hardened runtime silently hands
+	     CoreAudio no input at all, whatever NSMicrophoneUsageDescription says. -->
+	<key>com.apple.security.device.audio-input</key>
+	<true/>
+
+	<!-- Apple Events to Finder ("copy the file path") and the browsers ("copy
+	     the link"), sent through /usr/bin/osascript. TCC charges those to the
+	     responsible process, which is this app, so the permission is ours to hold. -->
+	<key>com.apple.security.automation.apple-events</key>
+	<true/>
+</dict>
+</plist>

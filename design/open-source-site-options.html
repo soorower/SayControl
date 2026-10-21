@@ -1,0 +1,1326 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Open-source site options</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700&display=swap">
+<style>
+/* The site once SayControl is open source: a new Models section (cloud, this
+   Mac, your own keys) and the pricing that goes with it. Two options, A and
+   B, switched from the bar at the top. Colours, type and radii are
+   SayCtrl-Web's src/styles.css. Local model names, sizes and languages are
+   the app's LOCAL_CATALOG (Sources/LocalEngine.swift); provider model ids are
+   Config.swift's, apart from the chat models, which the real thing reads from
+   each provider's model list. Nothing on this page sends anything anywhere. */
+:root {
+  --paper: #fafaf8; --sidebar-fill: #f3f2ef; --surface: #fff; --sunk: #f3f2ef;
+  --hairline: #e5e3de; --hairsoft: #eeece8;
+  --ink: #17150f; --ink2: #3b3830; --muted: #6b675f; --faint: #9f9a91;
+  --ember: #d4491c; --ember-soft: rgb(212 73 28 / .1); --ember-ring: rgb(212 73 28 / .32); --ember-wash: rgb(212 73 28 / .05);
+  --moss: #3f7a50; --moss-soft: rgb(63 122 80 / .1);
+  --amber: #b5822e; --amber-soft: rgb(181 130 46 / .1);
+  --blue: #2c5fd4; --blue-soft: rgb(44 95 212 / .1);
+  --violet: #6d4ed8; --violet-soft: rgb(109 78 216 / .1);
+  --slate: #55606e; --slate-soft: rgb(85 96 110 / .1);
+  --rose: #c23a5e; --rose-soft: rgb(194 58 94 / .1);
+  --bar: #dad7d0;
+  --desk1: #fadcc3; --desk2: #f0a578; --on-desk: #2a1a12; --on-desk2: #5a3524; --desk-card: rgb(255 255 255 / .55); --desk-line: rgb(0 0 0 / .08);
+  --shadow-soft: 0 1px 2px rgb(23 21 15 / .04), 0 4px 14px rgb(23 21 15 / .05);
+  --shadow-lift: 0 2px 4px rgb(23 21 15 / .05), 0 14px 40px rgb(23 21 15 / .1);
+  --shadow-deep: 0 4px 8px rgb(23 21 15 / .08), 0 30px 80px rgb(23 21 15 / .18);
+  --ease: cubic-bezier(.2,.8,.2,1);
+  --font-display: 'Bricolage Grotesque', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Inter, system-ui, sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, monospace;
+  color-scheme: light;
+}
+:root[data-theme="dark"] {
+  --paper: #121110; --sidebar-fill: #0d0c0b; --surface: #1b1a18; --sunk: #181715;
+  --hairline: #2c2a26; --hairsoft: #23221f;
+  --ink: #f1efea; --ink2: #cfcbc3; --muted: #9c978e; --faint: #6c6861;
+  --ember: #f2693c; --ember-soft: rgb(242 105 60 / .14); --ember-ring: rgb(242 105 60 / .4); --ember-wash: rgb(242 105 60 / .07);
+  --moss: #6fa07b; --moss-soft: rgb(111 160 123 / .14);
+  --amber: #d2a04c; --amber-soft: rgb(210 160 76 / .14);
+  --blue: #8ab0ff; --blue-soft: rgb(138 176 255 / .14);
+  --violet: #b09cff; --violet-soft: rgb(176 156 255 / .14);
+  --slate: #b4bdc9; --slate-soft: rgb(180 189 201 / .12);
+  --rose: #ff8fae; --rose-soft: rgb(255 143 174 / .13);
+  --bar: #3a3833;
+  --desk1: #8a3e22; --desk2: #4a2116; --on-desk: #f4ece6; --on-desk2: #d6c6bb; --desk-card: rgb(255 255 255 / .06); --desk-line: rgb(255 255 255 / .1);
+  --shadow-soft: 0 1px 2px rgb(0 0 0 / .3), 0 6px 18px rgb(0 0 0 / .28);
+  --shadow-lift: 0 2px 4px rgb(0 0 0 / .34), 0 16px 44px rgb(0 0 0 / .44);
+  --shadow-deep: 0 4px 10px rgb(0 0 0 / .4), 0 34px 90px rgb(0 0 0 / .6);
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --paper: #121110; --sidebar-fill: #0d0c0b; --surface: #1b1a18; --sunk: #181715;
+  --hairline: #2c2a26; --hairsoft: #23221f;
+  --ink: #f1efea; --ink2: #cfcbc3; --muted: #9c978e; --faint: #6c6861;
+  --ember: #f2693c; --ember-soft: rgb(242 105 60 / .14); --ember-ring: rgb(242 105 60 / .4); --ember-wash: rgb(242 105 60 / .07);
+  --moss: #6fa07b; --moss-soft: rgb(111 160 123 / .14);
+  --amber: #d2a04c; --amber-soft: rgb(210 160 76 / .14);
+  --blue: #8ab0ff; --blue-soft: rgb(138 176 255 / .14);
+  --violet: #b09cff; --violet-soft: rgb(176 156 255 / .14);
+  --slate: #b4bdc9; --slate-soft: rgb(180 189 201 / .12);
+  --rose: #ff8fae; --rose-soft: rgb(255 143 174 / .13);
+  --bar: #3a3833;
+  --desk1: #8a3e22; --desk2: #4a2116; --on-desk: #f4ece6; --on-desk2: #d6c6bb; --desk-card: rgb(255 255 255 / .06); --desk-line: rgb(255 255 255 / .1);
+  --shadow-soft: 0 1px 2px rgb(0 0 0 / .3), 0 6px 18px rgb(0 0 0 / .28);
+  --shadow-lift: 0 2px 4px rgb(0 0 0 / .34), 0 16px 44px rgb(0 0 0 / .44);
+  --shadow-deep: 0 4px 10px rgb(0 0 0 / .4), 0 34px 90px rgb(0 0 0 / .6);
+  color-scheme: dark;
+} }
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { -webkit-font-smoothing: antialiased; scroll-behavior: smooth; }
+body { background: var(--paper); color: var(--ink); font: 15px/1.5 var(--font-sans); text-rendering: optimizeLegibility; overflow-x: hidden; }
+a { color: inherit; text-decoration: none; }
+button, input, select { font: inherit; color: inherit; }
+button { background: none; border: 0; cursor: pointer; }
+svg.i { width: 18px; height: 18px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
+:focus-visible { outline: 2px solid var(--ember); outline-offset: 2px; border-radius: 6px; }
+[hidden] { display: none !important; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+.shell { max-width: 72rem; margin: 0 auto; padding: 0 32px; }
+@media (max-width: 640px) { .shell { padding: 0 16px; } }
+.display { font-family: var(--font-display); font-weight: 500; letter-spacing: -.045em; line-height: 1.02; }
+.kicker { display: inline-flex; align-items: center; gap: 8px; margin-bottom: 16px; font-size: 14px; font-weight: 600; color: var(--ember); }
+.kicker svg { width: 18px; height: 18px; }
+.section-title { font-family: var(--font-display); font-weight: 500; letter-spacing: -.04em; line-height: 1.05; font-size: clamp(2.125rem, 4.6vw, 3.25rem); text-wrap: balance; }
+.lede { margin-top: 16px; max-width: 36rem; font-size: 17px; line-height: 1.6; color: var(--muted); text-wrap: pretty; }
+.center { text-align: center; } .center .lede { margin-left: auto; margin-right: auto; }
+.ember { color: var(--ember); }
+.sec { padding: 104px 0; border-top: 1px solid var(--hairline); }
+.sec.sunk { background: color-mix(in srgb, var(--sunk) 55%, var(--paper)); }
+@media (max-width: 640px) { .sec { padding: 72px 0; } }
+
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 46px; padding: 0 22px; border-radius: 999px; font-size: 15px; font-weight: 500; white-space: nowrap; transition: transform .2s var(--ease), background-color .2s, box-shadow .2s, opacity .2s; }
+.btn:active { transform: scale(.98); }
+.btn-ink { background: var(--ink); color: var(--paper); }
+.btn-ink:hover { opacity: .9; }
+.btn-ember { background: var(--ember); color: #fffaf7; box-shadow: 0 1px 0 rgb(255 255 255 / .2) inset, 0 6px 18px var(--ember-soft); }
+.btn-ember:hover { filter: brightness(1.05); }
+.btn-quiet { border: 1px solid var(--hairline); background: var(--surface); color: var(--ink); box-shadow: var(--shadow-soft); }
+.btn-quiet:hover { background: var(--sunk); }
+.btn-light { background: var(--paper); color: var(--ink); }
+.btn-sm { height: 36px; padding: 0 14px; font-size: 13.5px; }
+.link { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; font-size: 15px; color: var(--ember); }
+.link svg { width: 16px; height: 16px; transition: transform .25s var(--ease); }
+.link:hover svg { transform: translateX(2px); }
+
+/* ── the design bar: not part of the site ─────────────────────── */
+.dbar { position: sticky; top: 0; z-index: 60; background: color-mix(in srgb, var(--paper) 80%, transparent); backdrop-filter: saturate(1.4) blur(16px); -webkit-backdrop-filter: saturate(1.4) blur(16px); border-bottom: 1px solid var(--hairline); }
+.dbar .in { display: flex; align-items: center; gap: 14px; height: 56px; max-width: 86rem; margin: 0 auto; padding: 0 24px; }
+.dbar .what { font-size: 13px; font-weight: 600; color: var(--muted); white-space: nowrap; }
+.dbar .what b { color: var(--ink); font-weight: 600; }
+.seg { display: inline-flex; padding: 3px; gap: 2px; border-radius: 12px; background: var(--sunk); border: 1px solid var(--hairsoft); }
+.seg button { height: 32px; padding: 0 14px; border-radius: 9px; font-size: 13.5px; font-weight: 500; color: var(--muted); white-space: nowrap; transition: background-color .2s, color .2s, box-shadow .2s; }
+.seg button[aria-pressed="true"], .seg button[aria-selected="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgb(0 0 0 / .08), 0 0 0 1px var(--hairsoft); }
+.seg button b { font-weight: 700; margin-right: 4px; color: var(--ember); }
+.dbar .grow { flex: 1; }
+.dbar .theme button { width: 36px; padding: 0; display: inline-grid; place-items: center; }
+.dbar .theme svg { width: 16px; height: 16px; }
+@media (max-width: 760px) { .dbar .what { display: none; } .dbar .in { padding: 0 12px; gap: 8px; } .seg button { padding: 0 10px; } .seg .long { display: none; } }
+
+/* ── site header + a short hero, for context ─────────────────── */
+.site-head { border-bottom: 1px solid var(--hairsoft); }
+.site-head .in { display: flex; align-items: center; gap: 6px; height: 64px; max-width: 86rem; margin: 0 auto; padding: 0 32px; }
+.wordmark { display: inline-flex; align-items: center; font-family: var(--font-display); font-weight: 600; font-size: 19px; letter-spacing: -.035em; }
+.wordmark svg { width: 1.3em; height: 1.3em; margin-left: -.17em; margin-right: .12em; }
+.site-head nav { margin-left: auto; display: flex; gap: 2px; }
+.site-head nav a { padding: 8px 12px; border-radius: 999px; font-size: 14px; font-weight: 500; color: var(--ink2); }
+.site-head nav a:hover { color: var(--ink); }
+.gh { display: inline-flex; align-items: center; gap: 7px; height: 36px; padding: 0 12px; margin: 0 6px; border: 1px solid var(--hairline); border-radius: 999px; background: var(--surface); font-size: 13.5px; font-weight: 500; color: var(--ink2); }
+.gh svg { width: 16px; height: 16px; }
+.gh .star { display: inline-flex; align-items: center; gap: 4px; padding-left: 8px; border-left: 1px solid var(--hairline); color: var(--muted); }
+.gh .star svg { width: 13px; height: 13px; }
+@media (max-width: 760px) { .site-head nav { display: none; } .site-head .in { padding: 0 16px; } .gh { margin-left: auto; } .site-head .btn { display: none; } }
+
+.hero { padding: 88px 0 96px; }
+.os-pill { display: inline-flex; align-items: center; gap: 8px; padding: 6px 8px 6px 12px; border-radius: 999px; border: 1px solid var(--hairline); background: var(--surface); box-shadow: var(--shadow-soft); font-size: 13.5px; font-weight: 500; color: var(--ink2); }
+.os-pill svg { width: 15px; height: 15px; }
+.os-pill .new { padding: 2px 8px; border-radius: 999px; background: var(--ember-soft); color: var(--ember); font-size: 12px; font-weight: 600; }
+.hero h1 { margin-top: 28px; font-size: clamp(2.75rem, 7vw, 5rem); }
+.hero .ctas { margin-top: 32px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+.hero .ways { margin-top: 22px; display: flex; gap: 18px; justify-content: center; flex-wrap: wrap; font-size: 13.5px; color: var(--muted); }
+.hero .ways span { display: inline-flex; align-items: center; gap: 6px; }
+.hero .ways svg { width: 15px; height: 15px; color: var(--faint); }
+
+/* ── shared bits ─────────────────────────────────────────────── */
+.tile { width: 44px; height: 44px; border-radius: 13px; display: grid; place-items: center; background: var(--sunk); color: var(--ink2); flex: none; transition: background-color .25s, color .25s; }
+.tile svg { width: 21px; height: 21px; }
+.tile.sm { width: 34px; height: 34px; border-radius: 10px; }
+.tile.sm svg { width: 17px; height: 17px; }
+.chip { display: inline-flex; align-items: center; gap: 5px; height: 26px; padding: 0 10px; border-radius: 999px; font-size: 12.5px; font-weight: 500; background: var(--sunk); color: var(--ink2); white-space: nowrap; }
+.chip svg { width: 13px; height: 13px; }
+.chip.ok { background: var(--moss-soft); color: var(--moss); }
+.chip.live { background: var(--ember-soft); color: var(--ember); }
+.chip.blue { background: var(--blue-soft); color: var(--blue); }
+.pane-k { font-size: 13px; font-weight: 600; color: var(--ink2); letter-spacing: -.005em; }
+.pane-sub { margin-top: 4px; font-size: 14px; color: var(--muted); max-width: 34rem; }
+.note { display: flex; gap: 10px; align-items: flex-start; margin-top: 18px; padding: 12px 14px; border-radius: 14px; background: var(--sunk); font-size: 13.5px; color: var(--muted); }
+.note svg { width: 16px; height: 16px; margin-top: 2px; color: var(--amber); }
+.note b { color: var(--ink2); font-weight: 600; }
+.rule { display: flex; align-items: center; gap: 12px; }
+.rule span:first-child { font-size: 13px; font-weight: 600; color: var(--ink2); white-space: nowrap; }
+.rule span:last-child { flex: 1; height: 1px; background: var(--hairline); }
+.ticks { list-style: none; display: grid; gap: 11px; }
+.ticks li { display: flex; gap: 10px; font-size: 14px; line-height: 1.5; color: var(--ink2); }
+.ticks li svg { width: 16px; height: 16px; margin-top: 3px; color: var(--moss); stroke-width: 2.25; }
+.mono { font-family: var(--font-mono); font-size: .92em; letter-spacing: -.01em; }
+.spin { width: 16px; height: 16px; border-radius: 50%; border: 2px solid currentColor; border-right-color: transparent; animation: spin .7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.rise { animation: rise .42s var(--ease) both; }
+.progress { height: 6px; border-radius: 99px; background: var(--hairsoft); overflow: hidden; }
+.progress i { display: block; height: 100%; width: 0; border-radius: inherit; background: var(--ember); }
+
+/* model rows (local) */
+.mlist { display: grid; gap: 8px; margin-top: 16px; }
+.mrow { display: grid; grid-template-columns: 22px 1fr auto; gap: 14px; align-items: center; padding: 14px 16px; border-radius: 16px; border: 1px solid var(--hairline); background: var(--surface); cursor: pointer; transition: border-color .2s, box-shadow .2s, background-color .2s; }
+.mrow:hover { border-color: color-mix(in srgb, var(--ink) 18%, var(--hairline)); }
+.mrow:has(input:checked) { border-color: var(--ember); box-shadow: 0 0 0 3px var(--ember-soft); }
+.mrow input { appearance: none; width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid var(--bar); display: grid; place-items: center; transition: border-color .2s; }
+.mrow input:checked { border-color: var(--ember); }
+.mrow input:checked::after { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--ember); }
+.mrow b { font-weight: 600; font-size: 15px; letter-spacing: -.01em; }
+.mrow small { display: block; font-size: 13.5px; color: var(--muted); margin-top: 1px; }
+.mrow .tags { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+.mrow .done { color: var(--moss); }
+@media (max-width: 640px) { .mrow { grid-template-columns: 22px 1fr; } .mrow .tags { grid-column: 2; justify-content: flex-start; } }
+
+/* provider tiles */
+.prov-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; margin-top: 14px; }
+.prov { position: relative; display: flex; align-items: center; gap: 10px; padding: 12px; border-radius: 14px; border: 1px solid var(--hairline); background: var(--surface); cursor: pointer; text-align: left; transition: border-color .2s, box-shadow .2s, transform .2s var(--ease); }
+.prov:hover { border-color: color-mix(in srgb, var(--ink) 18%, var(--hairline)); }
+.prov[aria-checked="true"] { border-color: var(--ember); box-shadow: 0 0 0 3px var(--ember-soft); }
+.prov .mono-tile { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; font-family: var(--font-display); font-weight: 600; font-size: 14px; letter-spacing: -.03em; flex: none; }
+.prov .pn { font-size: 14px; font-weight: 600; letter-spacing: -.01em; line-height: 1.2; }
+.prov .pj { display: flex; gap: 4px; margin-top: 4px; color: var(--faint); }
+.prov .pj svg { width: 13px; height: 13px; }
+.prov .dot { position: absolute; top: 9px; right: 9px; width: 8px; height: 8px; border-radius: 50%; background: var(--moss); box-shadow: 0 0 0 3px var(--moss-soft); }
+.prov.more { color: var(--muted); border-style: dashed; cursor: default; }
+.prov.more .mono-tile { background: var(--sunk); color: var(--faint); }
+.hue-ink { background: var(--ink); color: var(--paper); }
+.hue-ember { background: var(--ember-soft); color: var(--ember); }
+.hue-blue { background: var(--blue-soft); color: var(--blue); }
+.hue-moss { background: var(--moss-soft); color: var(--moss); }
+.hue-amber { background: var(--amber-soft); color: var(--amber); }
+.hue-violet { background: var(--violet-soft); color: var(--violet); }
+.hue-slate { background: var(--slate-soft); color: var(--slate); }
+.hue-rose { background: var(--rose-soft); color: var(--rose); }
+
+.field { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; height: 46px; padding: 0 14px; border-radius: 14px; border: 1px solid var(--hairline); background: var(--surface); transition: border-color .2s, box-shadow .2s; }
+.field:focus-within { border-color: var(--ember); box-shadow: 0 0 0 3px var(--ember-soft); }
+.field svg { color: var(--faint); width: 17px; height: 17px; }
+.field input { flex: 1; min-width: 0; border: 0; outline: 0; background: none; font-family: var(--font-mono); font-size: 14px; }
+.field input::placeholder { color: var(--faint); }
+.field.bad { border-color: var(--rose); box-shadow: 0 0 0 3px var(--rose-soft); animation: nudge .3s; }
+@keyframes nudge { 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
+.hint { margin-top: 10px; display: flex; gap: 12px; justify-content: space-between; flex-wrap: wrap; font-size: 13px; color: var(--muted); }
+.hint svg { width: 13px; height: 13px; vertical-align: -2px; color: var(--moss); }
+.hint a { color: var(--ember); font-weight: 600; display: inline-flex; align-items: center; gap: 4px; }
+.hint a svg { color: var(--ember); }
+
+/* ═══ OPTION A — three doors ═══════════════════════════════════ */
+.doors { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 56px; }
+@media (max-width: 900px) { .doors { grid-template-columns: 1fr; } }
+.door { position: relative; display: flex; flex-direction: column; padding: 24px; border-radius: 24px; border: 1px solid var(--hairline); background: var(--surface); cursor: pointer; transition: border-color .25s, box-shadow .25s, transform .25s var(--ease); }
+.door:hover { transform: translateY(-2px); box-shadow: var(--shadow-soft); }
+.door input { position: absolute; opacity: 0; pointer-events: none; }
+.door:has(input:checked) { border-color: var(--ember); box-shadow: 0 0 0 4px var(--ember-soft), var(--shadow-lift); transform: none; }
+.door:has(input:focus-visible) { outline: 2px solid var(--ember); outline-offset: 3px; }
+.door:has(input:checked) .tile { background: var(--ember); color: #fffaf7; }
+.door .top { display: flex; justify-content: space-between; align-items: flex-start; }
+.door .radio { width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid var(--bar); display: grid; place-items: center; transition: border-color .2s, background-color .2s; }
+.door .radio svg { width: 13px; height: 13px; stroke-width: 3; color: #fffaf7; opacity: 0; transform: scale(.6); transition: opacity .2s, transform .25s var(--ease); }
+.door:has(input:checked) .radio { border-color: var(--ember); background: var(--ember); }
+.door:has(input:checked) .radio svg { opacity: 1; transform: none; }
+.door .name { margin-top: 20px; font-family: var(--font-display); font-size: 24px; font-weight: 500; letter-spacing: -.035em; line-height: 1.1; }
+.door .line { margin-top: 8px; font-size: 14.5px; line-height: 1.55; color: var(--muted); min-height: 3.1em; }
+.door .facts { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--hairsoft); display: grid; gap: 8px; }
+.door .facts span { display: flex; align-items: center; gap: 9px; font-size: 13.5px; color: var(--ink2); }
+.door .facts svg { width: 15px; height: 15px; color: var(--faint); }
+.door .price { margin-top: auto; padding-top: 18px; display: flex; align-items: baseline; gap: 6px; }
+.door .price b { font-family: var(--font-display); font-size: 22px; font-weight: 600; letter-spacing: -.03em; }
+.door .price span { font-size: 13.5px; color: var(--muted); }
+
+.stage { position: relative; margin-top: 14px; border-radius: 28px; border: 1px solid var(--hairline); background: var(--surface); box-shadow: var(--shadow-soft); padding: 32px; }
+@media (max-width: 640px) { .stage { padding: 20px; border-radius: 22px; } }
+.stage .caret { position: absolute; top: -9px; width: 16px; height: 16px; background: var(--surface); border-left: 1px solid var(--hairline); border-top: 1px solid var(--hairline); transform: rotate(45deg); transition: left .45s var(--ease); }
+@media (max-width: 900px) { .stage .caret { display: none; } }
+.pane-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
+@media (max-width: 640px) { .pane-head { flex-direction: column-reverse; gap: 12px; } .connected { flex-direction: column; align-items: stretch; } .connected .found-head { height: auto; } }
+.pane-title { font-family: var(--font-display); font-size: 26px; font-weight: 500; letter-spacing: -.035em; line-height: 1.1; }
+
+.cloud-grid { display: grid; grid-template-columns: 1.5fr 1fr; gap: 28px; margin-top: 24px; }
+@media (max-width: 860px) { .cloud-grid { grid-template-columns: 1fr; } }
+.jobs { display: grid; gap: 2px; border-radius: 18px; border: 1px solid var(--hairline); overflow: hidden; }
+.job { display: grid; grid-template-columns: auto 1fr auto; gap: 14px; align-items: center; padding: 16px; background: var(--surface); }
+.job + .job { border-top: 1px solid var(--hairsoft); }
+.job b { font-weight: 600; font-size: 15px; letter-spacing: -.01em; }
+.job small { display: block; font-size: 13.5px; color: var(--muted); margin-top: 1px; }
+@media (max-width: 560px) { .job { grid-template-columns: auto 1fr; } .job .chip { grid-column: 2; justify-self: start; } }
+.miniplans { display: grid; gap: 10px; align-content: start; }
+.mp { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 16px 18px; border-radius: 18px; border: 1px solid var(--hairline); }
+.mp span { font-size: 13px; font-weight: 600; color: var(--muted); }
+.mp b { font-family: var(--font-display); font-weight: 500; font-size: 19px; letter-spacing: -.03em; }
+.mp.pro { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.mp.pro span { color: color-mix(in srgb, var(--paper) 60%, transparent); }
+.miniplans .link { margin-top: 6px; justify-self: start; }
+
+.dl { margin-top: 18px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.dl .progress { flex: 1; min-width: 160px; }
+.dl .state { font-size: 13.5px; color: var(--muted); white-space: nowrap; }
+.dl .state.ok { color: var(--moss); font-weight: 500; display: inline-flex; align-items: center; gap: 6px; }
+
+.steps { display: grid; gap: 28px; margin-top: 26px; }
+.keyrow { display: flex; gap: 10px; margin-top: 12px; }
+@media (max-width: 560px) { .keyrow { flex-direction: column; } }
+.connected { display: flex; gap: 10px; align-items: center; margin-top: 12px; }
+.connected .found-head { flex: 1; margin-top: 0; height: 46px; }
+.connected .btn { height: 46px; }
+.found-head { display: flex; align-items: center; gap: 8px; margin-top: 12px; padding: 10px 14px; border-radius: 12px; background: var(--moss-soft); color: var(--moss); font-size: 14px; font-weight: 500; }
+.found-head svg { width: 16px; height: 16px; stroke-width: 2.25; }
+.fgroups { display: grid; gap: 16px; margin-top: 16px; }
+.fg-head { display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 600; color: var(--ink2); }
+.fg-head svg { width: 15px; height: 15px; color: var(--faint); }
+.fg-head small { font-weight: 400; color: var(--faint); }
+.mchips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.mchip { display: inline-flex; align-items: center; gap: 8px; padding: 9px 13px; border-radius: 12px; border: 1px solid var(--hairline); background: var(--surface); cursor: pointer; transition: border-color .2s, box-shadow .2s, background-color .2s; }
+.mchip:hover { border-color: color-mix(in srgb, var(--ink) 18%, var(--hairline)); }
+.mchip input { position: absolute; opacity: 0; pointer-events: none; }
+.mchip:has(input:checked) { border-color: var(--ember); background: var(--ember-wash); box-shadow: 0 0 0 3px var(--ember-soft); }
+.mchip:has(input:focus-visible) { outline: 2px solid var(--ember); outline-offset: 2px; }
+.mchip .mono { font-size: 13px; color: var(--ink); }
+.mchip small { font-size: 12px; color: var(--muted); }
+.mchip small.live { color: var(--ember); font-weight: 500; }
+.fg-empty { margin-top: 8px; font-size: 13.5px; color: var(--muted); padding: 10px 13px; border-radius: 12px; border: 1px dashed var(--hairline); }
+
+.setup { margin-top: 26px; border-radius: 20px; background: var(--sunk); padding: 18px; }
+.setup .slots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px; }
+@media (max-width: 760px) { .setup .slots { grid-template-columns: 1fr; } }
+.slot { padding: 12px 14px; border-radius: 14px; background: var(--surface); border: 1px solid var(--hairsoft); min-width: 0; }
+.slot .sj { display: flex; align-items: center; gap: 7px; font-size: 12.5px; font-weight: 600; color: var(--muted); }
+.slot .sj svg { width: 14px; height: 14px; }
+.slot .sv { margin-top: 6px; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.slot .sp { font-size: 12.5px; color: var(--faint); }
+.slot.empty .sv { color: var(--faint); font-family: var(--font-sans); }
+
+/* pricing A */
+.appband { margin-top: 56px; display: grid; grid-template-columns: 1.1fr 1fr; gap: 32px; align-items: center; padding: 40px; border-radius: 30px; background: linear-gradient(135deg, var(--desk1), var(--desk2)); color: var(--on-desk); position: relative; overflow: hidden; }
+.appband::after { content: ''; position: absolute; inset: 0; background: radial-gradient(60% 80% at 100% 0%, rgb(255 255 255 / .35), transparent 60%); pointer-events: none; }
+:root[data-theme="dark"] .appband::after { background: radial-gradient(60% 80% at 100% 0%, rgb(255 140 90 / .18), transparent 60%); }
+@media (max-width: 860px) { .appband { grid-template-columns: 1fr; padding: 28px; } }
+.appband > * { position: relative; z-index: 1; }
+.appband .lab { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; color: var(--on-desk2); }
+.appband .lab svg { width: 17px; height: 17px; }
+.appband .big { margin-top: 14px; display: flex; align-items: baseline; gap: 10px; }
+.appband .big b { font-family: var(--font-display); font-weight: 500; font-size: 64px; letter-spacing: -.05em; line-height: 1; }
+.appband .big span { font-size: 16px; color: var(--on-desk2); }
+.appband p.say { margin-top: 12px; font-size: 16px; line-height: 1.55; color: var(--on-desk2); max-width: 30rem; }
+.appband .ctas { margin-top: 24px; display: flex; gap: 10px; flex-wrap: wrap; }
+.appband .btn-quiet { background: var(--desk-card); border-color: var(--desk-line); color: var(--on-desk); box-shadow: none; }
+.appband .btn-ink { background: var(--on-desk); color: var(--desk1); }
+.appband .card { padding: 24px; border-radius: 22px; background: var(--desk-card); border: 1px solid var(--desk-line); backdrop-filter: blur(6px); }
+.appband .ticks li { color: var(--on-desk); }
+.appband .ticks li svg { color: var(--on-desk); }
+.appband .card .rule span:first-child { color: var(--on-desk2); }
+.appband .card .rule span:last-child { background: var(--desk-line); }
+
+.plans { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 20px; }
+@media (max-width: 960px) { .plans { grid-template-columns: 1fr; } }
+.plan { display: flex; flex-direction: column; padding: 30px; border-radius: 26px; border: 1px solid var(--hairline); background: var(--surface); }
+.plan .ph { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 600; }
+.plan .ph svg { width: 18px; height: 18px; color: var(--moss); }
+.plan .fig { margin-top: 20px; font-family: var(--font-display); font-weight: 500; font-size: 48px; letter-spacing: -.045em; line-height: 1; }
+.plan .fig span { font-family: var(--font-sans); font-size: 15px; font-weight: 400; letter-spacing: 0; color: var(--muted); }
+.plan .say { margin-top: 12px; font-size: 15px; line-height: 1.55; color: var(--muted); }
+.plan .ticks { margin-top: 24px; }
+.plan .foot { margin-top: auto; padding-top: 28px; }
+.plan .cap { margin-top: 10px; font-size: 13px; color: var(--faint); }
+.plan.inv { background: var(--ink); color: var(--paper); border-color: var(--ink); box-shadow: var(--shadow-lift); }
+.plan.inv .ph svg { color: var(--ember); }
+.plan.inv .fig span, .plan.inv .say { color: color-mix(in srgb, var(--paper) 65%, transparent); }
+.plan.inv .ticks li { color: color-mix(in srgb, var(--paper) 85%, transparent); }
+.plan.inv .ticks li svg { color: var(--ember); }
+.plan.inv .cap { color: color-mix(in srgb, var(--paper) 50%, transparent); }
+.plan.inv .btn-light { background: var(--paper); color: var(--ink); }
+.plan .ph .ent { color: var(--ink2); }
+.pfoot { margin-top: 28px; text-align: center; font-size: 14px; color: var(--muted); }
+
+/* ═══ OPTION B — the Settings window ═══════════════════════════ */
+.b-grid { display: grid; grid-template-columns: minmax(0, 4.3fr) minmax(0, 7.7fr); gap: 48px; align-items: start; }
+@media (max-width: 1020px) { .b-grid { grid-template-columns: 1fr; gap: 40px; } }
+.b-left { position: sticky; top: 96px; }
+@media (max-width: 1020px) { .b-left { position: static; } }
+.ways { display: grid; gap: 10px; margin-top: 32px; }
+.way { position: relative; display: grid; grid-template-columns: auto 1fr auto; gap: 14px; align-items: center; padding: 16px; border-radius: 18px; border: 1px solid var(--hairline); background: var(--surface); cursor: pointer; transition: border-color .2s, box-shadow .25s, background-color .2s; }
+.way:hover { border-color: color-mix(in srgb, var(--ink) 18%, var(--hairline)); }
+.way input { position: absolute; opacity: 0; pointer-events: none; }
+.way:has(input:checked) { border-color: var(--ember); box-shadow: 0 0 0 4px var(--ember-soft); }
+.way:has(input:focus-visible) { outline: 2px solid var(--ember); outline-offset: 3px; }
+.way:has(input:checked) .tile { background: var(--ember); color: #fffaf7; }
+.way b { font-size: 16px; font-weight: 600; letter-spacing: -.015em; }
+.way small { display: block; font-size: 13.5px; color: var(--muted); margin-top: 1px; }
+.way .p { font-size: 13px; font-weight: 600; color: var(--ink2); text-align: right; white-space: nowrap; }
+.way .p span { display: block; font-weight: 400; color: var(--faint); font-size: 12px; }
+.mixnote { margin-top: 18px; display: flex; gap: 10px; font-size: 14px; color: var(--muted); }
+.mixnote svg { width: 17px; height: 17px; color: var(--ember); margin-top: 2px; }
+.mixnote b { color: var(--ink2); font-weight: 600; }
+
+.win { border-radius: 16px; background: var(--surface); box-shadow: 0 0 0 1px var(--hairline), var(--shadow-deep); }
+.win-bar { position: relative; border-radius: 16px 16px 0 0; height: 40px; display: flex; align-items: center; gap: 8px; padding: 0 14px; background: var(--sidebar-fill); border-bottom: 1px solid var(--hairline); }
+.win-bar i { width: 12px; height: 12px; border-radius: 50%; background: #ff5f57; box-shadow: inset 0 0 0 .5px rgb(0 0 0 / .15); }
+.win-bar i:nth-child(2) { background: #febc2e; } .win-bar i:nth-child(3) { background: #28c840; }
+.win-bar span { position: absolute; left: 0; right: 0; text-align: center; font-size: 13px; font-weight: 600; color: var(--muted); pointer-events: none; }
+.win-body { display: grid; grid-template-columns: 152px 1fr; min-height: 560px; }
+.win-side { background: var(--sidebar-fill); border-bottom-left-radius: 16px; border-right: 1px solid var(--hairline); padding: 12px 8px; display: grid; align-content: start; gap: 1px; }
+.win-side span { display: flex; align-items: center; gap: 9px; padding: 7px 10px; border-radius: 8px; font-size: 13.5px; color: var(--ink2); }
+.win-side span svg { width: 15px; height: 15px; color: var(--faint); }
+.win-side span.on { background: var(--surface); color: var(--ink); font-weight: 500; box-shadow: 0 0 0 1px var(--hairsoft), 0 1px 2px rgb(0 0 0 / .05); }
+.win-side span.on svg { color: var(--ember); }
+@media (max-width: 720px) { .win-body { grid-template-columns: 1fr; } .win-side { display: none; } }
+.win-main { padding: 24px; min-width: 0; }
+@media (max-width: 560px) { .win-main { padding: 16px; } }
+.win-main h3 { font-family: var(--font-display); font-weight: 500; font-size: 26px; letter-spacing: -.035em; }
+.win-main .sub { font-size: 13.5px; color: var(--muted); margin-top: 2px; }
+.win-main .seg { margin-top: 18px; display: flex; width: 100%; }
+.win-main .seg button { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 7px; height: 34px; }
+.win-main .seg svg { width: 15px; height: 15px; }
+.group { margin-top: 18px; }
+.group > .gl { font-size: 12.5px; font-weight: 600; color: var(--muted); margin: 0 0 8px 2px; display: flex; justify-content: space-between; align-items: center; }
+.box { border-radius: 14px; border: 1px solid var(--hairline); background: var(--surface); }
+.box .r { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center; padding: 12px 14px; position: relative; }
+.box .r + .r { border-top: 1px solid var(--hairsoft); }
+.box .r b { font-size: 14px; font-weight: 600; letter-spacing: -.01em; }
+.box .r small { display: block; font-size: 12.5px; color: var(--muted); }
+.picker { display: inline-flex; align-items: center; gap: 6px; max-width: 240px; height: 32px; padding: 0 10px 0 12px; border-radius: 9px; border: 1px solid var(--hairline); background: var(--paper); font-size: 13px; transition: border-color .2s, box-shadow .2s; }
+.picker:hover { border-color: color-mix(in srgb, var(--ink) 22%, var(--hairline)); }
+.picker[aria-expanded="true"] { border-color: var(--ember); box-shadow: 0 0 0 3px var(--ember-soft); }
+.picker .pv { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.picker .pv .mono { font-size: 12.5px; }
+.picker svg { width: 14px; height: 14px; color: var(--faint); }
+.picker.locked { background: var(--sunk); border-color: transparent; color: var(--ink2); cursor: default; }
+.picker.locked svg { color: var(--moss); }
+.picker.none { color: var(--faint); }
+@media (max-width: 560px) { .box .r { grid-template-columns: auto 1fr; } .box .r > .picker { grid-column: 1 / -1; max-width: none; justify-content: space-between; } .box .r > .minibtn, .box .r > .status, .box .r > .mprog { grid-column: 2; justify-self: start; text-align: left; } }
+.menu { position: absolute; right: 14px; top: calc(100% - 6px); z-index: 20; width: min(300px, calc(100% - 28px)); padding: 6px; border-radius: 14px; background: var(--surface); box-shadow: 0 0 0 1px var(--hairline), var(--shadow-lift); animation: rise .2s var(--ease) both; }
+.menu .mh { padding: 8px 10px 4px; font-size: 11.5px; font-weight: 600; color: var(--faint); letter-spacing: .01em; }
+.menu button { display: flex; width: 100%; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 8px; text-align: left; font-size: 13px; }
+.menu button:hover, .menu button:focus-visible { background: var(--sunk); outline: 0; }
+.menu button .ck { width: 14px; height: 14px; color: var(--ember); stroke-width: 2.5; visibility: hidden; }
+.menu button[aria-checked="true"] .ck { visibility: visible; }
+.menu button .mono { font-size: 12.5px; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.menu button .mn { flex: 1; }
+.menu button small { color: var(--faint); font-size: 11.5px; }
+.menu button small.live { color: var(--ember); }
+.acct { display: flex; align-items: center; gap: 12px; padding: 14px; }
+.avatar { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: var(--ember-soft); color: var(--ember); font-weight: 600; font-family: var(--font-display); }
+.acct .meter { margin-top: 7px; }
+.acct .meter .progress { height: 5px; }
+.acct .meter .progress i { width: 62%; background: var(--moss); }
+.acct small { font-size: 12.5px; color: var(--muted); }
+.keyform { display: grid; gap: 10px; padding: 14px; border-top: 1px solid var(--hairsoft); }
+.keyform .row { display: flex; gap: 8px; }
+.keyform select { height: 40px; padding: 0 10px; border-radius: 10px; border: 1px solid var(--hairline); background: var(--paper); font-size: 13.5px; }
+.keyform .field { height: 40px; border-radius: 10px; }
+@media (max-width: 560px) { .keyform .row { flex-direction: column; } }
+.status { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--moss); font-weight: 500; }
+.status::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.minibtn { height: 30px; padding: 0 11px; border-radius: 8px; font-size: 12.5px; font-weight: 500; border: 1px solid var(--hairline); background: var(--paper); white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; }
+.minibtn:hover { background: var(--sunk); }
+.minibtn svg { width: 13px; height: 13px; }
+.minibtn.ember { background: var(--ember); border-color: var(--ember); color: #fffaf7; }
+.minibtn.ghost { border-color: transparent; background: none; color: var(--muted); }
+.mprog { width: 110px; display: grid; gap: 4px; text-align: right; font-size: 11.5px; color: var(--muted); }
+.mprog .progress { height: 4px; }
+.win-foot { margin-top: 16px; font-size: 12.5px; color: var(--faint); display: flex; gap: 8px; align-items: flex-start; }
+.win-foot svg { width: 14px; height: 14px; margin-top: 1px; color: var(--moss); }
+
+/* pricing B */
+.tri { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 56px; }
+@media (max-width: 960px) { .tri { grid-template-columns: 1fr; } }
+.tri .plan .ph svg { color: var(--ink2); }
+.tri .plan .tag { margin-top: 14px; }
+.cloudtoggle { margin-top: 18px; display: inline-flex; padding: 3px; border-radius: 11px; background: color-mix(in srgb, var(--paper) 12%, transparent); }
+.cloudtoggle button { height: 30px; padding: 0 14px; border-radius: 8px; font-size: 13px; font-weight: 500; color: color-mix(in srgb, var(--paper) 65%, transparent); transition: background-color .2s, color .2s; }
+.cloudtoggle button[aria-pressed="true"] { background: var(--paper); color: var(--ink); }
+.cmp { margin-top: 40px; border-radius: 22px; border: 1px solid var(--hairline); background: var(--surface); overflow: hidden; }
+.cmp table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.cmp th, .cmp td { padding: 14px 18px; text-align: left; vertical-align: top; }
+.cmp thead th { font-size: 13px; font-weight: 600; color: var(--ink2); background: var(--sunk); border-bottom: 1px solid var(--hairline); }
+.cmp thead th svg { width: 15px; height: 15px; vertical-align: -3px; margin-right: 6px; color: var(--faint); }
+.cmp tbody tr + tr td, .cmp tbody tr + tr th { border-top: 1px solid var(--hairsoft); }
+.cmp tbody th { font-weight: 500; color: var(--ink); width: 24%; }
+.cmp td { color: var(--ink2); }
+.cmp td svg { width: 16px; height: 16px; color: var(--moss); stroke-width: 2.25; vertical-align: -3px; }
+.cmp td .no { color: var(--faint); }
+.cmp td.hl, .cmp th.hl { background: var(--ember-wash); }
+@media (max-width: 760px) { .cmp { overflow-x: auto; } .cmp table { min-width: 640px; } }
+.teams { margin-top: 16px; display: flex; align-items: center; gap: 16px; justify-content: space-between; flex-wrap: wrap; padding: 20px 24px; border-radius: 20px; border: 1px solid var(--hairline); background: var(--surface); }
+.teams b { font-size: 15px; font-weight: 600; }
+.teams span { font-size: 14px; color: var(--muted); }
+.teams .l { display: flex; align-items: center; gap: 14px; }
+
+/* the "what this option does" card at the end of each option */
+.why { margin: 0 auto; max-width: 72rem; padding: 0 32px 80px; }
+.why .in { border-radius: 22px; border: 1px dashed var(--bar); padding: 22px 24px; display: grid; grid-template-columns: auto 1fr; gap: 16px; }
+.why .tag { font-size: 12px; font-weight: 700; color: var(--ember); background: var(--ember-soft); padding: 4px 9px; border-radius: 999px; height: fit-content; white-space: nowrap; }
+.why ul { list-style: none; display: grid; gap: 6px; font-size: 14px; color: var(--muted); }
+.why ul b { color: var(--ink2); font-weight: 600; }
+@media (max-width: 640px) { .why { padding: 0 16px 64px; } .why .in { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<!-- Design bar: switches options and theme. Not part of the site. -->
+<div class="dbar">
+  <div class="in">
+    <p class="what"><b>Open-source site</b> · models + pricing</p>
+    <div class="seg" role="group" aria-label="Design option">
+      <button type="button" data-opt="a" aria-pressed="true"><b>A</b>Three doors<span class="long"> + one plan page</span></button>
+      <button type="button" data-opt="b" aria-pressed="false"><b>B</b>Settings window<span class="long"> + side by side</span></button>
+    </div>
+    <span class="grow"></span>
+    <div class="seg theme" role="group" aria-label="Theme">
+      <button type="button" data-theme-set="light" aria-pressed="false" title="Light"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg></button>
+      <button type="button" data-theme-set="auto" aria-pressed="true" title="Match the Mac"><svg class="i" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg></button>
+      <button type="button" data-theme-set="dark" aria-pressed="false" title="Dark"><svg class="i" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg></button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── the site ─────────────────────────────────────────────── -->
+<header class="site-head">
+  <div class="in">
+    <a class="wordmark" href="#top" aria-label="SayControl home">
+      <svg viewBox="0 0 256 256" aria-hidden="true"><g stroke-linecap="round" stroke-width="24" fill="none" stroke="var(--ink)"><line x1="50" x2="50" y1="90.5" y2="165.5"/><line x1="88" x2="88" y1="63.5" y2="192.5"/><line x1="126" x2="126" y1="44" y2="212"/></g><polygon points="158,71 158,185 206,128" fill="var(--ember)" stroke="var(--ember)" stroke-width="12" stroke-linejoin="round"/></svg>
+      Say<span class="ember">Control</span>
+    </a>
+    <nav aria-label="Site">
+      <a href="#top">How it works</a>
+      <a href="#models" class="nav-models">Models</a>
+      <a href="#pricing" class="nav-pricing">Pricing</a>
+    </nav>
+    <a class="gh" href="#" title="SayControl on GitHub"><i data-i="github"></i>GitHub<span class="star"><i data-i="star"></i>Star</span></a>
+    <a class="btn btn-ink btn-sm" href="#"><i data-i="download"></i>Download for Mac</a>
+  </div>
+</header>
+
+<section class="hero" id="top">
+  <div class="shell center">
+    <a class="os-pill" href="#"><i data-i="github"></i>SayControl is open source <span class="new">Read the code</span></a>
+    <h1 class="display">Dictation that<br><span class="ember">does what you say.</span></h1>
+    <p class="lede">SayControl types your words into any Mac app, cleans up the ums, and handles commands like “take a screenshot” right where you said them. Free and open source.</p>
+    <div class="ctas">
+      <a class="btn btn-ink" href="#"><i data-i="download"></i>Download for Mac</a>
+      <a class="btn btn-quiet" href="#models">Choose how it runs</a>
+    </div>
+    <div class="ways">
+      <span><i data-i="cloud"></i>On SayControl Cloud</span>
+      <span><i data-i="laptop"></i>On your Mac</span>
+      <span><i data-i="key"></i>With your own API keys</span>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ OPTION A ═══════════════ -->
+<div id="opt-a" class="opt">
+
+  <section class="sec" id="models-a">
+    <div class="shell">
+      <header class="center">
+        <p class="kicker"><i data-i="mark"></i>How it runs</p>
+        <h2 class="section-title">Your voice. Your models.</h2>
+        <p class="lede">Let us run everything, keep it all on your Mac, or plug in your own keys. You can switch any time in Settings › Models.</p>
+      </header>
+
+      <div class="doors" role="radiogroup" aria-label="How SayControl runs">
+        <label class="door">
+          <input type="radio" name="doorA" value="cloud" checked>
+          <span class="top"><span class="tile"><i data-i="cloud"></i></span><span class="radio"><i data-i="check"></i></span></span>
+          <span class="name">SayControl Cloud</span>
+          <span class="line">Sign in and talk. We run the models and keep them tuned.</span>
+          <span class="facts">
+            <span><i data-i="sparkle"></i>Nothing to set up</span>
+            <span><i data-i="zap"></i>Words appear as you talk</span>
+            <span><i data-i="volume"></i>A natural voice for your agents</span>
+          </span>
+          <span class="price"><b>Free</b><span>or $12 a month for unlimited</span></span>
+        </label>
+        <label class="door">
+          <input type="radio" name="doorA" value="local">
+          <span class="top"><span class="tile"><i data-i="laptop"></i></span><span class="radio"><i data-i="check"></i></span></span>
+          <span class="name">On your Mac</span>
+          <span class="line">Download a model once. Your audio never leaves the Mac.</span>
+          <span class="facts">
+            <span><i data-i="wifioff"></i>Dictation works offline</span>
+            <span><i data-i="zap"></i>Words appear as you talk</span>
+            <span><i data-i="user"></i>No account needed</span>
+          </span>
+          <span class="price"><b>Free</b><span>forever</span></span>
+        </label>
+        <label class="door">
+          <input type="radio" name="doorA" value="keys">
+          <span class="top"><span class="tile"><i data-i="key"></i></span><span class="radio"><i data-i="check"></i></span></span>
+          <span class="name">Your own keys</span>
+          <span class="line">Paste a key from OpenAI, Claude and more, then pick any model.</span>
+          <span class="facts">
+            <span><i data-i="layers"></i>Mix providers for each job</span>
+            <span><i data-i="shield"></i>Keys stay on your Mac</span>
+            <span><i data-i="user"></i>No account needed</span>
+          </span>
+          <span class="price"><b>Free</b><span>you pay your provider</span></span>
+        </label>
+      </div>
+
+      <div class="stage" id="stageA">
+        <span class="caret" id="caretA"></span>
+
+        <!-- cloud -->
+        <div data-pane="cloud" class="rise">
+          <div class="pane-head">
+            <div>
+              <p class="pane-title">We run all three jobs for you</p>
+              <p class="pane-sub">Sign in with Google or your email and start talking. We move to better models as they come out, so there is never a setting to change.</p>
+            </div>
+            <span class="chip ok"><i data-i="check"></i>Nothing to set up</span>
+          </div>
+          <div class="cloud-grid">
+            <div class="jobs">
+              <div class="job"><span class="tile sm"><i data-i="mic"></i></span><div><b>Dictation</b><small>The most accurate live models we’ve measured</small></div><span class="chip">Chosen for you</span></div>
+              <div class="job"><span class="tile sm"><i data-i="sparkle"></i></span><div><b>Cleanup and commands</b><small>Drops the “um”s, does “make it a list”</small></div><span class="chip">Chosen for you</span></div>
+              <div class="job"><span class="tile sm"><i data-i="volume"></i></span><div><b>Agent voice</b><small>Claude Code and Codex tell you what they did</small></div><span class="chip">Chosen for you</span></div>
+            </div>
+            <div class="miniplans">
+              <div class="mp"><span>Free</span><b>2,000 words a week</b></div>
+              <div class="mp pro"><span>Pro</span><b>Unlimited · $12 a month</b></div>
+              <a class="link" href="#pricing-a">See the cloud plans<i data-i="arrow"></i></a>
+            </div>
+          </div>
+        </div>
+
+        <!-- local -->
+        <div data-pane="local" class="rise" hidden>
+          <div class="pane-head">
+            <div>
+              <p class="pane-title">Pick a model to download</p>
+              <p class="pane-sub">It runs on your Mac, so dictation works with no internet and your audio never goes anywhere. Change models whenever you like.</p>
+            </div>
+            <span class="chip ok"><i data-i="shield"></i>Stays on your Mac</span>
+          </div>
+          <div class="mlist" id="localA" role="radiogroup" aria-label="Local model"></div>
+          <div class="dl">
+            <button class="btn btn-ember" id="dlA" type="button"><i data-i="download"></i><span>Download</span></button>
+            <div class="progress" id="dlBarA" hidden><i></i></div>
+            <span class="state" id="dlStateA"></span>
+          </div>
+          <p class="note"><i data-i="sparkle"></i><span><b>Cleanup and commands need a language model.</b> Add any key for just that part, and keep dictation on your Mac. Or dictate without cleanup.</span></p>
+        </div>
+
+        <!-- keys -->
+        <div data-pane="keys" class="rise" hidden>
+          <div class="pane-head">
+            <div>
+              <p class="pane-title">Bring the keys you already have</p>
+              <p class="pane-sub">SayControl reads the key’s model list and shows only the models it can use, sorted by job. Add more than one key to mix them.</p>
+            </div>
+            <span class="chip"><i data-i="shield"></i>Keys stay on your Mac</span>
+          </div>
+          <div class="steps">
+            <div>
+              <p class="pane-k">1 · Pick a provider</p>
+              <div class="prov-grid" id="provA" role="radiogroup" aria-label="Provider"></div>
+            </div>
+            <div id="keyStepA">
+              <p class="pane-k">2 · <span id="verbA">Paste your</span> <span class="pname">OpenAI</span> key</p>
+              <div class="connected" id="connectedA" hidden>
+                <span class="found-head"><i data-i="check"></i><span id="connectedTextA"></span></span>
+                <button type="button" class="btn btn-quiet btn-sm" id="removeA">Remove key</button>
+              </div>
+              <div class="keyrow" id="keyRowA">
+                <label class="field" id="keyFieldA"><i data-i="key"></i><span class="sr">API key</span><input id="keyA" type="password" placeholder="sk-…" autocomplete="off" spellcheck="false"></label>
+                <button class="btn btn-ink" id="connA" type="button">Connect</button>
+              </div>
+              <p class="hint" id="keyHintA"><span><i data-i="lock"></i> Stays on this Mac, and is only ever sent to <span class="pname">OpenAI</span>.</span><a href="#" id="getKeyA" target="_blank" rel="noopener">Get a key<i data-i="ext"></i></a></p>
+            </div>
+            <div id="foundA" hidden></div>
+          </div>
+          <div class="setup">
+            <p class="pane-k">Your setup</p>
+            <div class="slots" id="slotsA"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec sunk" id="pricing-a">
+    <div class="shell">
+      <header class="center">
+        <p class="kicker"><i data-i="mark"></i>Pricing</p>
+        <h2 class="section-title">Free and open source.<br>Pay only for our cloud.</h2>
+        <p class="lede">The whole app costs nothing on your Mac or with your own keys, with every feature in it. SayControl Cloud is for when you’d rather not set anything up.</p>
+      </header>
+
+      <div class="appband">
+        <div>
+          <p class="lab"><i data-i="github"></i>The app</p>
+          <p class="big"><b>$0</b><span>forever</span></p>
+          <p class="say">Every feature, with local models or your own keys. No account, no word count, and the code is on GitHub for anyone to read.</p>
+          <div class="ctas">
+            <a class="btn btn-ink" href="#"><i data-i="download"></i>Download for Mac</a>
+            <a class="btn btn-quiet" href="#"><i data-i="github"></i>View the code</a>
+          </div>
+        </div>
+        <div class="card">
+          <ul class="ticks">
+            <li><i data-i="check"></i>Dictation, cleanup, tones, dictionary and phrases</li>
+            <li><i data-i="check"></i>Command mode and spoken controls</li>
+            <li><i data-i="check"></i>Ask ChatGPT, Claude, Grok or Perplexity mid-sentence</li>
+            <li><i data-i="check"></i>Agent voice for Claude Code and Codex</li>
+            <li><i data-i="check"></i>Open source, so you can check what it does</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="rule" style="margin-top:56px"><span>SayControl Cloud: we run the models for you</span><span></span></div>
+      <div class="plans">
+        <div class="plan">
+          <p class="ph"><i data-i="cloud"></i>Cloud Free</p>
+          <p class="fig">$0 <span>a month</span></p>
+          <p class="say">2,000 cloud words a week. The count starts again every Monday.</p>
+          <ul class="ticks">
+            <li><i data-i="check"></i>Nothing to download or set up</li>
+            <li><i data-i="check"></i>Words appear as you talk</li>
+            <li><i data-i="check"></i>Every feature, commands included</li>
+            <li><i data-i="check"></i>10 agent conversations to try</li>
+          </ul>
+          <div class="foot">
+            <a class="btn btn-ink" href="#"><i data-i="download"></i>Download for Mac</a>
+            <p class="cap">Then sign in. No card needed.</p>
+          </div>
+        </div>
+        <div class="plan inv">
+          <p class="ph"><i data-i="infinity"></i>Cloud Pro</p>
+          <p class="fig">$12 <span>a month</span></p>
+          <p class="say">Unlimited cloud dictation, and paying for it keeps the open-source app going.</p>
+          <ul class="ticks">
+            <li><i data-i="check"></i>Unlimited cloud words, all month</li>
+            <li><i data-i="check"></i>300 agent conversations a month</li>
+            <li><i data-i="check"></i>More at $1 per 100, kept until used</li>
+            <li><i data-i="check"></i>Cancel any time</li>
+          </ul>
+          <div class="foot">
+            <a class="btn btn-light" href="#"><i data-i="download"></i>Download for Mac</a>
+            <p class="cap">Upgrade in the app, from Settings › Plans.</p>
+          </div>
+        </div>
+        <div class="plan">
+          <p class="ph"><i data-i="building" class="ent"></i>Enterprise</p>
+          <p class="fig">Custom</p>
+          <p class="say">SayControl for a whole team, on one bill, with a hand getting everyone set up.</p>
+          <ul class="ticks">
+            <li><i data-i="check"></i>Everything in Pro</li>
+            <li><i data-i="check"></i>One bill for the team</li>
+            <li><i data-i="check"></i>Help rolling it out</li>
+          </ul>
+          <div class="foot">
+            <a class="btn btn-quiet" href="#">Contact us<i data-i="arrow"></i></a>
+            <p class="cap">We reply within a day.</p>
+          </div>
+        </div>
+      </div>
+      <p class="pfoot">Using your own keys? Your provider bills you directly, and SayControl takes nothing.</p>
+    </div>
+  </section>
+
+  <div class="why"><div class="in"><span class="tag">Option A</span><ul>
+    <li><b>Models:</b> three big cards, one choice. The panel under them changes to that way’s setup: cloud says there is nothing to do, local lists the models, keys walks you through provider → key → models.</li>
+    <li><b>Pricing:</b> the free app is the headline (warm band), and the cloud plans sit under it as the paid option, the same three cards as today.</li>
+    <li><b>Good for:</b> people who pick one way and stay there. Easy to scan, very little to read.</li>
+  </ul></div></div>
+</div>
+
+<!-- ═══════════════ OPTION B ═══════════════ -->
+<div id="opt-b" class="opt" hidden>
+
+  <section class="sec" id="models-b">
+    <div class="shell">
+      <div class="b-grid">
+        <div class="b-left">
+          <p class="kicker"><i data-i="mark"></i>Models</p>
+          <h2 class="section-title">Run it where you want.</h2>
+          <p class="lede">The same app, three ways to run it. This is the real Models page from Settings: try each one.</p>
+          <div class="ways" role="radiogroup" aria-label="How SayControl runs">
+            <label class="way"><input type="radio" name="wayB" value="cloud" checked><span class="tile"><i data-i="cloud"></i></span><span><b>SayControl Cloud</b><small>Sign in and talk.</small></span><span class="p">Free<span>or $12/mo</span></span></label>
+            <label class="way"><input type="radio" name="wayB" value="local"><span class="tile"><i data-i="laptop"></i></span><span><b>On this Mac</b><small>Your audio stays here.</small></span><span class="p">Free<span>forever</span></span></label>
+            <label class="way"><input type="radio" name="wayB" value="keys"><span class="tile"><i data-i="key"></i></span><span><b>Your own keys</b><small>Paste a key, pick a model.</small></span><span class="p">Free<span>+ your provider</span></span></label>
+          </div>
+          <p class="mixnote"><i data-i="layers"></i><span><b>Mix them, too.</b> Dictate with a model on your Mac and let your own Claude key do the cleanup.</span></p>
+        </div>
+
+        <div class="win" aria-label="SayControl Settings, Models page">
+          <div class="win-bar"><i></i><i></i><i></i><span>Settings</span></div>
+          <div class="win-body">
+            <div class="win-side" aria-hidden="true">
+              <span><i data-i="gear"></i>General</span>
+              <span class="on"><i data-i="cpu"></i>Models</span>
+              <span><i data-i="book"></i>Dictionary</span>
+              <span><i data-i="sparkle"></i>Tones</span>
+              <span><i data-i="mic"></i>Commands</span>
+              <span><i data-i="card"></i>Plans</span>
+            </div>
+            <div class="win-main">
+              <h3>Models</h3>
+              <p class="sub">Where SayControl hears you, tidies your words and speaks.</p>
+              <div class="seg" role="tablist" aria-label="Run on">
+                <button type="button" role="tab" data-way="cloud" aria-selected="true"><i data-i="cloud"></i>Cloud</button>
+                <button type="button" role="tab" data-way="local" aria-selected="false"><i data-i="laptop"></i>This Mac</button>
+                <button type="button" role="tab" data-way="keys" aria-selected="false"><i data-i="key"></i>API keys</button>
+              </div>
+              <div id="paneB"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec sunk" id="pricing-b">
+    <div class="shell">
+      <header class="center">
+        <p class="kicker"><i data-i="mark"></i>Pricing</p>
+        <h2 class="section-title">Three ways to run it.<br>Two cost nothing.</h2>
+        <p class="lede">The app is free and open source with every feature. You only pay if you want us to run the models, or your own provider if you bring a key.</p>
+      </header>
+
+      <div class="tri">
+        <div class="plan">
+          <p class="ph"><i data-i="laptop"></i>On your Mac</p>
+          <p class="fig">$0 <span>forever</span></p>
+          <p class="say">Download a model once and dictate with no internet. Nothing you say leaves the Mac.</p>
+          <ul class="ticks">
+            <li><i data-i="check"></i>Every feature</li>
+            <li><i data-i="check"></i>Words appear as you talk</li>
+            <li><i data-i="check"></i>Works offline</li>
+            <li><i data-i="check"></i>No account</li>
+          </ul>
+          <div class="foot">
+            <a class="btn btn-ink" href="#"><i data-i="download"></i>Download for Mac</a>
+            <p class="cap">Models are 360 MB to 2.5 GB.</p>
+          </div>
+        </div>
+        <div class="plan">
+          <p class="ph"><i data-i="key"></i>Your own keys</p>
+          <p class="fig">$0 <span>to us</span></p>
+          <p class="say">Your provider bills you directly, usually a few cents for an hour of talking.</p>
+          <ul class="ticks">
+            <li><i data-i="check"></i>Every feature</li>
+            <li><i data-i="check"></i>Any model your key offers</li>
+            <li><i data-i="check"></i>Mix providers for each job</li>
+            <li><i data-i="check"></i>No account</li>
+          </ul>
+          <div class="foot">
+            <a class="btn btn-ink" href="#"><i data-i="download"></i>Download for Mac</a>
+            <p class="cap">OpenAI, Claude, ElevenLabs and more.</p>
+          </div>
+        </div>
+        <div class="plan inv" id="cloudPlanB">
+          <p class="ph"><i data-i="cloud"></i>SayControl Cloud</p>
+          <div class="cloudtoggle" role="group" aria-label="Cloud plan">
+            <button type="button" data-cp="free" aria-pressed="true">Free</button>
+            <button type="button" data-cp="pro" aria-pressed="false">Pro</button>
+          </div>
+          <div id="cpBody"></div>
+        </div>
+      </div>
+
+      <div class="cmp">
+        <table>
+          <thead><tr><th></th><th><i data-i="laptop"></i>On your Mac</th><th><i data-i="key"></i>Your own keys</th><th class="hl"><i data-i="cloud"></i>SayControl Cloud</th></tr></thead>
+          <tbody>
+            <tr><th>Setting up</th><td>One download</td><td>Paste a key</td><td class="hl">Sign in</td></tr>
+            <tr><th>Words appear as you talk</th><td><i data-i="check"></i> On live models</td><td><i data-i="check"></i> On live models</td><td class="hl"><i data-i="check"></i></td></tr>
+            <tr><th>Works offline</th><td><i data-i="check"></i> Dictation</td><td><span class="no">—</span></td><td class="hl"><span class="no">—</span></td></tr>
+            <tr><th>Where your audio goes</th><td>Nowhere</td><td>The provider you picked</td><td class="hl">Our cloud, never kept</td></tr>
+            <tr><th>Cleanup and commands</th><td>With any key, or off</td><td><i data-i="check"></i></td><td class="hl"><i data-i="check"></i></td></tr>
+            <tr><th>Agent voice</th><td>Your Mac’s voice</td><td>Your provider’s voices</td><td class="hl">Natural voice</td></tr>
+            <tr><th>Account</th><td>Not needed</td><td>Not needed</td><td class="hl">Google or email</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="teams">
+        <div class="l"><span class="tile sm"><i data-i="building"></i></span><div><b>For a team</b><br><span>Cloud for everyone on one bill, with help rolling it out. Priced with you.</span></div></div>
+        <a class="btn btn-quiet btn-sm" href="#">Contact us<i data-i="arrow"></i></a>
+      </div>
+    </div>
+  </section>
+
+  <div class="why"><div class="in"><span class="tag">Option B</span><ul>
+    <li><b>Models:</b> the app’s own Settings › Models page, live on the site. Each job (dictation, cleanup, agent voice) has its own picker, so mixing is obvious: a local model for dictation, your Claude key for cleanup.</li>
+    <li><b>Pricing:</b> the three ways side by side as equals, the cloud card flips between Free and Pro, and a table answers “where does my audio go”.</li>
+    <li><b>Good for:</b> technical buyers, the open-source crowd. Shows exactly what they’ll get before they download.</li>
+  </ul></div></div>
+</div>
+
+<script>
+/* ── icons ───────────────────────────────────────────────────── */
+const P = {
+  cloud: '<path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/>',
+  laptop: '<path d="M20 16V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9m16 0H4m16 0 1.28 2.55a1 1 0 0 1-.9 1.45H3.62a1 1 0 0 1-.9-1.45L4 16"/>',
+  key: '<path d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z"/><circle cx="16.5" cy="7.5" r=".5" fill="currentColor"/>',
+  check: '<path d="M20 6 9 17l-5-5"/>',
+  arrow: '<path d="M5 12h14M12 5l7 7-7 7"/>',
+  github: '<path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/>',
+  star: '<path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"/>',
+  download: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/>',
+  mic: '<path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><path d="M12 19v3"/>',
+  sparkle: '<path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/>',
+  volume: '<path d="M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z"/><path d="M16 9a5 5 0 0 1 0 6"/><path d="M19.364 18.364a9 9 0 0 0 0-12.728"/>',
+  lock: '<rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
+  wifioff: '<path d="M12 20h.01"/><path d="M8.5 16.429a5 5 0 0 1 7 0"/><path d="M5 12.859a10 10 0 0 1 5.17-2.69"/><path d="M19 12.859a10 10 0 0 0-2.007-1.523"/><path d="M2 8.82a15 15 0 0 1 4.177-2.643"/><path d="M22 8.82a15 15 0 0 0-11.288-3.764"/><path d="m2 2 20 20"/>',
+  user: '<circle cx="12" cy="8" r="5"/><path d="M20 21a8 8 0 0 0-16 0"/>',
+  zap: '<path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/>',
+  shield: '<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/>',
+  layers: '<path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/>',
+  chev: '<path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/>',
+  infinity: '<path d="M6 16c5 0 7-8 12-8a4 4 0 0 1 0 8c-5 0-7-8-12-8a4 4 0 1 0 0 8"/>',
+  building: '<path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4M10 10h4M10 14h4M10 18h4"/>',
+  ext: '<path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>',
+  gear: '<path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/>',
+  cpu: '<rect width="16" height="16" x="4" y="4" rx="2"/><rect width="6" height="6" x="9" y="9" rx="1"/><path d="M15 2v2M15 20v2M2 15h2M2 9h2M20 15h2M20 9h2M9 2v2M9 20v2"/>',
+  book: '<path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20"/>',
+  card: '<rect width="20" height="14" x="2" y="5" rx="2"/><path d="M2 10h20"/>',
+  plus: '<path d="M5 12h14M12 5v14"/>',
+};
+const MARK = '<svg viewBox="0 0 256 256" aria-hidden="true"><g stroke-linecap="round" stroke-width="24" fill="none" stroke="var(--ember)"><line x1="50" x2="50" y1="90.5" y2="165.5"/><line x1="88" x2="88" y1="63.5" y2="192.5"/><line x1="126" x2="126" y1="44" y2="212"/></g><polygon points="158,71 158,185 206,128" fill="var(--ember)" stroke="var(--ember)" stroke-width="12" stroke-linejoin="round"/></svg>';
+const icon = (n, cls = '') => n === 'mark' ? MARK : `<svg class="i ${cls}" viewBox="0 0 24 24" aria-hidden="true">${P[n] || ''}</svg>`;
+function paintIcons(root = document) {
+  root.querySelectorAll('i[data-i]').forEach(el => { el.outerHTML = icon(el.dataset.i, el.className); });
+}
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+/* ── data: the app's own catalogue ───────────────────────────── */
+// LocalEngine.swift's LOCAL_CATALOG, the standard size of each family.
+// `live` is LocalFamily.streams.
+const LOCAL = [
+  { id: 'parakeet', name: 'Parakeet v3', lang: '25 languages', size: '669 MB', live: true, note: 'Light and quick. A good first pick.' },
+  { id: 'cohere', name: 'Cohere Transcribe', lang: '14 languages', size: '1.5 GB', live: true, note: 'The most accurate one here.' },
+  { id: 'qwen3', name: 'Qwen3-ASR English', lang: 'English', size: '2.5 GB', live: true, note: 'Takes your dictionary as a hint, so names land.' },
+  { id: 'whisper', name: 'Whisper Turbo', lang: '99 languages', size: '574 MB', live: false, note: 'The most languages. Writes when you let go.' },
+  { id: 'nemotron', name: 'Nemotron 3.5', lang: '34 languages', size: '686 MB', live: false, note: 'Many languages at a small size.' },
+];
+
+const JOBS = [
+  { id: 'dictation', label: 'Dictation', icon: 'mic', what: 'speech to text' },
+  { id: 'cleanup', label: 'Cleanup and commands', icon: 'sparkle', what: 'a language model' },
+  { id: 'voice', label: 'Agent voice', icon: 'volume', what: 'text to speech' },
+];
+
+// Dictation and voice ids are Config.swift's. Chat models are examples: the
+// real list comes from the provider's own models endpoint.
+const PROV = {
+  openai: { name: 'OpenAI', mono: 'OA', hue: 'ink', hint: 'sk-…', url: 'https://platform.openai.com/api-keys', jobs: {
+    dictation: [['gpt-4o-transcribe', 'Live'], ['gpt-4o-mini-transcribe', 'Live'], ['whisper-1', 'When you let go']],
+    cleanup: [['gpt-5-mini', 'Fast'], ['gpt-5-nano', 'Fastest']],
+    voice: [['gpt-4o-mini-tts', '']] } },
+  anthropic: { name: 'Claude', sub: 'Anthropic', mono: 'Cl', hue: 'amber', hint: 'sk-ant-…', url: 'https://console.anthropic.com/settings/keys', jobs: {
+    cleanup: [['claude-haiku-5-5', 'Fast'], ['claude-sonnet-5-5', 'Smartest']] },
+    gap: 'Claude reads and writes but doesn’t take audio. Pair it with a dictation model from another key, or one on your Mac.' },
+  openrouter: { name: 'OpenRouter', mono: 'OR', hue: 'slate', hint: 'sk-or-v1-…', url: 'https://openrouter.ai/settings/keys', jobs: {
+    dictation: [['openai/gpt-4o-mini-transcribe', ''], ['mistralai/voxtral-small-24b-2507-stt', '']],
+    cleanup: [['openai/gpt-oss-120b', 'Fast'], ['meta-llama/llama-3.3-70b-instruct', ''], ['qwen/qwen3-32b', '']] } },
+  elevenlabs: { name: 'ElevenLabs', mono: 'XI', hue: 'violet', hint: 'sk_…', url: 'https://elevenlabs.io/app/settings/api-keys', jobs: {
+    dictation: [['scribe_v2_realtime', 'Live'], ['scribe_v2_realtime_turbo', 'Live']],
+    voice: [['eleven_v3', '']] } },
+  assemblyai: { name: 'AssemblyAI', mono: 'AA', hue: 'blue', hint: '32-character key', url: 'https://www.assemblyai.com/app/api-keys', jobs: {
+    dictation: [['universal-3-5-pro', 'Live']] } },
+  soniox: { name: 'Soniox', mono: 'So', hue: 'moss', hint: 'your Soniox key', url: 'https://console.soniox.com/', jobs: {
+    dictation: [['stt-rt-v5', 'Live']],
+    voice: [['tts-rt-v2', '']] } },
+  xai: { name: 'xAI', sub: 'Grok', mono: 'x', hue: 'ink', hint: 'xai-…', url: 'https://console.x.ai/', jobs: {
+    dictation: [['grok-voice-transcribe-2.0', 'Live']] } },
+  google: { name: 'Google', sub: 'Gemini', mono: 'G', hue: 'rose', hint: 'AIza…', url: 'https://aistudio.google.com/apikey', jobs: {
+    dictation: [['gemini-3.5-transcribe-live', 'Live']],
+    cleanup: [['gemini-2.5-flash', 'Fast']] } },
+};
+const modelCount = id => Object.values(PROV[id].jobs).reduce((n, l) => n + l.length, 0);
+
+/* ── design bar ──────────────────────────────────────────────── */
+const store = { get(k) { try { return localStorage.getItem(k); } catch { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch {} } };
+function setOpt(o) {
+  document.querySelectorAll('[data-opt]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.opt === o)));
+  document.getElementById('opt-a').hidden = o !== 'a';
+  document.getElementById('opt-b').hidden = o !== 'b';
+  document.querySelector('.nav-models').href = `#models-${o}`;
+  document.querySelector('.nav-pricing').href = `#pricing-${o}`;
+  document.querySelector('.hero .btn-quiet').href = `#models-${o}`;
+  store.set('os-opt', o);
+  if (o === 'a') placeCaret();
+}
+document.querySelectorAll('[data-opt]').forEach(b => b.addEventListener('click', () => setOpt(b.dataset.opt)));
+function setTheme(t) {
+  if (t === 'auto') document.documentElement.removeAttribute('data-theme');
+  else document.documentElement.dataset.theme = t;
+  document.querySelectorAll('[data-theme-set]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.themeSet === t)));
+  store.set('os-theme', t);
+}
+document.querySelectorAll('[data-theme-set]').forEach(b => b.addEventListener('click', () => setTheme(b.dataset.themeSet)));
+
+/* ═══ OPTION A ═══════════════════════════════════════════════ */
+const A = { door: 'cloud', local: 'parakeet', got: {}, prov: 'openai', keys: {}, pick: {} };
+
+function placeCaret() {
+  const door = document.querySelector(`.door input[value="${A.door}"]`).closest('.door');
+  const stage = document.getElementById('stageA');
+  const caret = document.getElementById('caretA');
+  if (!stage.offsetParent) return;
+  const d = door.getBoundingClientRect(), s = stage.getBoundingClientRect();
+  caret.style.left = `${d.left - s.left + d.width / 2 - 8}px`;
+}
+document.querySelectorAll('input[name="doorA"]').forEach(r => r.addEventListener('change', () => {
+  A.door = r.value;
+  document.querySelectorAll('#stageA [data-pane]').forEach(p => { p.hidden = p.dataset.pane !== A.door; });
+  placeCaret();
+}));
+addEventListener('resize', placeCaret);
+
+// local
+function renderLocalA() {
+  const box = document.getElementById('localA');
+  box.innerHTML = LOCAL.map(m => `
+    <label class="mrow">
+      <input type="radio" name="lmA" value="${m.id}" ${m.id === A.local ? 'checked' : ''}>
+      <span><b>${esc(m.name)}</b><small>${esc(m.note)}</small></span>
+      <span class="tags">
+        ${A.got[m.id] ? `<span class="chip ok">${icon('check')}On this Mac</span>` : ''}
+        ${m.live ? `<span class="chip live">${icon('zap')}Live</span>` : ''}
+        <span class="chip">${esc(m.lang)}</span><span class="chip">${esc(m.size)}</span>
+      </span>
+    </label>`).join('');
+  box.querySelectorAll('input').forEach(r => r.addEventListener('change', () => { A.local = r.value; syncDlA(); }));
+  syncDlA();
+}
+let dlBusyA = false;
+function syncDlA() {
+  if (dlBusyA) return;
+  const m = LOCAL.find(x => x.id === A.local);
+  const btn = document.getElementById('dlA'), bar = document.getElementById('dlBarA'), st = document.getElementById('dlStateA');
+  bar.hidden = true;
+  if (A.got[m.id]) {
+    btn.hidden = true;
+    st.className = 'state ok';
+    st.innerHTML = `${icon('check')}${esc(m.name)} is ready. ${m.live ? 'Words appear as you talk.' : 'Words appear when you let go.'}`;
+  } else {
+    btn.hidden = false;
+    btn.querySelector('span').textContent = `Download ${m.name} · ${m.size}`;
+    st.className = 'state';
+    st.textContent = 'One download, then it runs here.';
+  }
+}
+document.getElementById('dlA').addEventListener('click', () => {
+  const m = LOCAL.find(x => x.id === A.local);
+  const btn = document.getElementById('dlA'), bar = document.getElementById('dlBarA'), st = document.getElementById('dlStateA');
+  dlBusyA = true; btn.hidden = true; bar.hidden = false;
+  const t0 = performance.now(), dur = 2200;
+  (function step(t) {
+    const k = Math.min(1, (t - t0) / dur);
+    bar.firstElementChild.style.width = `${(k * 100).toFixed(1)}%`;
+    st.textContent = `Downloading ${m.name}… ${Math.round(k * 100)}%`;
+    if (k < 1) requestAnimationFrame(step);
+    else { dlBusyA = false; A.got[m.id] = true; renderLocalA(); }
+  })(t0);
+});
+
+// keys
+function renderProvA() {
+  const box = document.getElementById('provA');
+  box.innerHTML = Object.entries(PROV).map(([id, p]) => `
+    <button type="button" class="prov" role="radio" aria-checked="${id === A.prov}" data-p="${id}">
+      ${A.keys[id] ? '<span class="dot" title="Connected"></span>' : ''}
+      <span class="mono-tile hue-${p.hue}">${esc(p.mono)}</span>
+      <span><span class="pn">${esc(p.name)}</span>
+        <span class="pj">${JOBS.filter(j => p.jobs[j.id]).map(j => icon(j.icon)).join('')}</span></span>
+    </button>`).join('') + `
+    <div class="prov more"><span class="mono-tile">${icon('plus')}</span><span><span class="pn">More soon</span><span class="pj" style="font-size:12px">Tell us which</span></span></div>`;
+  box.querySelectorAll('.prov[data-p]').forEach(b => b.addEventListener('click', () => { A.prov = b.dataset.p; renderKeysA(); }));
+}
+function renderKeysA() {
+  const p = PROV[A.prov];
+  renderProvA();
+  document.querySelectorAll('#keyStepA .pname').forEach(s => { s.textContent = p.name; });
+  const inp = document.getElementById('keyA');
+  inp.placeholder = p.hint;
+  document.getElementById('getKeyA').href = p.url;
+  const on = !!A.keys[A.prov];
+  document.getElementById('connectedA').hidden = !on;
+  document.getElementById('keyRowA').hidden = on;
+  document.getElementById('keyHintA').hidden = on;
+  document.getElementById('verbA').textContent = on ? 'Your' : 'Paste your';
+  document.getElementById('connectedTextA').textContent = `Connected. ${modelCount(A.prov)} models SayControl can use.`;
+  const found = document.getElementById('foundA');
+  if (on) {
+    found.hidden = false;
+    found.innerHTML = `
+      <p class="pane-k">3 · Pick a model for each job</p>
+      <div class="fgroups">${JOBS.map(j => {
+        const list = p.jobs[j.id];
+        if (!list) return `<div><p class="fg-head">${icon(j.icon)}${j.label} <small>· ${j.what}</small></p>
+          <p class="fg-empty">${esc(j.id === 'dictation' && p.gap ? p.gap : j.id === 'voice' ? `${p.name} has no voices. Use another key for this, or your Mac’s own voice.` : `${p.name} has no ${j.what} models. Use another key for this.`)}</p></div>`;
+        return `<div><p class="fg-head">${icon(j.icon)}${j.label} <small>· ${j.what}</small></p>
+          <div class="mchips" role="radiogroup" aria-label="${j.label}">${list.map(([m, tag]) => {
+            const on = A.pick[j.id] && A.pick[j.id].p === A.prov && A.pick[j.id].m === m;
+            return `<label class="mchip"><input type="radio" name="f-${j.id}" value="${esc(m)}" ${on ? 'checked' : ''} data-job="${j.id}">
+              <span class="mono">${esc(m)}</span>${tag ? `<small class="${tag === 'Live' ? 'live' : ''}">${esc(tag)}</small>` : ''}</label>`;
+          }).join('')}</div></div>`;
+      }).join('')}</div>`;
+    found.querySelectorAll('input[data-job]').forEach(r => r.addEventListener('change', () => {
+      A.pick[r.dataset.job] = { p: A.prov, m: r.value }; renderSlotsA();
+    }));
+  } else {
+    found.hidden = true; found.innerHTML = '';
+    inp.value = '';
+  }
+  renderSlotsA();
+}
+function autoPickA() {
+  for (const j of JOBS) {
+    if (A.pick[j.id]) continue;
+    for (const id of Object.keys(A.keys)) { const l = PROV[id].jobs[j.id]; if (l) { A.pick[j.id] = { p: id, m: l[0][0] }; break; } }
+  }
+}
+function renderSlotsA() {
+  document.getElementById('slotsA').innerHTML = JOBS.map(j => {
+    const s = A.pick[j.id];
+    return s ? `<div class="slot"><p class="sj">${icon(j.icon)}${j.label}</p><p class="sv mono" title="${esc(s.m)}">${esc(s.m)}</p><p class="sp">${esc(PROV[s.p].name)} key</p></div>`
+             : `<div class="slot empty"><p class="sj">${icon(j.icon)}${j.label}</p><p class="sv">Not set yet</p><p class="sp">Add a key that does ${j.what}</p></div>`;
+  }).join('');
+}
+document.getElementById('removeA').addEventListener('click', () => {
+  delete A.keys[A.prov];
+  for (const j of Object.keys(A.pick)) if (A.pick[j].p === A.prov) delete A.pick[j];
+  autoPickA(); renderKeysA();
+});
+document.getElementById('connA').addEventListener('click', connectA);
+document.getElementById('keyA').addEventListener('keydown', e => { if (e.key === 'Enter') connectA(); });
+function connectA() {
+  const inp = document.getElementById('keyA'), field = document.getElementById('keyFieldA'), btn = document.getElementById('connA');
+  if (!inp.value.trim()) { field.classList.remove('bad'); void field.offsetWidth; field.classList.add('bad'); inp.focus(); return; }
+  field.classList.remove('bad');
+  btn.disabled = true; btn.innerHTML = '<span class="spin"></span>Checking';
+  setTimeout(() => {   // a mock: nothing is sent anywhere
+    btn.disabled = false; btn.textContent = 'Connect';
+    A.keys[A.prov] = true; autoPickA(); renderKeysA();
+  }, 900);
+}
+
+/* ═══ OPTION B ═══════════════════════════════════════════════ */
+const B = {
+  way: 'cloud',
+  got: { parakeet: true }, busy: {},
+  keys: { openai: true },
+  local: { dictation: { k: 'local', m: 'parakeet' }, cleanup: { k: 'off' }, voice: { k: 'mac' } },
+  keyed: { dictation: { p: 'openai', m: 'gpt-4o-transcribe' }, cleanup: { p: 'openai', m: 'gpt-5-mini' }, voice: { p: 'openai', m: 'gpt-4o-mini-tts' } },
+  adding: false, addProv: 'anthropic', openMenu: null,
+};
+function setWayB(w) {
+  B.way = w; B.openMenu = null;
+  document.querySelectorAll('.win-main .seg [data-way]').forEach(b => b.setAttribute('aria-selected', String(b.dataset.way === w)));
+  document.querySelectorAll('input[name="wayB"]').forEach(r => { r.checked = r.value === w; });
+  renderB();
+}
+document.querySelectorAll('.win-main .seg [data-way]').forEach(b => b.addEventListener('click', () => setWayB(b.dataset.way)));
+document.querySelectorAll('input[name="wayB"]').forEach(r => r.addEventListener('change', () => setWayB(r.value)));
+
+const keyedOptions = job => Object.keys(B.keys).filter(id => PROV[id].jobs[job]).map(id => ({ head: `${PROV[id].name} key`, items: PROV[id].jobs[job].map(([m, tag]) => ({ val: { p: id, m }, mono: m, tag })) }));
+function pickerValue(job) {
+  if (B.way === 'cloud') return { locked: true, html: 'SayControl Cloud' };
+  if (B.way === 'local') {
+    const s = B.local[job];
+    if (s.k === 'local') return { html: esc(LOCAL.find(x => x.id === s.m).name) };
+    if (s.k === 'off') return { html: 'Off', none: true };
+    if (s.k === 'mac') return { html: 'Your Mac’s voice' };
+    if (!B.keys[s.p]) return job === 'voice' ? { html: 'Your Mac’s voice' } : { html: 'Off', none: true };
+    return { html: `<span class="mono">${esc(s.m)}</span>` };
+  }
+  const s = B.keyed[job];
+  if (!s || !B.keys[s.p]) return { html: 'Add a key for this', none: true };
+  return { html: `<span class="mono">${esc(s.m)}</span>` };
+}
+function menuGroups(job) {
+  if (B.way === 'local') {
+    const g = [];
+    if (job === 'dictation') g.push({ head: 'On this Mac', items: LOCAL.filter(m => B.got[m.id]).map(m => ({ val: { k: 'local', m: m.id }, name: m.name, tag: m.live ? 'Live' : '' })) });
+    if (job === 'cleanup') g.push({ head: 'No key', items: [{ val: { k: 'off' }, name: 'Off: paste what I said' }] });
+    if (job === 'voice') g.push({ head: 'On this Mac', items: [{ val: { k: 'mac' }, name: 'Your Mac’s voice' }] });
+    keyedOptions(job).forEach(o => g.push({ head: `Use your ${o.head}`, items: o.items.map(i => ({ ...i, val: { k: 'key', ...i.val } })) }));
+    return g;
+  }
+  return keyedOptions(job);
+}
+const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+
+function jobsBox() {
+  return `<div class="group"><p class="gl">What does each job</p><div class="box">${JOBS.map(j => {
+    const v = pickerValue(j.id);
+    const open = B.openMenu === j.id;
+    let menu = '';
+    if (open) {
+      const cur = B.way === 'local' ? B.local[j.id] : B.keyed[j.id];
+      const groups = menuGroups(j.id).filter(g => g.items.length);
+      menu = `<div class="menu" role="menu">${groups.length ? groups.map(g => `<p class="mh">${esc(g.head)}</p>${g.items.map(it =>
+        `<button type="button" role="menuitemradio" aria-checked="${same(it.val, cur)}" data-val='${esc(JSON.stringify(it.val))}' data-job="${j.id}">${icon('check', 'ck')}${it.mono ? `<span class="mono">${esc(it.mono)}</span>` : `<span class="mn">${esc(it.name)}</span>`}${it.tag ? `<small class="${it.tag === 'Live' ? 'live' : ''}">${esc(it.tag)}</small>` : ''}</button>`).join('')}`).join('')
+        : `<p class="mh">No key here does ${j.what} yet. Add one above.</p>`}</div>`;
+    }
+    return `<div class="r"><span class="tile sm">${icon(j.icon)}</span><span><b>${j.label}</b><small>${j.what[0].toUpperCase() + j.what.slice(1)}</small></span>
+      ${v.locked ? `<span class="picker locked">${icon('lock')}<span class="pv">${v.html}</span></span>`
+                 : `<button type="button" class="picker ${v.none ? 'none' : ''}" data-menu="${j.id}" aria-haspopup="menu" aria-expanded="${open}"><span class="pv">${v.html}</span>${icon('chev')}</button>`}
+      ${menu}</div>`;
+  }).join('')}</div></div>`;
+}
+
+function renderB() {
+  const pane = document.getElementById('paneB');
+  let html = '';
+  if (B.way === 'cloud') {
+    html = `
+      <div class="group"><p class="gl">Account</p><div class="box"><div class="acct">
+        <span class="avatar">Y</span>
+        <div style="flex:1;min-width:0"><b style="font-size:14px">you@example.com</b> <span class="chip" style="height:22px;margin-left:4px">Free</span>
+          <div class="meter"><div class="progress"><i></i></div></div>
+          <small>1,240 of 2,000 words this week · starts again Monday</small></div>
+        <button type="button" class="minibtn">Go Pro</button>
+      </div></div></div>
+      ${jobsBox()}
+      <p class="win-foot">${icon('shield')}<span>We pick these and move to better models as they come out. Your audio is never kept on our servers.</span></p>`;
+  } else if (B.way === 'local') {
+    html = `
+      <div class="group"><p class="gl"><span>Models on this Mac</span><span style="font-weight:400;color:var(--faint)">${LOCAL.filter(m => B.got[m.id]).length} downloaded</span></p><div class="box">${LOCAL.map(m => {
+        const busy = B.busy[m.id];
+        const right = B.got[m.id] ? `<span class="status">On this Mac</span>`
+          : busy != null ? `<span class="mprog"><span class="progress"><i style="width:${busy}%"></i></span>${busy}%</span>`
+          : `<button type="button" class="minibtn" data-dl="${m.id}">${icon('download')}${esc(m.size)}</button>`;
+        return `<div class="r"><span class="tile sm">${icon(m.live ? 'zap' : 'mic')}</span><span><b>${esc(m.name)}</b><small>${esc(m.lang)}${m.live ? ' · words appear as you talk' : ' · writes when you let go'}</small></span>${right}</div>`;
+      }).join('')}</div></div>
+      ${jobsBox()}
+      <p class="win-foot">${icon('shield')}<span>Dictation runs here and works offline. Cleanup needs a language model: pick one of your keys for it, or leave it off.</span></p>`;
+  } else {
+    const ids = Object.keys(B.keys);
+    const free = Object.keys(PROV).filter(id => !B.keys[id]);
+    if (!free.includes(B.addProv)) B.addProv = free[0];
+    html = `
+      <div class="group"><p class="gl">Your keys</p><div class="box">
+        ${ids.length ? ids.map(id => `<div class="r"><span class="mono-tile hue-${PROV[id].hue}" style="width:30px;height:30px;border-radius:9px;display:grid;place-items:center;font:600 13px var(--font-display)">${esc(PROV[id].mono)}</span>
+          <span><b>${esc(PROV[id].name)}</b><small><span class="status">Connected</span> · ${modelCount(id)} models</small></span>
+          <button type="button" class="minibtn ghost" data-rm="${id}">Remove</button></div>`).join('')
+          : `<div class="r"><span class="tile sm">${icon('key')}</span><span><b>No keys yet</b><small>Add one and its models show up below.</small></span><span></span></div>`}
+        ${B.adding ? `<div class="keyform rise">
+            <div class="row">
+              <select id="addProvB" aria-label="Provider">${free.map(id => `<option value="${id}" ${id === B.addProv ? 'selected' : ''}>${esc(PROV[id].name)}</option>`).join('')}</select>
+              <label class="field" id="addFieldB"><span class="sr">API key</span>${icon('key')}<input id="addKeyB" type="password" placeholder="${esc(PROV[B.addProv].hint)}" autocomplete="off" spellcheck="false"></label>
+              <button type="button" class="minibtn ember" id="addGoB" style="height:40px;padding:0 16px">Connect</button>
+            </div>
+            <p class="hint" style="margin-top:0"><span>${icon('lock')} Stays on this Mac, and is only ever sent to ${esc(PROV[B.addProv].name)}.</span><a href="${PROV[B.addProv].url}" target="_blank" rel="noopener">Get a key${icon('ext')}</a></p>
+          </div>`
+          : free.length ? `<div class="r" style="border-top:1px solid var(--hairsoft)"><span></span><span></span><button type="button" class="minibtn" id="addB">${icon('plus')}Add a key</button></div>` : ''}
+      </div></div>
+      ${jobsBox()}
+      <p class="win-foot">${icon('shield')}<span>Your audio goes straight from this Mac to the provider you picked. We never see it, and your provider bills you.</span></p>`;
+  }
+  pane.innerHTML = html;
+  wireB(pane);
+}
+
+function wireB(pane) {
+  pane.querySelectorAll('[data-menu]').forEach(b => b.addEventListener('click', e => {
+    e.stopPropagation();
+    B.openMenu = B.openMenu === b.dataset.menu ? null : b.dataset.menu;
+    renderB();
+    const first = pane.querySelector('.menu button[aria-checked="true"]') || pane.querySelector('.menu button');
+    if (first) first.focus();
+  }));
+  pane.querySelectorAll('.menu button[data-val]').forEach(b => b.addEventListener('click', e => {
+    e.stopPropagation();
+    const v = JSON.parse(b.dataset.val), job = b.dataset.job;
+    if (B.way === 'local') B.local[job] = v; else B.keyed[job] = v;
+    B.openMenu = null; renderB();
+    const p = document.querySelector(`#paneB [data-menu="${job}"]`); if (p) p.focus();
+  }));
+  pane.querySelectorAll('[data-dl]').forEach(b => b.addEventListener('click', () => {
+    const id = b.dataset.dl; B.busy[id] = 0; renderB();
+    const t0 = performance.now(), dur = 1800;
+    (function step(t) {
+      const k = Math.min(1, (t - t0) / dur);
+      B.busy[id] = Math.round(k * 100);
+      if (k < 1) { if (B.way === 'local' && !B.openMenu) renderB(); requestAnimationFrame(step); }
+      else { delete B.busy[id]; B.got[id] = true; if (B.way === 'local') renderB(); }
+    })(t0);
+  }));
+  pane.querySelectorAll('[data-rm]').forEach(b => b.addEventListener('click', () => {
+    delete B.keys[b.dataset.rm];
+    renderB();
+  }));
+  const add = pane.querySelector('#addB');
+  if (add) add.addEventListener('click', () => { B.adding = true; renderB(); pane.querySelector('#addKeyB').focus(); });
+  const sel = pane.querySelector('#addProvB');
+  if (sel) sel.addEventListener('change', () => { B.addProv = sel.value; renderB(); pane.querySelector('#addKeyB').focus(); });
+  const go = pane.querySelector('#addGoB');
+  if (go) {
+    const run = () => {
+      const inp = pane.querySelector('#addKeyB'), field = pane.querySelector('#addFieldB');
+      if (!inp.value.trim()) { field.classList.remove('bad'); void field.offsetWidth; field.classList.add('bad'); inp.focus(); return; }
+      go.disabled = true; go.innerHTML = '<span class="spin" style="width:13px;height:13px"></span>Checking';
+      setTimeout(() => {   // a mock: nothing is sent anywhere
+        const id = B.addProv;
+        B.keys[id] = true; B.adding = false;
+        for (const j of JOBS) {
+          const cur = B.keyed[j.id];
+          if ((!cur || !B.keys[cur.p]) && PROV[id].jobs[j.id]) B.keyed[j.id] = { p: id, m: PROV[id].jobs[j.id][0][0] };
+        }
+        renderB();
+      }, 800);
+    };
+    go.addEventListener('click', run);
+    pane.querySelector('#addKeyB').addEventListener('keydown', e => { if (e.key === 'Enter') run(); if (e.key === 'Escape') { B.adding = false; renderB(); } });
+  }
+}
+document.addEventListener('click', e => { if (B.openMenu && !e.target.closest('.menu')) { B.openMenu = null; renderB(); } });
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && B.openMenu) { const j = B.openMenu; B.openMenu = null; renderB(); const p = document.querySelector(`#paneB [data-menu="${j}"]`); if (p) p.focus(); }
+});
+
+// cloud plan card in B's pricing
+const CP = {
+  free: { fig: '$0 <span>a month</span>', say: '2,000 cloud words a week. The count starts again every Monday.', ticks: ['Nothing to download or set up', 'Words appear as you talk', 'Every feature, commands included', '10 agent conversations to try'], btn: 'Download for Mac', cap: 'Then sign in. No card needed.' },
+  pro: { fig: '$12 <span>a month</span>', say: 'Unlimited cloud dictation, and paying for it keeps the open-source app going.', ticks: ['Unlimited cloud words, all month', '300 agent conversations a month', 'More at $1 per 100, kept until used', 'Cancel any time'], btn: 'Download for Mac', cap: 'Upgrade in the app, from Settings › Plans.' },
+};
+function renderCP(k) {
+  document.querySelectorAll('[data-cp]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.cp === k)));
+  const c = CP[k];
+  document.getElementById('cpBody').innerHTML = `
+    <p class="fig" style="margin-top:16px">${c.fig}</p>
+    <p class="say">${c.say}</p>
+    <ul class="ticks">${c.ticks.map(t => `<li>${icon('check')}${t}</li>`).join('')}</ul>
+    <div class="foot"><a class="btn btn-light" href="#">${icon('download')}${c.btn}</a><p class="cap">${c.cap}</p></div>`;
+  document.getElementById('cloudPlanB').style.display = 'flex';
+}
+document.querySelectorAll('[data-cp]').forEach(b => b.addEventListener('click', () => renderCP(b.dataset.cp)));
+// the cloud card holds the toggle and the body; let the body's foot sit at the bottom
+document.getElementById('cpBody').style.cssText = 'display:flex;flex-direction:column;flex:1';
+
+/* ── boot ───────────────────────────────────────────────────── */
+paintIcons();
+renderLocalA(); renderKeysA(); renderB(); renderCP('free');
+setTheme(store.get('os-theme') || 'auto');
+const hashOpt = location.hash.match(/-(a|b)$/);
+setOpt(hashOpt ? hashOpt[1] : (store.get('os-opt') || 'a'));
+requestAnimationFrame(placeCaret);
+document.fonts && document.fonts.ready.then(placeCaret);
+</script>
+</body>
+</html>

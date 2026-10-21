@@ -1,0 +1,2127 @@
+<title>SayCtrl 2.1 Interface</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&display=swap">
+<style>
+/* ─────────────────────────────────────────────────────────────
+   SayCtrl — ink on paper, ember when you speak.
+   Palette and serif carried over from Theme.swift, tightened.
+   ───────────────────────────────────────────────────────────── */
+:root{
+  --paper:#FAF8F3;  --sidebar:#F1EDE5;  --surface:#FFFFFF;  --sunk:#F4F1EA;
+  --hairline:#E7E1D5; --hairsoft:#EFEAE0;
+  --ink:#1E1B16;    --ink2:#413C33;     --muted:#7A7368;   --faint:#A8A197;
+  --ember:#C4451A;  --ember-soft:rgba(196,69,26,.10); --ember-ring:rgba(196,69,26,.32);
+  --lvl1:rgba(196,69,26,.24); --lvl2:rgba(196,69,26,.46); --lvl3:rgba(196,69,26,.70);
+  --moss:#4C7A58;   --amber:#B5822E;
+  --bar:#DCD5C7;    --shadow:0 1px 2px rgba(38,32,22,.05), 0 6px 18px rgba(38,32,22,.05);
+  --shadow-lift:0 2px 4px rgba(38,32,22,.06), 0 14px 40px rgba(38,32,22,.10);
+  --desk1:#DCD3C4; --desk2:#C9BFAF; --desk3:#B9AE9D;
+  --onDesk:#332C22; --onDesk2:#4A4134; --deskCard:rgba(255,255,255,.5); --deskLine:rgba(0,0,0,.07);
+  --s:1;
+  --ui:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Inter,system-ui,sans-serif;
+  --serif:"Newsreader","New York",Georgia,"Times New Roman",serif;
+  --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,"JetBrains Mono",monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#1C1A16; --sidebar:#16140F; --surface:#232019; --sunk:#1F1D17;
+    --hairline:#322E26; --hairsoft:#2A2721;
+    --ink:#EDE9E0;   --ink2:#C9C3B7;   --muted:#9A9389;  --faint:#6E685F;
+    --ember:#F2693C; --ember-soft:rgba(242,105,60,.14); --ember-ring:rgba(242,105,60,.40);
+  --lvl1:rgba(242,105,60,.26); --lvl2:rgba(242,105,60,.50); --lvl3:rgba(242,105,60,.74);
+    --lvl1:rgba(242,105,60,.26); --lvl2:rgba(242,105,60,.50); --lvl3:rgba(242,105,60,.74);
+    --moss:#6FA07B;  --amber:#D2A04C;
+    --bar:#3C3931;   --shadow:0 1px 2px rgba(0,0,0,.30), 0 6px 18px rgba(0,0,0,.28);
+    --shadow-lift:0 2px 4px rgba(0,0,0,.34), 0 16px 44px rgba(0,0,0,.44);
+    --desk1:#37301F; --desk2:#221D14; --desk3:#17130D;
+    --onDesk:#EFEAE0; --onDesk2:#C9C3B7; --deskCard:rgba(255,255,255,.055); --deskLine:rgba(255,255,255,.09);
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#1C1A16; --sidebar:#16140F; --surface:#232019; --sunk:#1F1D17;
+  --hairline:#322E26; --hairsoft:#2A2721;
+  --ink:#EDE9E0;   --ink2:#C9C3B7;   --muted:#9A9389;  --faint:#6E685F;
+  --ember:#F2693C; --ember-soft:rgba(242,105,60,.14); --ember-ring:rgba(242,105,60,.40);
+  --moss:#6FA07B;  --amber:#D2A04C;
+  --bar:#3C3931;   --shadow:0 1px 2px rgba(0,0,0,.30), 0 6px 18px rgba(0,0,0,.28);
+  --shadow-lift:0 2px 4px rgba(0,0,0,.34), 0 16px 44px rgba(0,0,0,.44);
+  --desk1:#37301F; --desk2:#221D14; --desk3:#17130D;
+  --onDesk:#EFEAE0; --onDesk2:#C9C3B7; --deskCard:rgba(255,255,255,.055); --deskLine:rgba(255,255,255,.09);
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+body{
+  font-family:var(--ui);
+  background:var(--paper);
+  color:var(--ink);
+  min-height:100vh;
+}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+:focus-visible{outline:2px solid var(--ember);outline-offset:2px;border-radius:4px}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms !important;transition-duration:.01ms !important}}
+
+/* ── page frame ─────────────────────────────────────────────── */
+.stage{
+  min-height:100vh;padding:28px 28px 56px;
+  display:flex;flex-direction:column;align-items:center;gap:18px;
+  background:
+    radial-gradient(120% 90% at 12% 0%, var(--desk1) 0%, transparent 55%),
+    radial-gradient(100% 80% at 88% 8%, var(--desk2) 0%, transparent 60%),
+    linear-gradient(168deg, var(--desk2) 0%, var(--desk3) 100%);
+}
+.stage-bar{
+  width:100%;max-width:1360px;display:flex;align-items:baseline;
+  gap:14px;flex-wrap:wrap;color:var(--onDesk);
+}
+.stage-bar h1{font-family:var(--serif);font-size:19px;font-weight:500;letter-spacing:-.01em}
+.stage-bar p{font-size:13px;opacity:.8;flex:1;min-width:240px}
+.stage-bar kbd{
+  font:500 11px/1 var(--ui);padding:3px 6px;border-radius:5px;
+  background:var(--deskCard);border:1px solid var(--deskLine);
+}
+
+/* ── the window ─────────────────────────────────────────────── */
+.win-wrap{width:100%;max-width:1360px;overflow-x:auto;overflow-y:hidden;padding-bottom:2px}
+.win-wrap::-webkit-scrollbar{height:8px}
+.win-wrap::-webkit-scrollbar-thumb{background:rgba(0,0,0,.22);border-radius:8px}
+.win-rail{position:relative}
+.win{
+  position:absolute;top:0;left:0;
+  width:1360px;height:880px;transform-origin:top left;
+  display:flex;border-radius:12px;overflow:hidden;
+  background:var(--paper);box-shadow:var(--shadow-lift),0 0 0 1px rgba(0,0,0,.10);
+}
+:root[data-theme="dark"] .win,:root:not([data-theme="light"]) .win{box-shadow:var(--shadow-lift),0 0 0 1px rgba(255,255,255,.07)}
+
+/* ── sidebar ────────────────────────────────────────────────── */
+.side{
+  width:calc(var(--s) * 236px);flex:none;background:var(--sidebar);
+  border-right:1px solid var(--hairline);
+  display:flex;flex-direction:column;padding:0 calc(var(--s) * 14px) calc(var(--s) * 16px);
+}
+.lights{display:flex;gap:8px;padding:16px 4px 0}
+.lights i{width:12px;height:12px;border-radius:50%;background:#DDD6C9}
+.side:hover .lights i:nth-child(1){background:#FF5F57}
+.side:hover .lights i:nth-child(2){background:#FEBC2E}
+.side:hover .lights i:nth-child(3){background:#28C840}
+:root[data-theme="dark"] .lights i,:root:not([data-theme="light"]) .lights i{background:#3A362E}
+.brand{
+  margin-top:calc(var(--s) * 16px);display:flex;align-items:center;gap:calc(var(--s) * 10px);
+  padding:calc(var(--s) * 7px) calc(var(--s) * 9px);border-radius:9px;width:100%;
+  transition:background .14s ease;
+}
+.brand:hover{background:rgba(0,0,0,.045)}
+:root[data-theme="dark"] .brand:hover,:root:not([data-theme="light"]) .brand:hover{background:rgba(255,255,255,.06)}
+.brand .mark{width:calc(var(--s) * 22px);height:calc(var(--s) * 22px);flex:none;color:var(--ink)}
+.brand b{font-size:calc(var(--s) * 16px);font-weight:600;letter-spacing:-.012em}
+.brand .info{
+  margin-left:auto;width:calc(var(--s) * 16px);height:calc(var(--s) * 16px);
+  color:var(--faint);opacity:0;transition:opacity .14s ease;
+}
+.brand:hover .info{opacity:1}
+
+nav{display:flex;flex-direction:column;gap:calc(var(--s) * 2px);margin-top:calc(var(--s) * 22px)}
+nav.tail{margin-top:auto;margin-bottom:0}
+.nav-row{
+  display:flex;align-items:center;gap:calc(var(--s) * 11px);width:100%;
+  padding:0 calc(var(--s) * 10px);height:calc(var(--s) * 38px);border-radius:8px;
+  color:var(--muted);font-size:calc(var(--s) * 15px);font-weight:500;letter-spacing:-.006em;
+  transition:background .13s ease,color .13s ease;text-align:left;
+}
+.nav-row svg{width:calc(var(--s) * 20px);height:calc(var(--s) * 20px);flex:none;stroke-width:1.65}
+.nav-row:hover{background:rgba(0,0,0,.045);color:var(--ink2)}
+:root[data-theme="dark"] .nav-row:hover,:root:not([data-theme="light"]) .nav-row:hover{background:rgba(255,255,255,.06)}
+.nav-row.on{background:var(--surface);color:var(--ink);font-weight:600;box-shadow:0 1px 2px rgba(38,32,22,.07)}
+:root[data-theme="dark"] .nav-row.on,:root:not([data-theme="light"]) .nav-row.on{box-shadow:0 1px 2px rgba(0,0,0,.4)}
+.nav-row.on svg{color:var(--ember)}
+
+/* ── content ────────────────────────────────────────────────── */
+.content{flex:1;min-width:0;position:relative;overflow:hidden}
+.pane{position:absolute;inset:0;overflow-y:auto;display:none}
+.pane.on{display:block}
+.pane::-webkit-scrollbar{width:9px}
+.pane::-webkit-scrollbar-thumb{background:rgba(0,0,0,.15);border-radius:9px;border:3px solid transparent;background-clip:content-box}
+.inner{padding:calc(var(--s) * 58px) calc(var(--s) * 46px) calc(var(--s) * 56px);width:100%}
+
+.pane-head{display:flex;align-items:flex-start;gap:16px;margin-bottom:calc(var(--s) * 26px)}
+.pane-head h2{
+  font-family:var(--serif);font-size:calc(var(--s) * 34px);font-weight:500;
+  letter-spacing:-.018em;line-height:1.08;text-wrap:balance;
+}
+.pane-head .sub{font-size:calc(var(--s) * 14px);color:var(--muted);margin-top:calc(var(--s) * 5px)}
+.head-actions{margin-left:auto;display:flex;align-items:center;gap:calc(var(--s) * 8px);padding-top:calc(var(--s) * 6px)}
+
+/* ── text tabs (replaces the segmented buttons) ─────────────── */
+.tabs{
+  display:flex;gap:calc(var(--s) * 26px);border-bottom:1px solid var(--hairline);
+  margin-bottom:calc(var(--s) * 24px);
+}
+.tab{
+  position:relative;padding:0 0 calc(var(--s) * 11px);font-size:calc(var(--s) * 14.5px);
+  font-weight:500;color:var(--muted);letter-spacing:-.006em;transition:color .14s ease;
+}
+.tab:hover{color:var(--ink2)}
+.tab.on{color:var(--ink);font-weight:600}
+.tab.on::after{
+  content:"";position:absolute;left:0;right:0;bottom:-1px;height:2px;
+  background:var(--ink);border-radius:2px;
+}
+.tabs.sub{gap:calc(var(--s) * 22px);border-bottom-color:var(--hairsoft);margin-bottom:calc(var(--s) * 20px)}
+.tabs.sub .tab{font-size:calc(var(--s) * 13.5px);padding-bottom:calc(var(--s) * 9px)}
+.tabs.sub .tab.on::after{background:var(--ember)}
+
+/* ── cards ──────────────────────────────────────────────────── */
+.card{
+  background:var(--surface);border:1px solid var(--hairline);border-radius:calc(var(--s) * 13px);
+  box-shadow:var(--shadow);padding:calc(var(--s) * 20px) calc(var(--s) * 22px);
+  margin-bottom:calc(var(--s) * 14px);
+}
+.card > .card-head{display:flex;align-items:center;gap:10px;margin-bottom:calc(var(--s) * 14px)}
+.card h3{font-size:calc(var(--s) * 14.5px);font-weight:600;letter-spacing:-.008em}
+.card .note{font-size:calc(var(--s) * 13px);color:var(--muted);line-height:1.5}
+.rule{height:1px;background:var(--hairsoft);margin:calc(var(--s) * 16px) calc(var(--s) * -22px)}
+.eyebrow{
+  font-size:calc(var(--s) * 11.5px);font-weight:600;letter-spacing:.085em;
+  text-transform:uppercase;color:var(--faint);
+}
+
+/* ── overview ───────────────────────────────────────────────── */
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:calc(var(--s) * 12px);margin-bottom:calc(var(--s) * 14px)}
+.stat{
+  background:var(--surface);border:1px solid var(--hairline);border-radius:calc(var(--s) * 13px);
+  box-shadow:var(--shadow);padding:calc(var(--s) * 18px) calc(var(--s) * 20px);
+}
+.stat .n{
+  font-family:var(--serif);font-size:calc(var(--s) * 34px);font-weight:500;
+  letter-spacing:-.02em;line-height:1;font-variant-numeric:tabular-nums;display:block;
+}
+.stat .n small{font-size:calc(var(--s) * 17px);color:var(--muted);margin-left:2px;font-family:var(--ui);font-weight:500}
+.stat .l{display:block;margin-top:calc(var(--s) * 9px)}
+.stat .trend{font-size:calc(var(--s) * 12px);color:var(--moss);font-weight:500;margin-left:8px;font-family:var(--ui)}
+
+/* week amplitude chart — the signature */
+.week{display:flex;align-items:flex-end;gap:calc(var(--s) * 12px);height:calc(var(--s) * 148px);padding-top:calc(var(--s) * 4px)}
+.day{flex:1;display:flex;flex-direction:column;align-items:center;gap:calc(var(--s) * 8px);height:100%;justify-content:flex-end;cursor:default}
+.day .col{width:100%;display:flex;align-items:flex-end;justify-content:center;gap:calc(var(--s) * 3px);flex:1}
+.day .col i{background:var(--bar);border-radius:2.5px;flex:1;max-width:calc(var(--s) * 9px);min-height:calc(var(--s) * 4px);transition:background .16s ease}
+.day.today .col i{background:var(--ember)}
+.day:hover .col i{background:var(--ink)}
+.day.today:hover .col i{background:var(--ember)}
+.day .lab{font-size:calc(var(--s) * 11.5px);color:var(--muted);font-weight:500}
+.day.today .lab{color:var(--ink);font-weight:600}
+.day .val{font-family:var(--mono);font-size:calc(var(--s) * 11px);color:var(--faint);font-variant-numeric:tabular-nums}
+
+/* recent — replaces the Activity pane */
+.rec{display:flex;align-items:center;gap:calc(var(--s) * 14px);padding:calc(var(--s) * 11px) calc(var(--s) * 10px);border-radius:9px;margin:0 calc(var(--s) * -10px);transition:background .13s ease}
+.rec:hover{background:var(--sunk)}
+.rec .when{font-family:var(--mono);font-size:calc(var(--s) * 12px);color:var(--faint);width:calc(var(--s) * 62px);flex:none;font-variant-numeric:tabular-nums}
+.rec .txt{flex:1;min-width:0;font-size:calc(var(--s) * 14px);color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rec .wave{display:flex;align-items:center;gap:1.5px;height:calc(var(--s) * 20px);width:calc(var(--s) * 76px);flex:none;opacity:.55}
+.rec:hover .wave{opacity:1}
+.rec .wave i{width:2px;background:var(--bar);border-radius:1px;transition:background .12s ease}
+.rec:hover .wave i{background:var(--ember)}
+.rec .meta{font-family:var(--mono);font-size:calc(var(--s) * 11.5px);color:var(--faint);flex:none;font-variant-numeric:tabular-nums;width:calc(var(--s) * 132px);text-align:right;white-space:nowrap}
+.rec .acts{display:flex;gap:calc(var(--s) * 4px);flex:none;opacity:0;transition:opacity .13s ease}
+.rec:hover .acts,.rec:focus-within .acts{opacity:1}
+.icon-btn{
+  width:calc(var(--s) * 28px);height:calc(var(--s) * 28px);border-radius:7px;display:grid;place-items:center;
+  color:var(--muted);transition:background .12s ease,color .12s ease;
+}
+.icon-btn svg{width:calc(var(--s) * 15px);height:calc(var(--s) * 15px);stroke-width:1.7}
+.icon-btn:hover{background:var(--ember-soft);color:var(--ember)}
+.empty{font-size:calc(var(--s) * 13px);color:var(--faint);padding:calc(var(--s) * 8px) 0}
+
+/* ── list rows (dictionary / phrases) ───────────────────────── */
+.list{border:1px solid var(--hairline);border-radius:calc(var(--s) * 13px);background:var(--surface);box-shadow:var(--shadow);overflow:hidden}
+.row{display:flex;align-items:center;gap:calc(var(--s) * 12px);padding:calc(var(--s) * 13px) calc(var(--s) * 18px);border-bottom:1px solid var(--hairsoft);transition:background .12s ease}
+.row:last-child{border-bottom:none}
+.row:hover{background:var(--sunk)}
+.row .from{font-size:calc(var(--s) * 14px);color:var(--muted);width:calc(var(--s) * 210px);flex:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .arrow{color:var(--faint);flex:none;font-size:calc(var(--s) * 13px)}
+.row .to{flex:1;min-width:0;font-size:calc(var(--s) * 14px);color:var(--ink);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .hits{font-family:var(--mono);font-size:calc(var(--s) * 11.5px);color:var(--faint);flex:none}
+.row .acts{display:flex;gap:2px;flex:none;opacity:0;transition:opacity .12s}
+.row:hover .acts,.row:focus-within .acts{opacity:1}
+.chip-auto{font-size:calc(var(--s) * 11px);color:var(--amber);flex:none}
+
+/* the add-new row, revealed by the button */
+.addrow{display:none;gap:calc(var(--s) * 10px);padding:calc(var(--s) * 14px) calc(var(--s) * 18px);background:var(--sunk);border-bottom:1px solid var(--hairsoft);align-items:center}
+.addrow.open{display:flex;animation:slidein .16s ease}
+@keyframes slidein{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+
+/* ── controls ───────────────────────────────────────────────── */
+.field{
+  font:inherit;font-size:calc(var(--s) * 13.5px);color:var(--ink);
+  background:var(--surface);border:1px solid var(--hairline);border-radius:8px;
+  padding:calc(var(--s) * 8px) calc(var(--s) * 11px);width:100%;
+  transition:border-color .14s ease,box-shadow .14s ease;
+}
+.field::placeholder{color:var(--faint)}
+.field:focus{outline:none;border-color:var(--ember);box-shadow:0 0 0 3px var(--ember-soft)}
+.field.mono{font-family:var(--mono);font-size:calc(var(--s) * 12.5px)}
+.btn{
+  font-size:calc(var(--s) * 13px);font-weight:500;padding:calc(var(--s) * 7px) calc(var(--s) * 13px);
+  border-radius:8px;border:1px solid var(--hairline);background:var(--surface);color:var(--ink2);
+  transition:background .13s,border-color .13s,color .13s;white-space:nowrap;
+}
+.btn:hover{background:var(--sunk);color:var(--ink)}
+.btn.primary{background:var(--ember);border-color:transparent;color:#fff;font-weight:600}
+.btn.primary:hover{filter:brightness(1.07);background:var(--ember);color:#fff}
+.btn.quiet{border-color:transparent;color:var(--muted)}
+.btn.quiet:hover{background:var(--sunk)}
+.btn.add{display:inline-flex;align-items:center;gap:calc(var(--s) * 6px)}
+.btn.add svg{width:calc(var(--s) * 14px);height:calc(var(--s) * 14px);stroke-width:2}
+
+.search{display:flex;align-items:center}
+.search input{width:0;padding:0;border-color:transparent;background:transparent;transition:width .2s ease,padding .2s ease}
+.search.open input{width:calc(var(--s) * 170px);padding:calc(var(--s) * 7px) calc(var(--s) * 10px);border-color:var(--hairline);background:var(--surface)}
+
+.switch{width:calc(var(--s) * 40px);height:calc(var(--s) * 23px);border-radius:999px;background:var(--bar);position:relative;flex:none;transition:background .18s ease}
+.switch::after{content:"";position:absolute;top:2px;left:2px;width:calc(var(--s) * 19px);height:calc(var(--s) * 19px);border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.22);transition:transform .18s cubic-bezier(.3,1.4,.5,1)}
+.switch.on{background:var(--ember)}
+.switch.on::after{transform:translateX(calc(var(--s) * 17px))}
+.toggle-row{display:flex;align-items:center;gap:calc(var(--s) * 16px);width:100%;text-align:left;padding:calc(var(--s) * 2px) 0}
+.toggle-row .tt{flex:1;min-width:0}
+.toggle-row .tt b{display:block;font-size:calc(var(--s) * 14px);font-weight:500;letter-spacing:-.006em}
+.toggle-row .tt span{display:block;font-size:calc(var(--s) * 12.5px);color:var(--muted);margin-top:2px}
+
+.pills{display:inline-flex;background:var(--sunk);border:1px solid var(--hairline);border-radius:9px;padding:2px;gap:2px}
+.pill{padding:calc(var(--s) * 6px) calc(var(--s) * 15px);border-radius:7px;font-size:calc(var(--s) * 13px);font-weight:500;color:var(--muted);transition:all .13s ease}
+.pill:hover{color:var(--ink)}
+.pill.on{background:var(--surface);color:var(--ink);font-weight:600;box-shadow:0 1px 2px rgba(38,32,22,.10)}
+
+/* ── model rows ─────────────────────────────────────────────── */
+.models{display:flex;flex-direction:column}
+.model{
+  display:flex;align-items:center;gap:calc(var(--s) * 13px);width:100%;text-align:left;
+  padding:calc(var(--s) * 12px) calc(var(--s) * 4px);border-bottom:1px solid var(--hairsoft);
+  transition:background .12s ease;border-radius:6px;
+}
+.model:last-child{border-bottom:none}
+.model:hover:not(.off){background:var(--sunk)}
+.model .radio{width:calc(var(--s) * 16px);height:calc(var(--s) * 16px);border-radius:50%;border:1.5px solid var(--bar);flex:none;position:relative;transition:border-color .14s}
+.model.on .radio{border-color:var(--ember);border-width:5px}
+.model .mid{flex:1;min-width:0}
+.model .mid b{display:block;font-family:var(--mono);font-size:calc(var(--s) * 13px);font-weight:500;letter-spacing:-.01em;color:var(--ink)}
+.model .mid span{display:block;font-size:calc(var(--s) * 12.5px);color:var(--muted);margin-top:3px}
+.model .tag{font-family:var(--mono);font-size:calc(var(--s) * 11.5px);color:var(--faint);flex:none;font-variant-numeric:tabular-nums}
+.model.off{opacity:.38;cursor:not-allowed;filter:grayscale(1)}
+.model.off .tag{color:var(--faint)}
+.badge{
+  font-size:calc(var(--s) * 10.5px);font-weight:600;letter-spacing:.04em;text-transform:uppercase;
+  padding:calc(var(--s) * 3px) calc(var(--s) * 7px);border-radius:5px;flex:none;
+  background:var(--ember-soft);color:var(--ember);
+}
+.badge.grey{background:var(--sunk);color:var(--faint);border:1px solid var(--hairline)}
+.badge.moss{background:rgba(76,122,88,.13);color:var(--moss)}
+
+/* ── permissions ────────────────────────────────────────────── */
+.perm{display:flex;align-items:center;gap:calc(var(--s) * 13px);padding:calc(var(--s) * 13px) 0;border-bottom:1px solid var(--hairsoft)}
+.perm:last-child{border-bottom:none}
+.perm .dot{width:calc(var(--s) * 8px);height:calc(var(--s) * 8px);border-radius:50%;flex:none;background:var(--moss)}
+.perm .dot.warn{background:var(--amber)}
+.perm .dot.off{background:var(--bar)}
+.perm .pn{flex:1;min-width:0}
+.perm .pn b{display:block;font-size:calc(var(--s) * 14px);font-weight:500}
+.perm .pn span{display:block;font-size:calc(var(--s) * 12.5px);color:var(--muted);margin-top:2px}
+
+/* ── tones ──────────────────────────────────────────────────── */
+.tone-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:calc(var(--s) * 12px)}
+.tone{
+  background:var(--surface);border:1px solid var(--hairline);border-radius:calc(var(--s) * 13px);
+  padding:calc(var(--s) * 18px);text-align:left;box-shadow:var(--shadow);transition:border-color .14s,box-shadow .14s;
+}
+.tone:hover{border-color:var(--ember-ring)}
+.tone.on{border-color:var(--ember);box-shadow:0 0 0 3px var(--ember-soft),var(--shadow)}
+.tone b{display:block;font-size:calc(var(--s) * 14.5px);font-weight:600}
+.tone .rule2{font-size:calc(var(--s) * 12.5px);color:var(--muted);margin-top:3px}
+.tone .say{
+  margin-top:calc(var(--s) * 16px);padding:calc(var(--s) * 12px) calc(var(--s) * 14px);
+  background:var(--sunk);border-radius:calc(var(--s) * 10px);font-size:calc(var(--s) * 13.5px);
+  color:var(--ink2);line-height:1.5;white-space:pre-line;
+}
+
+/* ── about sheet ────────────────────────────────────────────── */
+.scrim{position:absolute;inset:0;background:rgba(24,20,14,.34);backdrop-filter:blur(2px);display:none;place-items:center;z-index:20}
+.scrim.on{display:grid;animation:fade .16s ease}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+.sheet{
+  width:min(440px,86%);background:var(--surface);border:1px solid var(--hairline);
+  border-radius:16px;box-shadow:var(--shadow-lift);padding:calc(var(--s) * 30px) calc(var(--s) * 30px) calc(var(--s) * 22px);
+  text-align:center;animation:pop .18s cubic-bezier(.2,1.2,.4,1);
+}
+@keyframes pop{from{opacity:0;transform:scale(.96) translateY(6px)}to{opacity:1;transform:none}}
+.sheet .mark{width:calc(var(--s) * 40px);height:calc(var(--s) * 40px);color:var(--ember);margin:0 auto}
+.sheet h3{font-family:var(--serif);font-size:calc(var(--s) * 26px);font-weight:500;margin-top:calc(var(--s) * 12px);letter-spacing:-.015em}
+.sheet .tag2{font-size:calc(var(--s) * 13.5px);color:var(--ink2);margin-top:calc(var(--s) * 10px);line-height:1.55}
+.sheet .facts{margin-top:calc(var(--s) * 20px);display:flex;flex-direction:column;gap:calc(var(--s) * 9px);text-align:left}
+.sheet .fact{display:flex;gap:calc(var(--s) * 10px);font-size:calc(var(--s) * 13px);color:var(--muted);line-height:1.5}
+.sheet .fact svg{width:calc(var(--s) * 15px);height:calc(var(--s) * 15px);flex:none;color:var(--moss);margin-top:1px;stroke-width:1.8}
+.sheet .foot{margin-top:calc(var(--s) * 22px);padding-top:calc(var(--s) * 16px);border-top:1px solid var(--hairsoft);display:flex;align-items:center;justify-content:space-between;gap:10px}
+.sheet .foot span{font-family:var(--mono);font-size:calc(var(--s) * 11.5px);color:var(--faint)}
+.sheet a{color:var(--muted);font-size:calc(var(--s) * 12.5px);text-decoration:none;border-bottom:1px solid var(--hairline)}
+.sheet a:hover{color:var(--ember);border-color:var(--ember-ring)}
+
+/* ── toast ──────────────────────────────────────────────────── */
+.toast{
+  position:absolute;left:50%;bottom:26px;transform:translate(-50%,14px);
+  background:var(--ink);color:var(--paper);font-size:13px;font-weight:500;
+  padding:9px 16px;border-radius:9px;opacity:0;pointer-events:none;
+  transition:opacity .18s ease,transform .18s ease;z-index:30;box-shadow:var(--shadow-lift);
+}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+
+/* ── notes under the window ─────────────────────────────────── */
+.notes{width:100%;max-width:1360px;display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+.note-card{
+  background:var(--deskCard);border:1px solid var(--deskLine);border-radius:11px;
+  padding:14px 16px;backdrop-filter:blur(8px);
+}
+.note-card b{display:block;font-size:12.5px;font-weight:600;margin-bottom:5px;color:var(--onDesk)}
+.note-card p{font-size:12.5px;line-height:1.55;color:var(--onDesk2)}
+.note-card s{color:var(--onDesk2);opacity:.62;text-decoration-thickness:1px}
+
+
+/* ── settings sheet ─────────────────────────────────────────── */
+/* The app doesn't go away while you are in Settings — it dims, so it is
+   plainly still there and plainly not what you are working in. */
+.setscrim{position:absolute;inset:0;z-index:30;display:none;place-items:center;background:rgba(24,20,14,.34)}
+.win.set-open .setscrim{display:grid;animation:fade .16s ease}
+.setmodal{
+  width:calc(var(--s) * 920px);height:calc(var(--s) * 640px);max-width:92%;max-height:88%;
+  display:flex;background:var(--surface);border:1px solid var(--hairline);
+  border-radius:calc(var(--s) * 16px);box-shadow:var(--shadow-lift);overflow:hidden;
+  animation:pop .18s cubic-bezier(.2,1.2,.4,1);
+}
+.set-rail{
+  width:calc(var(--s) * 212px);flex:none;background:var(--sidebar);
+  border-right:1px solid var(--hairline);display:flex;flex-direction:column;
+  gap:calc(var(--s) * 20px);padding:calc(var(--s) * 22px) calc(var(--s) * 14px);
+}
+.set-rail h3{
+  font-family:var(--serif);font-size:calc(var(--s) * 21px);font-weight:500;
+  letter-spacing:-.014em;padding:0 calc(var(--s) * 9px);
+}
+/* The groups are the grouping: like with like, a gap between kinds. */
+.set-nav-list{display:flex;flex-direction:column;gap:calc(var(--s) * 18px)}
+.set-group{display:flex;flex-direction:column;gap:calc(var(--s) * 2px)}
+.set-main{
+  flex:1;min-width:0;position:relative;overflow-y:auto;
+  padding:calc(var(--s) * 26px) calc(var(--s) * 46px) calc(var(--s) * 40px);
+}
+.set-main::-webkit-scrollbar{width:9px}
+.set-main::-webkit-scrollbar-thumb{background:rgba(0,0,0,.15);border-radius:9px;border:3px solid transparent;background-clip:content-box}
+/* In the gutter beside the cards, never over them. */
+.set-close{
+  position:absolute;top:calc(var(--s) * 15px);right:calc(var(--s) * 16px);z-index:2;
+  width:calc(var(--s) * 26px);height:calc(var(--s) * 26px);border-radius:calc(var(--s) * 7px);
+  display:grid;place-items:center;color:var(--muted);transition:background .13s ease,color .13s ease;
+}
+.set-close svg{width:calc(var(--s) * 13px);height:calc(var(--s) * 13px);stroke-width:1.9}
+.set-close:hover{background:rgba(0,0,0,.055);color:var(--ink)}
+:root[data-theme="dark"] .set-close:hover,:root:not([data-theme="light"]) .set-close:hover{background:rgba(255,255,255,.07)}
+
+/* ── account button + popover ───────────────────────────────── */
+.topright{position:absolute;top:calc(var(--s) * 26px);right:calc(var(--s) * 26px);z-index:16}
+.avatar{
+  width:calc(var(--s) * 32px);height:calc(var(--s) * 32px);border-radius:50%;
+  display:grid;place-items:center;font-size:calc(var(--s) * 12.5px);font-weight:600;
+  color:#fff;background:linear-gradient(150deg,#D9663C,#B23C14);
+  box-shadow:0 1px 3px rgba(38,32,22,.22);border:1.5px solid var(--surface);
+  transition:transform .14s ease,box-shadow .14s ease;
+}
+.avatar:hover{transform:scale(1.05);box-shadow:0 2px 8px rgba(38,32,22,.28)}
+.avatar.out{background:var(--sunk);color:var(--muted);border-color:var(--hairline)}
+.pop{
+  position:absolute;top:calc(100% + 9px);right:0;width:calc(var(--s) * 288px);
+  background:var(--surface);border:1px solid var(--hairline);border-radius:calc(var(--s) * 13px);
+  box-shadow:var(--shadow-lift);padding:calc(var(--s) * 16px);display:none;
+  animation:pop .16s cubic-bezier(.2,1.2,.4,1);transform-origin:top right;text-align:left;
+}
+.pop.on{display:block}
+.pop .who{display:flex;align-items:center;gap:calc(var(--s) * 11px)}
+.pop .who .avatar{width:calc(var(--s) * 38px);height:calc(var(--s) * 38px);font-size:calc(var(--s) * 14px)}
+.pop .who b{display:block;font-size:calc(var(--s) * 14px);font-weight:600}
+.pop .who span{display:block;font-size:calc(var(--s) * 12.5px);color:var(--muted);margin-top:1px;word-break:break-all}
+.pop .grp{margin-top:calc(var(--s) * 14px);padding-top:calc(var(--s) * 14px);border-top:1px solid var(--hairsoft)}
+.pop .mrow{
+  display:flex;align-items:center;gap:calc(var(--s) * 10px);width:100%;text-align:left;
+  padding:calc(var(--s) * 8px) calc(var(--s) * 9px);border-radius:8px;margin:0 calc(var(--s) * -9px);
+  font-size:calc(var(--s) * 13.5px);color:var(--ink2);transition:background .12s ease;
+}
+.pop .mrow:hover{background:var(--sunk);color:var(--ink)}
+.pop .mrow svg{width:calc(var(--s) * 16px);height:calc(var(--s) * 16px);stroke-width:1.7;color:var(--muted);flex:none}
+.pop .mrow.danger:hover{color:var(--ember)}
+.pop .btn{width:100%;justify-content:center;display:flex}
+
+/* usage meter, shared by the popover and Billing */
+.meter{height:calc(var(--s) * 6px);border-radius:99px;background:var(--bar);overflow:hidden;margin-top:calc(var(--s) * 8px)}
+.meter i{display:block;height:100%;border-radius:99px;background:var(--ember)}
+.meter.low i{background:var(--amber)}
+.mline{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:calc(var(--s) * 12.5px)}
+.mline b{font-weight:600;font-variant-numeric:tabular-nums}
+.mline span{color:var(--muted);font-family:var(--mono);font-size:calc(var(--s) * 11.5px)}
+
+/* ── insights ───────────────────────────────────────────────── */
+.grid2{display:grid;grid-template-columns:1.15fr 1fr;gap:calc(var(--s) * 14px);align-items:start}
+.chart{position:relative;height:calc(var(--s) * 168px);display:flex;align-items:flex-end;gap:calc(var(--s) * 4px);border-bottom:1px solid var(--hairline)}
+.col{flex:1;height:100%;display:flex;align-items:flex-end;justify-content:center;position:relative;cursor:default}
+.col i{display:block;width:100%;max-width:calc(var(--s) * 20px);background:var(--bar);border-radius:3px 3px 0 0;min-height:2px;transition:background .14s ease}
+.col:hover i{background:var(--ink)}
+.col.today i{background:var(--ember)}
+.chart svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+.chart .wline{fill:none;stroke:var(--ember);stroke-width:1.8;vector-effect:non-scaling-stroke;stroke-linejoin:round;stroke-linecap:round}
+.chart .warea{fill:var(--ember-soft);stroke:none}
+.xaxis{display:flex;gap:calc(var(--s) * 4px);margin-top:calc(var(--s) * 8px)}
+.xaxis span{flex:1;text-align:center;font:500 calc(var(--s) * 10.5px) var(--mono);color:var(--faint);white-space:nowrap}
+.key{display:inline-flex;align-items:center;gap:calc(var(--s) * 6px);font-size:calc(var(--s) * 12px);color:var(--muted)}
+.key i{display:block;flex:none}
+.key .kb{width:calc(var(--s) * 9px);height:calc(var(--s) * 11px);border-radius:2px;background:var(--bar)}
+.key .kl{width:calc(var(--s) * 15px);height:2px;border-radius:2px;background:var(--ember)}
+
+/* when you speak — one sentence, not a grid */
+.bigline{
+  font-family:var(--serif);font-size:calc(var(--s) * 22px);font-weight:400;line-height:1.32;
+  letter-spacing:-.012em;text-wrap:balance;color:var(--ink);
+}
+.bigline b{font-weight:600;color:var(--ember);font-style:normal}
+.chips{display:flex;flex-wrap:wrap;gap:calc(var(--s) * 7px);margin-top:calc(var(--s) * 18px)}
+.chip{
+  font-size:calc(var(--s) * 12px);color:var(--muted);background:var(--sunk);
+  border:1px solid var(--hairsoft);border-radius:99px;padding:calc(var(--s) * 5px) calc(var(--s) * 11px);
+}
+.chip b{color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
+
+/* most used words */
+.word{display:flex;align-items:center;gap:calc(var(--s) * 10px);padding:calc(var(--s) * 6px) 0}
+.word b{font-size:calc(var(--s) * 13.5px);font-weight:500;width:calc(var(--s) * 92px);flex:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.word .wb{flex:1;height:calc(var(--s) * 7px);background:var(--sunk);border-radius:99px;overflow:hidden}
+.word .wb i{display:block;height:100%;background:var(--ember);opacity:.75;border-radius:99px}
+.word span{font-family:var(--mono);font-size:calc(var(--s) * 11.5px);color:var(--faint);width:calc(var(--s) * 40px);text-align:right;flex:none}
+
+/* the year grid */
+.year{display:flex;gap:calc(var(--s) * 3px);padding-bottom:calc(var(--s) * 4px)}
+.ycol{display:flex;flex-direction:column;gap:calc(var(--s) * 3px);flex:1;min-width:0}
+.ycell{width:100%;aspect-ratio:1;border-radius:2.5px;background:var(--sunk);border:1px solid var(--hairsoft)}
+.ycell.l1{background:var(--lvl1);border-color:transparent}
+.ycell.l2{background:var(--lvl2);border-color:transparent}
+.ycell.l3{background:var(--lvl3);border-color:transparent}
+.ycell.l4{background:var(--ember);border-color:transparent}
+.ymonths{display:flex;gap:calc(var(--s) * 3px);margin-bottom:calc(var(--s) * 6px);font-size:calc(var(--s) * 10.5px);color:var(--faint)}
+.ymonths span{flex:1;min-width:0;overflow:visible;white-space:nowrap}
+.ylegend{display:flex;align-items:center;gap:calc(var(--s) * 5px);font-size:calc(var(--s) * 11.5px);color:var(--faint);margin-top:calc(var(--s) * 12px)}
+.ylegend .ycell{width:calc(var(--s) * 11px);height:calc(var(--s) * 11px);aspect-ratio:auto;flex:none}
+.streak{display:flex;align-items:baseline;gap:calc(var(--s) * 8px)}
+.streak b{font-family:var(--serif);font-size:calc(var(--s) * 30px);font-weight:500;line-height:1;font-variant-numeric:tabular-nums}
+.streak span{font-size:calc(var(--s) * 13px);color:var(--muted)}
+
+/* ── form rows, keys, selects ───────────────────────────────── */
+.frow{display:flex;align-items:center;gap:calc(var(--s) * 16px);padding:calc(var(--s) * 3px) 0}
+.frow > .fl{flex:1;min-width:0}
+.fl b{display:block;font-size:calc(var(--s) * 14px);font-weight:500}
+.fl span{display:block;font-size:calc(var(--s) * 12.5px);color:var(--muted);margin-top:2px}
+.frow .fc{flex:none;display:flex;align-items:center;gap:calc(var(--s) * 8px)}
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:calc(var(--s) * 12px)}
+.flab{display:block;font-size:calc(var(--s) * 12px);font-weight:500;color:var(--muted);margin-bottom:calc(var(--s) * 6px)}
+.sel{position:relative;display:inline-block}
+.sel::after{
+  content:"";position:absolute;right:calc(var(--s) * 11px);top:50%;width:calc(var(--s) * 6px);height:calc(var(--s) * 6px);
+  border-right:1.5px solid var(--muted);border-bottom:1.5px solid var(--muted);
+  transform:translateY(-70%) rotate(45deg);pointer-events:none;
+}
+select.field{appearance:none;-webkit-appearance:none;padding-right:calc(var(--s) * 28px);cursor:pointer}
+.keys{display:flex;gap:calc(var(--s) * 4px)}
+.keycap{
+  font-family:var(--ui);font-size:calc(var(--s) * 12.5px);font-weight:600;color:var(--ink);
+  min-width:calc(var(--s) * 30px);text-align:center;padding:calc(var(--s) * 5px) calc(var(--s) * 9px);
+  background:var(--surface);border:1px solid var(--hairline);border-bottom-width:2px;border-radius:6px;
+}
+.danger{color:var(--ember)}
+.btn.danger{border-color:var(--ember-ring);color:var(--ember)}
+.btn.danger:hover{background:var(--ember-soft);color:var(--ember)}
+
+/* ── plans + billing ────────────────────────────────────────── */
+.plans{display:grid;grid-template-columns:1fr 1fr;gap:calc(var(--s) * 12px)}
+.plan{
+  border:1px solid var(--hairline);border-radius:calc(var(--s) * 12px);padding:calc(var(--s) * 18px);
+  background:var(--surface);text-align:left;transition:border-color .14s,box-shadow .14s;
+}
+.plan.on{border-color:var(--ember);box-shadow:0 0 0 3px var(--ember-soft)}
+.plan .ph{display:flex;align-items:center;gap:8px}
+.plan .ph b{font-size:calc(var(--s) * 15px);font-weight:600}
+.plan .price{font-family:var(--serif);font-size:calc(var(--s) * 27px);font-weight:500;margin-top:calc(var(--s) * 10px);line-height:1;letter-spacing:-.02em}
+.plan .price small{font-family:var(--ui);font-size:calc(var(--s) * 13px);color:var(--muted);font-weight:400;letter-spacing:0}
+.plan ul{list-style:none;margin-top:calc(var(--s) * 14px);display:flex;flex-direction:column;gap:calc(var(--s) * 7px)}
+.plan li{display:flex;gap:calc(var(--s) * 8px);font-size:calc(var(--s) * 13px);color:var(--ink2);line-height:1.45}
+.plan li svg{width:calc(var(--s) * 14px);height:calc(var(--s) * 14px);flex:none;margin-top:2px;color:var(--moss);stroke-width:2}
+.plan .btn{width:100%;margin-top:calc(var(--s) * 16px)}
+.paycard{display:flex;align-items:center;gap:calc(var(--s) * 12px)}
+.paycard .fl{flex:1;min-width:0}
+.brandmark{
+  width:calc(var(--s) * 38px);height:calc(var(--s) * 26px);border-radius:5px;border:1px solid var(--hairline);
+  background:var(--sunk);display:grid;place-items:center;flex:none;position:relative;
+}
+.brandmark i{position:absolute;width:calc(var(--s) * 13px);height:calc(var(--s) * 13px);border-radius:50%}
+.brandmark i:first-child{left:calc(var(--s) * 6px);background:#EB001B;opacity:.85}
+.brandmark i:last-child{right:calc(var(--s) * 6px);background:#F79E1B;opacity:.85;mix-blend-mode:multiply}
+.ledger{width:100%;border-collapse:collapse}
+.ledger td{padding:calc(var(--s) * 9px) 0;border-bottom:1px solid var(--hairsoft);font-size:calc(var(--s) * 13px)}
+.ledger tr:last-child td{border-bottom:none}
+.ledger td:first-child{font-family:var(--mono);font-size:calc(var(--s) * 12px);color:var(--faint);width:calc(var(--s) * 96px)}
+.ledger td:last-child{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums;color:var(--ink2)}
+
+/* ── help ───────────────────────────────────────────────────── */
+.helprow{
+  display:flex;align-items:center;gap:calc(var(--s) * 14px);width:100%;text-align:left;
+  padding:calc(var(--s) * 14px) 0;border-bottom:1px solid var(--hairsoft);color:inherit;text-decoration:none;
+}
+.helprow:last-child{border-bottom:none}
+.helprow .hi{
+  width:calc(var(--s) * 34px);height:calc(var(--s) * 34px);border-radius:9px;flex:none;display:grid;place-items:center;
+  background:var(--ember-soft);color:var(--ember);
+}
+.helprow .hi svg{width:calc(var(--s) * 17px);height:calc(var(--s) * 17px);stroke-width:1.7}
+.helprow .ht2{flex:1;min-width:0}
+.helprow .ht2 b{display:block;font-size:calc(var(--s) * 14px);font-weight:500}
+.helprow .ht2 span{display:block;font-size:calc(var(--s) * 12.5px);color:var(--muted);margin-top:2px}
+.helprow .go{color:var(--faint);flex:none;font-size:calc(var(--s) * 15px)}
+.helprow:hover .go{color:var(--ember)}
+
+
+/* ── Commands: show the thing, don't describe it ─────────────── */
+.demo{
+  border:1px solid var(--hairline);border-radius:calc(var(--s) * 14px);background:var(--surface);
+  box-shadow:var(--shadow);overflow:hidden;margin-bottom:calc(var(--s) * 26px);
+}
+.demo-top{
+  display:flex;align-items:center;gap:calc(var(--s) * 10px);
+  padding:calc(var(--s) * 12px) calc(var(--s) * 18px);border-bottom:1px solid var(--hairsoft);background:var(--sunk);
+}
+.demo-top .dot{width:calc(var(--s) * 8px);height:calc(var(--s) * 8px);border-radius:50%;background:var(--bar)}
+.demo-top .dot.live{background:var(--ember);animation:blip 1.1s ease-in-out infinite}
+@keyframes blip{0%,100%{opacity:1}50%{opacity:.3}}
+.demo-top span{font-size:calc(var(--s) * 12.5px);color:var(--muted)}
+.demo-top .keycap{margin-left:auto}
+.demo-body{padding:calc(var(--s) * 22px) calc(var(--s) * 24px);min-height:calc(var(--s) * 232px);display:flex;flex-direction:column;gap:calc(var(--s) * 16px)}
+.demo-line{font-size:calc(var(--s) * 16px);line-height:1.6;color:var(--ink);min-height:calc(var(--s) * 26px)}
+.demo-line .caret{display:inline-block;width:2px;height:calc(var(--s) * 17px);background:var(--ember);vertical-align:-3px;animation:blink .9s step-end infinite}
+@keyframes blink{50%{opacity:0}}
+.demo-line .said{color:var(--muted)}
+.demo-drop{
+  align-self:flex-start;opacity:0;transform:translateY(8px);
+  transition:opacity .3s ease,transform .3s cubic-bezier(.2,1.2,.4,1);
+}
+.demo-drop.in{opacity:1;transform:none}
+.wavebars{display:flex;align-items:center;gap:2px;height:calc(var(--s) * 18px)}
+.wavebars i{width:2px;border-radius:1px;background:var(--ember);height:20%;animation:talk 1s ease-in-out infinite}
+@keyframes talk{0%,100%{height:18%}50%{height:100%}}
+
+.cmd-sec{margin-bottom:calc(var(--s) * 10px);display:flex;align-items:center;gap:calc(var(--s) * 12px)}
+.cmd-sec .eyebrow{flex:none}
+.cmd-sec .ln{flex:1;height:1px;background:var(--hairline)}
+.cmd-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:calc(var(--s) * 12px);margin-bottom:calc(var(--s) * 26px)}
+.cmd{
+  background:var(--surface);border:1px solid var(--hairline);border-radius:calc(var(--s) * 13px);
+  box-shadow:var(--shadow);padding:calc(var(--s) * 17px);text-align:left;
+  display:flex;flex-direction:column;gap:calc(var(--s) * 11px);
+  transition:border-color .16s ease,transform .16s ease,box-shadow .16s ease;
+}
+.cmd:hover{border-color:var(--ember-ring);transform:translateY(-2px);box-shadow:var(--shadow-lift)}
+.voice{
+  display:flex;align-items:center;gap:calc(var(--s) * 9px);
+  background:var(--sunk);border:1px solid var(--hairsoft);border-radius:99px;
+  padding:calc(var(--s) * 7px) calc(var(--s) * 13px);align-self:flex-start;max-width:100%;
+}
+.voice .wavebars{height:calc(var(--s) * 13px);flex:none}
+.voice .wavebars i{background:var(--muted);animation:none;height:38%}
+.cmd:hover .voice .wavebars i{background:var(--ember);animation:talk .9s ease-in-out infinite}
+.cmd:hover .voice{border-color:var(--ember-ring)}
+.voice q{font-size:calc(var(--s) * 13.5px);color:var(--ink);font-style:italic;quotes:'“' '”'}
+.arrow-down{color:var(--faint);font-size:calc(var(--s) * 13px);line-height:1;transition:color .16s,transform .16s}
+.cmd:hover .arrow-down{color:var(--ember);transform:translateY(2px)}
+.cmd .cap{font-size:calc(var(--s) * 12.5px);color:var(--muted);line-height:1.5;margin-top:auto}
+
+/* the little "what lands" mocks */
+.res{
+  border-radius:calc(var(--s) * 9px);background:var(--sunk);border:1px solid var(--hairsoft);
+  padding:calc(var(--s) * 11px);min-height:calc(var(--s) * 62px);
+  display:flex;align-items:center;gap:calc(var(--s) * 9px);overflow:hidden;position:relative;
+}
+.shot{
+  width:100%;height:calc(var(--s) * 46px);border-radius:5px;border:1px solid var(--hairline);
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.9) 0 22%,transparent 22%),
+    repeating-linear-gradient(90deg,rgba(255,255,255,.34) 0 8%,transparent 8% 12%),
+    linear-gradient(128deg,#E9A97F,#C77A66 40%,#6E8CA8);
+  position:relative;overflow:hidden;
+}
+.shot::before{
+  content:"";position:absolute;left:calc(var(--s) * 5px);top:calc(var(--s) * 4px);
+  width:calc(var(--s) * 16px);height:calc(var(--s) * 4px);border-radius:99px;background:rgba(0,0,0,.22);
+}
+.shot.big{height:calc(var(--s) * 124px);border-radius:8px}
+.shot::after{
+  content:"";position:absolute;inset:0;background:linear-gradient(100deg,transparent 35%,rgba(255,255,255,.6) 50%,transparent 65%);
+  transform:translateX(-100%);
+}
+.cmd:hover .shot::after{animation:sweep .9s ease}
+@keyframes sweep{to{transform:translateX(100%)}}
+.appicon{
+  width:calc(var(--s) * 38px);height:calc(var(--s) * 38px);border-radius:calc(var(--s) * 9px);flex:none;
+  display:grid;place-items:center;color:#fff;font-weight:700;font-size:calc(var(--s) * 15px);
+  box-shadow:0 2px 6px rgba(38,32,22,.2);
+}
+.cmd:hover .appicon{animation:bounce .5s cubic-bezier(.3,1.5,.5,1)}
+@keyframes bounce{0%{transform:translateY(0)}40%{transform:translateY(-9px)}100%{transform:translateY(0)}}
+.filechip{
+  display:flex;align-items:center;gap:calc(var(--s) * 8px);background:var(--surface);
+  border:1px solid var(--hairline);border-radius:8px;padding:calc(var(--s) * 7px) calc(var(--s) * 10px);
+  font-size:calc(var(--s) * 12.5px);
+}
+.filechip .ft{
+  width:calc(var(--s) * 22px);height:calc(var(--s) * 26px);border-radius:3px;flex:none;background:var(--ember);
+  color:#fff;font:700 calc(var(--s) * 8px)/1 var(--ui);display:grid;place-items:center;
+}
+.mono-res{font-family:var(--mono);font-size:calc(var(--s) * 11.5px);color:var(--ink2);line-height:1.6;word-break:break-all}
+.urlpill{
+  display:inline-flex;align-items:center;gap:calc(var(--s) * 7px);background:var(--surface);
+  border:1px solid var(--hairline);border-radius:99px;padding:calc(var(--s) * 6px) calc(var(--s) * 11px);
+  font-family:var(--mono);font-size:calc(var(--s) * 11.5px);color:var(--ink2);
+}
+.bubble{
+  background:var(--surface);border:1px solid var(--hairline);border-radius:calc(var(--s) * 10px) calc(var(--s) * 10px) calc(var(--s) * 10px) 3px;
+  padding:calc(var(--s) * 9px) calc(var(--s) * 11px);font-size:calc(var(--s) * 12.5px);color:var(--ink2);line-height:1.45;
+}
+.swap{display:flex;flex-direction:column;gap:calc(var(--s) * 6px);width:100%;font-size:calc(var(--s) * 12.5px)}
+.swap .a{color:var(--muted)}
+.swap .b{color:var(--ink);font-weight:500}
+.swap .b.mono{font-family:var(--mono);font-size:calc(var(--s) * 11.5px);font-weight:400}
+.strike{position:relative;color:var(--muted)}
+.strike::after{
+  content:"";position:absolute;left:0;top:52%;height:1.5px;width:0;background:var(--ember);
+}
+.cmd:hover .strike::after{animation:cross .45s ease forwards}
+@keyframes cross{to{width:100%}}
+.enterkey{
+  margin-left:auto;font:600 calc(var(--s) * 12px)/1 var(--ui);color:var(--ink);
+  padding:calc(var(--s) * 8px) calc(var(--s) * 12px);background:var(--surface);
+  border:1px solid var(--hairline);border-bottom-width:3px;border-radius:7px;
+}
+.cmd:hover .enterkey{animation:press .3s ease}
+@keyframes press{50%{transform:translateY(2px);border-bottom-width:1px}}
+
+@media (max-width:900px){
+  .stage{padding:14px 12px 34px;gap:12px}
+  .stage-bar h1{font-size:17px}
+}
+</style>
+
+<div class="stage">
+
+  <div class="stage-bar">
+    <h1>SayCtrl&nbsp;2.1</h1>
+    <p>Interface prototype — click the sidebar. <kbd>Settings → General</kbd> changes text size and appearance for real.</p>
+    <span id="fitNote" style="font-family:var(--mono);font-size:11.5px;opacity:.6;white-space:nowrap"></span>
+  </div>
+
+  <div class="win-wrap" id="winWrap">
+   <div class="win-rail" id="winRail">
+  <div class="win" id="win">
+
+    <!-- ══ sidebar ══════════════════════════════════════════ -->
+    <aside class="side">
+      <div class="lights"><i></i><i></i><i></i></div>
+      <button class="brand" id="brandBtn" title="About SayCtrl">
+        <svg class="mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="2.25">
+          <!-- The mark, the 256 grid divided by 10.667: bars at x50/88/126,
+               half-heights 37.5/64.5/84, then the ember arrow. -->
+          <path d="M4.69 8.48v7.04M8.25 5.95v12.1M11.81 4.12v15.76"/>
+          <path d="M14.81 6.66 14.81 17.34 19.31 12Z" fill="var(--ember)"
+                stroke="var(--ember)" stroke-width="1.13" stroke-linejoin="round"/>
+        </svg>
+        <b>SayCtrl</b>
+        <svg class="info" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+          <circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01" stroke-linecap="round"/>
+        </svg>
+      </button>
+
+      <nav>
+        <button class="nav-row on" data-go="overview">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.6"/><rect x="14" y="3" width="7" height="7" rx="1.6"/><rect x="3" y="14" width="7" height="7" rx="1.6"/><rect x="14" y="14" width="7" height="7" rx="1.6"/></svg>
+          <span>Overview</span>
+        </button>
+        <button class="nav-row" data-go="commands">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5a3 3 0 0 1 3 3v5a3 3 0 0 1-6 0v-5a3 3 0 0 1 3-3z"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg>
+          <span>Commands</span>
+        </button>
+        <button class="nav-row" data-go="dictionary">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H19v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 1 6.5 18H19v3H6.5"/><path d="M9 8h6M9 11.5h4"/></svg>
+          <span>Dictionary</span>
+        </button>
+        <button class="nav-row" data-go="insights">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M9.3 20V4M14.7 20v-7M20 20V7"/></svg>
+          <span>Insights</span>
+        </button>
+        <button class="nav-row" data-go="phrases">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h11M4 11h7M4 16h9"/><path d="M17.5 12.5v7M14 16h7"/></svg>
+          <span>Phrases</span>
+        </button>
+        <button class="nav-row" data-go="tones">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3v10M5 17.5v3.5M12 3v5M12 12.5V21M19 3v9M19 16.5V21"/><circle cx="5" cy="15.2" r="2.2"/><circle cx="12" cy="10.2" r="2.2"/><circle cx="19" cy="14.2" r="2.2"/></svg>
+          <span>Tones</span>
+        </button>
+      </nav>
+
+      <nav class="tail">
+        <button class="nav-row" data-go="settings">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2.3"/><circle cx="10" cy="17" r="2.3"/></svg>
+          <span>Settings</span>
+        </button>
+        <button class="nav-row" data-go="help">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.4 9.3a2.7 2.7 0 1 1 3.4 3.4c-.5.2-.8.7-.8 1.3v.4M12 17.4h.01"/></svg>
+          <span>Help</span>
+        </button>
+      </nav>
+    </aside>
+
+    <!-- ══ content ══════════════════════════════════════════ -->
+    <div class="content">
+
+      <div class="topright">
+        <button class="avatar" id="avatarBtn" aria-label="Account">SH</button>
+        <div class="pop" id="accountPop"></div>
+      </div>
+
+      <!-- ── Overview ─────────────────────────────────────── -->
+      <section class="pane on" id="p-overview">
+        <div class="inner">
+          <div class="pane-head">
+            <div>
+              <h2>Welcome back, Sorower</h2>
+              <p class="sub">It's Thursday — 4,180 words dictated this week.</p>
+            </div>
+          </div>
+
+          <div class="stats">
+            <div class="stat"><span class="n">28,023</span><span class="l eyebrow">Words dictated</span></div>
+            <div class="stat"><span class="n">111<small>wpm</small></span><span class="l eyebrow">Speaking pace</span></div>
+            <div class="stat"><span class="n">1,280</span><span class="l eyebrow">Dictionary fixes</span></div>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><h3>Last 7 days</h3></div>
+            <div class="week" id="week"></div>
+          </div>
+
+          <div class="card">
+            <div class="card-head">
+              <h3>Recent</h3>
+              <span class="note" style="margin-left:auto">Kept on this Mac</span>
+              <button class="btn quiet" data-toast="History cleared">Clear</button>
+            </div>
+            <div id="recent"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Commands ─────────────────────────────────────── -->
+      <section class="pane" id="p-commands">
+        <div class="inner">
+          <div class="pane-head">
+            <div>
+              <h2>Commands</h2>
+              <p class="sub">Say these while you dictate. The result lands where you said it.</p>
+            </div>
+          </div>
+
+          <div class="demo">
+            <div class="demo-top">
+              <span class="dot live"></span>
+              <span id="demoState">Listening</span>
+              <kbd class="keycap">fn</kbd>
+            </div>
+            <div class="demo-body">
+              <div class="demo-line" id="demoLine"></div>
+              <div class="demo-drop" id="demoDrop"></div>
+            </div>
+          </div>
+
+          <div class="cmd-sec"><span class="eyebrow">Say it mid-sentence</span><span class="ln"></span></div>
+          <div class="cmd-grid" id="cmdMid"></div>
+
+          <div class="cmd-sec"><span class="eyebrow">Say it on its own</span><span class="ln"></span></div>
+          <div class="cmd-grid" id="cmdSolo"></div>
+
+          <div class="cmd-sec"><span class="eyebrow">Always on — nothing to say</span><span class="ln"></span></div>
+          <div class="cmd-grid" id="cmdAuto"></div>
+        </div>
+      </section>
+
+      <!-- ── Dictionary ───────────────────────────────────── -->
+      <section class="pane" id="p-dictionary">
+        <div class="inner">
+          <div class="pane-head">
+            <div>
+              <h2>Dictionary</h2>
+              <p class="sub">Words SayCtrl keeps getting right for you.</p>
+            </div>
+            <div class="head-actions">
+              <div class="search" data-search="dict">
+                <button class="icon-btn" data-searchtoggle><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.6-3.6"/></svg></button>
+                <input class="field" placeholder="Filter" aria-label="Filter dictionary">
+              </div>
+              <button class="btn add primary" data-add="dict">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Add new
+              </button>
+            </div>
+          </div>
+
+          <div class="list">
+            <div class="addrow" id="add-dict">
+              <input class="field" placeholder="Heard as" style="flex:1" aria-label="Heard as">
+              <span class="arrow">→</span>
+              <input class="field" placeholder="Write it as" style="flex:1" aria-label="Write it as">
+              <button class="btn primary" data-save="dict">Save</button>
+              <button class="btn quiet" data-cancel="dict">Cancel</button>
+            </div>
+            <div id="dictList"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Insights ─────────────────────────────────────── -->
+      <section class="pane" id="p-insights">
+        <div class="inner">
+          <div class="pane-head">
+            <div><h2>Insights</h2></div>
+          </div>
+
+          <div class="stats" id="insStats" style="grid-template-columns:repeat(4,1fr)"></div>
+
+          <div class="card">
+            <div class="card-head">
+              <h3>Last 30 days</h3>
+              <div style="margin-left:auto;display:flex;gap:calc(var(--s) * 16px)">
+                <span class="key"><i class="kb"></i>Minutes</span>
+                <span class="key"><i class="kl"></i>Words</span>
+              </div>
+            </div>
+            <div class="chart" id="dayChart"></div>
+            <div class="xaxis" id="dayAxis"></div>
+          </div>
+
+          <div class="grid2">
+            <div class="card">
+              <div class="card-head"><h3>When you speak</h3></div>
+              <p class="bigline" id="peakLine"></p>
+              <div class="chips" id="peakChips"></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><h3>Most used words</h3></div>
+              <div id="wordList"></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head">
+              <h3>Every day you've spoken</h3>
+              <span class="note" id="yearNote" style="margin-left:auto"></span>
+            </div>
+            <div class="streak" style="margin-bottom:calc(var(--s) * 16px)">
+              <b id="streakN">0</b><span id="streakL"></span>
+            </div>
+            <div class="ymonths" id="yearMonths"></div>
+            <div class="year" id="yearGrid"></div>
+            <div class="ylegend">Less
+              <span class="ycell"></span><span class="ycell l1"></span><span class="ycell l2"></span>
+              <span class="ycell l3"></span><span class="ycell l4"></span>More
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Phrases ──────────────────────────────────────── -->
+      <section class="pane" id="p-phrases">
+        <div class="inner">
+          <div class="pane-head">
+            <div>
+              <h2>Phrases</h2>
+              <p class="sub">Say the short thing, type the long thing.</p>
+            </div>
+            <div class="head-actions">
+              <div class="search" data-search="ph">
+                <button class="icon-btn" data-searchtoggle><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.6-3.6"/></svg></button>
+                <input class="field" placeholder="Filter" aria-label="Filter phrases">
+              </div>
+              <button class="btn add primary" data-add="ph">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Add new
+              </button>
+            </div>
+          </div>
+
+          <div class="list">
+            <div class="addrow" id="add-ph">
+              <input class="field" placeholder="Say this" style="flex:1" aria-label="Say this">
+              <span class="arrow">→</span>
+              <input class="field" placeholder="Type this" style="flex:1.6" aria-label="Type this">
+              <button class="btn primary" data-save="ph">Save</button>
+              <button class="btn quiet" data-cancel="ph">Cancel</button>
+            </div>
+            <div id="phList"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Tones ────────────────────────────────────────── -->
+      <section class="pane" id="p-tones">
+        <div class="inner">
+          <div class="pane-head">
+            <div>
+              <h2>Tones</h2>
+              <p class="sub">Where you dictate picks the register.</p>
+            </div>
+          </div>
+          <div class="tabs sub" id="toneTabs"></div>
+          <p class="note" id="toneWhere" style="margin:calc(var(--s) * -8px) 0 calc(var(--s) * 16px)"></p>
+          <div class="tone-grid" id="toneGrid"></div>
+
+          <div class="card" style="margin-top:calc(var(--s) * 18px)">
+            <div class="toggle-row">
+              <div class="tt"><b>Auto cleanup</b><span>How hard to scrub ums, stutters and false starts.</span></div>
+              <div class="pills" id="cleanupPills">
+                <button class="pill" data-clean="Light">Light</button>
+                <button class="pill on" data-clean="Balanced">Balanced</button>
+                <button class="pill" data-clean="Aggressive">Aggressive</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+
+
+      <!-- ── Help ─────────────────────────────────────────── -->
+      <section class="pane" id="p-help">
+        <div class="inner">
+          <div class="pane-head">
+            <div>
+              <h2>Help</h2>
+              <p class="sub">Something not working? Write to us.</p>
+            </div>
+          </div>
+
+          <div class="card">
+            <a class="helprow" href="mailto:support@sayctrl.com?subject=SayCtrl%20support">
+              <span class="hi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="m3.5 7 8.5 6 8.5-6"/></svg></span>
+              <span class="ht2"><b>Email support</b><span>support@sayctrl.com — we answer within a day.</span></span>
+              <span class="go">↗</span>
+            </a>
+            <button class="helprow" data-toast="Diagnostics copied — paste them into your email">
+              <span class="hi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v5M12 16.5h.01"/><path d="M10.3 4.3 2.8 17.5A2 2 0 0 0 4.5 20.5h15a2 2 0 0 0 1.7-3l-7.5-13.2a2 2 0 0 0-3.4 0z"/></svg></span>
+              <span class="ht2"><b>Report a problem</b><span>Copies your version, provider and last error. No transcripts.</span></span>
+              <span class="go">→</span>
+            </button>
+            <button class="helprow" data-toast="Opening in your browser">
+              <span class="hi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H19v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 1 6.5 18H19v3H6.5"/></svg></span>
+              <span class="ht2"><b>Getting started</b><span>Setup, shortcuts and voice commands.</span></span>
+              <span class="go">↗</span>
+            </button>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><h3>Common fixes</h3></div>
+            <div id="faq"></div>
+          </div>
+        </div>
+    </div>
+      </section>
+
+    <!-- ── About sheet ────────────────────────────────────── -->
+      <div class="scrim" id="scrim">
+        <div class="sheet" role="dialog" aria-label="About SayCtrl">
+          <svg class="mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="2.25">
+            <path d="M4.69 8.48v7.04M8.25 5.95v12.1M11.81 4.12v15.76"/>
+            <path d="M14.81 6.66 14.81 17.34 19.31 12Z" fill="var(--ember)"
+                  stroke="var(--ember)" stroke-width="1.13" stroke-linejoin="round"/>
+          </svg>
+          <h3>SayCtrl</h3>
+          <p class="tag2">Hold fn, talk, release — it's written.</p>
+          <div class="facts">
+            <div class="fact"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg><span>Your audio goes to your own key. Nothing else leaves this Mac.</span></div>
+            <div class="fact"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><span>No account, no subscription, no telemetry.</span></div>
+            <div class="fact"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v13M8 12l4 4 4-4M5 20h14"/></svg><span>Open source, MIT. Yours to read and change.</span></div>
+          </div>
+          <div class="foot">
+            <span>Version 2.1</span>
+            <a href="#" onclick="return false">github.com/soorower/SayCtrl</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="toast" id="toast"></div>
+
+      <!-- ── Settings ─────────────────────────────────────── -->
+      <!-- A sheet over the whole window, not a pane in it: the sections sit
+           in a rail on the left, built exactly like the sidebar's own rows,
+           and the app dims behind it. -->
+      <div class="setscrim" id="setScrim">
+        <div class="setmodal" role="dialog" aria-label="Settings">
+          <aside class="set-rail">
+            <h3>Settings</h3>
+            <div class="set-nav-list">
+            <div class="set-group">
+              <button class="nav-row on" data-set="general">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 3.4v2.2M12 18.4v2.2M20.6 12h-2.2M5.6 12H3.4M18.1 5.9l-1.6 1.6M7.5 16.5l-1.6 1.6M18.1 18.1l-1.6-1.6M7.5 7.5 5.9 5.9"/></svg>
+                <span>General</span>
+              </button>
+              <button class="nav-row" data-set="model">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5v3M8 7.5v9M12 5v14M16 8.5v7M20 11v2"/></svg>
+                <span>Model</span>
+              </button>
+              <button class="nav-row" data-set="system">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="12" rx="2"/><path d="M9 20.5h6M12 16.5v4"/></svg>
+                <span>System</span>
+              </button>
+            </div>
+            <div class="set-group">
+              <button class="nav-row" data-set="account">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="9.8" r="2.7"/><path d="M6.7 19.2a6 6 0 0 1 10.6 0"/></svg>
+                <span>Account</span>
+              </button>
+              <button class="nav-row" data-set="billing">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5.5" width="18" height="13" rx="2.2"/><path d="M3 10h18M6.5 14.5h4"/></svg>
+                <span>Billing</span>
+              </button>
+            </div>
+            <div class="set-group">
+              <button class="nav-row" data-set="permissions">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.2 5 6.1v5.4c0 4.2 2.9 8 7 9.3 4.1-1.3 7-5.1 7-9.3V6.1z"/><path d="M12 10.8v3"/></svg>
+                <span>Permissions</span>
+              </button>
+              <button class="nav-row" data-set="privacy">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11.5V5.4a1.5 1.5 0 0 1 3 0v5.1m0-.6V4.4a1.5 1.5 0 0 1 3 0v6.1m0-.7V6.6a1.5 1.5 0 0 1 3 0V14a7 7 0 0 1-7 7 6.5 6.5 0 0 1-6.5-6.5v-3.2a1.5 1.5 0 0 1 3 0v1.6"/></svg>
+                <span>Privacy</span>
+              </button>
+            </div>
+            </div>
+          </aside>
+          <div class="set-main">
+            <button class="set-close" id="setClose" aria-label="Close settings">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+            </button>
+
+          <!-- Model ................................................. -->
+          <div class="set-body" id="s-model" style="display:none">
+            <div class="tabs sub" id="provTabs"></div>
+
+            <div class="card">
+              <div style="display:flex;gap:calc(var(--s) * 8px);align-items:center">
+                <input class="field mono" id="keyField" type="password" aria-label="API key">
+                <button class="btn" id="revealBtn">Show</button>
+                <button class="btn primary" data-toast="Key saved">Save</button>
+              </div>
+              <p class="note" id="keyNote" style="margin-top:calc(var(--s) * 10px)"></p>
+            </div>
+
+            <div class="card">
+              <div class="toggle-row" id="liveRow">
+                <div class="tt"><b>Live streaming</b><span id="liveNote">Words land as you talk.</span></div>
+                <div class="switch" id="liveSwitch"></div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-head">
+                <h3>Model</h3>
+                <span class="note" id="modelCount" style="margin-left:auto"></span>
+              </div>
+              <div class="models" id="modelList"></div>
+            </div>
+          </div>
+
+          <!-- General ............................................... -->
+          <div class="set-body on" id="s-general">
+            <div class="card">
+              <div class="card-head"><h3>Shortcuts</h3></div>
+              <div class="frow">
+                <div class="fl"><b>Hold to dictate</b><span>Held down, it listens. Let go and it types.</span></div>
+                <div class="fc"><span class="keys"><kbd class="keycap">fn</kbd></span><button class="btn" data-toast="Press a new key">Change</button></div>
+              </div>
+              <div class="rule"></div>
+              <div class="frow">
+                <div class="fl"><b>Hands-free</b><span>Starts listening. Press again to finish.</span></div>
+                <div class="fc"><span class="keys"><kbd class="keycap">⌥</kbd><kbd class="keycap">Space</kbd></span><button class="btn" data-toast="Press a new key">Change</button></div>
+              </div>
+              <div class="rule"></div>
+              <div class="frow">
+                <div class="fl"><b>Cancel</b><span>Throws away what you just said.</span></div>
+                <div class="fc"><span class="keys"><kbd class="keycap">esc</kbd></span><button class="btn" data-toast="Press a new key">Change</button></div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-head"><h3>Input</h3></div>
+              <div class="frow">
+                <div class="fl"><b>Microphone</b></div>
+                <div class="fc"><span class="sel"><select class="field" id="micSel">
+                  <option>Same as system input</option>
+                  <option selected>MacBook Pro Microphone</option>
+                  <option>AirPods Pro</option>
+                  <option>Studio Display Microphone</option>
+                </select></span></div>
+              </div>
+              <div class="rule"></div>
+              <div class="frow">
+                <div class="fl"><b>Dictation language</b><span>Auto-detect costs about 200 ms.</span></div>
+                <div class="fc"><span class="sel"><select class="field" id="langSel">
+                  <option selected>English (US)</option>
+                  <option>English (UK)</option>
+                  <option>বাংলা — Bengali</option>
+                  <option>हिन्दी — Hindi</option>
+                  <option>Español</option>
+                  <option>Auto-detect</option>
+                </select></span></div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="toggle-row">
+                <div class="tt"><b>Appearance</b></div>
+                <div class="pills" id="apPills">
+                  <button class="pill on" data-ap="system">System</button>
+                  <button class="pill" data-ap="light">Light</button>
+                  <button class="pill" data-ap="dark">Dark</button>
+                </div>
+              </div>
+              <div class="rule"></div>
+              <div class="toggle-row">
+                <div class="tt"><b>Text size</b></div>
+                <div class="pills" id="szPills">
+                  <button class="pill" data-sz="0.90">Smallest</button>
+                  <button class="pill on" data-sz="1">Moderate</button>
+                  <button class="pill" data-sz="1.12">Larger</button>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- System ................................................ -->
+          <div class="set-body" id="s-system" style="display:none">
+            <div class="card" id="behaviour"></div>
+            <div class="card" id="notifs"></div>
+          </div>
+
+          <!-- Account ............................................... -->
+          <div class="set-body" id="s-account" style="display:none">
+            <div class="card">
+              <div class="frow">
+                <div class="fc"><span class="avatar" style="width:calc(var(--s) * 56px);height:calc(var(--s) * 56px);font-size:calc(var(--s) * 19px)">SH</span></div>
+                <div class="fl"><b>Profile picture</b><span>PNG or JPEG, at least 128 px.</span></div>
+                <div class="fc">
+                  <button class="btn" data-toast="Choose a picture">Change</button>
+                  <button class="btn quiet" data-toast="Picture removed">Remove</button>
+                </div>
+              </div>
+              <div class="rule"></div>
+              <div class="fgrid">
+                <div><label class="flab" for="fName">First name</label><input class="field" id="fName" value="Sorower"></div>
+                <div><label class="flab" for="lName">Last name</label><input class="field" id="lName" value="Hossan"></div>
+              </div>
+              <div style="margin-top:calc(var(--s) * 12px)">
+                <label class="flab" for="emailF">Email</label>
+                <input class="field" id="emailF" type="email" value="sorower@example.com">
+              </div>
+              <div style="display:flex;gap:calc(var(--s) * 8px);margin-top:calc(var(--s) * 14px)">
+                <button class="btn primary" data-toast="Account updated">Save changes</button>
+                <button class="btn quiet" id="signOutBtn">Sign out</button>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="frow">
+                <div class="fl"><b class="danger">Delete account</b><span>Removes your account and billing history. Dictionary, phrases and history stay on this Mac.</span></div>
+                <div class="fc"><button class="btn danger" data-toast="Type DELETE to confirm">Delete</button></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Billing ............................................... -->
+          <div class="set-body" id="s-billing" style="display:none">
+            <div class="card">
+              <div class="card-head">
+                <h3>Your balance</h3>
+                <span class="badge" id="planChip" style="margin-left:auto">Free</span>
+              </div>
+              <div class="mline"><b id="balL">18 of 30 free minutes used</b><span id="balR">resets 1 Sep</span></div>
+              <div class="meter" id="balMeter"><i style="width:60%"></i></div>
+              <p class="note" style="margin-top:calc(var(--s) * 12px)">Credits never expire and are only spent while you're speaking.</p>
+            </div>
+
+            <div class="plans">
+              <div class="plan on">
+                <div class="ph"><b>Free</b><span class="badge moss">Current</span></div>
+                <div class="price">$0<small> / month</small></div>
+                <ul>
+                  <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>30 minutes every month</li>
+                  <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Every feature, no limits</li>
+                  <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Or bring your own API key, free forever</li>
+                </ul>
+                <button class="btn" disabled style="opacity:.5;cursor:default">You're on this plan</button>
+              </div>
+              <div class="plan">
+                <div class="ph"><b>Pro credits</b></div>
+                <div class="price">$0.02<small> / minute</small></div>
+                <ul>
+                  <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>$10 buys 500 minutes</li>
+                  <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>One-time top-up, not a subscription</li>
+                  <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Credits never expire</li>
+                </ul>
+                <button class="btn primary" data-toast="Opening secure checkout">Add $10 credit</button>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="toggle-row" id="autoTop">
+                <div class="tt"><b>Auto top-up</b><span>Buy another $10 when the balance runs low.</span></div>
+                <div class="switch on"></div>
+              </div>
+              <div class="rule"></div>
+              <div class="frow">
+                <div class="fl"><b>Top up when below</b></div>
+                <div class="fc"><span class="sel"><select class="field">
+                  <option>25 minutes</option><option selected>50 minutes</option><option>100 minutes</option>
+                </select></span></div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-head"><h3>Payment method</h3></div>
+              <div class="paycard">
+                <span class="brandmark"><i></i><i></i></span>
+                <div class="fl"><b>Mastercard ending 4242</b><span>Expires 09 / 29</span></div>
+                <button class="btn" data-toast="Opening secure checkout">Update</button>
+                <button class="btn quiet" data-toast="Card removed">Remove</button>
+              </div>
+              <p class="note" style="margin-top:calc(var(--s) * 12px)">Card details are entered on our payment provider's page. SayCtrl never sees or stores your card number.</p>
+            </div>
+
+            <div class="card">
+              <div class="card-head"><h3>Recent charges</h3></div>
+              <table class="ledger">
+                <tr><td>2 Aug 2026</td><td>Credit top-up — 500 minutes</td><td>$10.00</td></tr>
+                <tr><td>4 Jul 2026</td><td>Credit top-up — 500 minutes</td><td>$10.00</td></tr>
+                <tr><td>1 Jun 2026</td><td>Free plan</td><td>$0.00</td></tr>
+              </table>
+            </div>
+          </div>
+
+          <!-- Privacy ............................................... -->
+          <div class="set-body" id="s-privacy" style="display:none">
+            <div class="card">
+              <div class="card-head"><h3>What leaves this Mac</h3></div>
+              <p class="note">Your audio goes to the transcription provider you picked, using your key. Dictionary, phrases, tones and history are files on this Mac and are never uploaded.</p>
+            </div>
+            <div class="card" id="privToggles"></div>
+            <div class="card">
+              <div class="frow">
+                <div class="fl"><b>Dictation history</b><span>200 most recent, stored on this Mac.</span></div>
+                <div class="fc">
+                  <button class="btn" data-toast="Exported to Downloads">Export</button>
+                  <button class="btn danger" data-toast="History cleared">Clear</button>
+                </div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="frow">
+                <div class="fl"><b>Privacy Policy</b></div>
+                <div class="fc"><button class="btn quiet" data-toast="Opening in your browser">Open ↗</button></div>
+              </div>
+              <div class="rule"></div>
+              <div class="frow">
+                <div class="fl"><b>Terms of Service</b></div>
+                <div class="fc"><button class="btn quiet" data-toast="Opening in your browser">Open ↗</button></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Permissions ........................................... -->
+          <div class="set-body" id="s-permissions" style="display:none">
+            <div class="card" id="permList"></div>
+            <p class="note" style="padding:0 calc(var(--s) * 4px)">macOS asks once. Without them the fn key or the paste goes dead.</p>
+          </div>
+          </div>
+        </div>
+      </div>
+  </div>
+
+   </div>
+  </div>
+
+  <div class="notes">
+    <div class="note-card"><b>Commands</b><p>Every automation shown, not described — say it, see what lands.</p></div>
+    <div class="note-card"><b>Insights, simplified</b><p>Always the last 30 days. One chart, bars for minutes and a line for words. <s>Range tabs, hour chart, heatmap.</s></p></div>
+    <div class="note-card"><b>When you speak</b><p>A sentence instead of a grid: the day and the hour you talk most.</p></div>
+    <div class="note-card"><b>Settings, a sheet</b><p>Seven sections in a rail — General · Model · System, then Account · Billing, then Permissions · Privacy — over the app, dimmed behind.</p></div>
+    <div class="note-card"><b>Account in the corner</b><p>Plan, minutes left, billing and sign out — from any pane.</p></div>
+    <div class="note-card"><b>Credits, not a subscription</b><p>Free is 30 min a month. Pro is $0.02 a minute, bought $10 at a time, with auto top-up.</p></div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const $  = (s, r=document) => r.querySelector(s);
+  const $$ = (s, r=document) => [...r.querySelectorAll(s)];
+  const el = (t, c, h) => { const n = document.createElement(t); if(c) n.className = c; if(h!=null) n.innerHTML = h; return n; };
+
+  /* stable pseudo-random so the waveforms never reshuffle on redraw */
+  const rng = s => () => (s = s * 1664525 + 1013904223 | 0, ((s >>> 8) & 0xffff) / 0xffff);
+
+  const toast = msg => {
+    const t = $('#toast'); t.textContent = msg; t.classList.add('on');
+    clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('on'), 1500);
+  };
+  const svg = d => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+  const ICON = {
+    again: '<path d="M4 9h11a5 5 0 0 1 0 10h-3"/><path d="m8 5-4 4 4 4"/>',
+    copy:  '<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M15 5.5A1.5 1.5 0 0 0 13.5 4h-8A1.5 1.5 0 0 0 4 5.5v8A1.5 1.5 0 0 0 5.5 15"/>',
+    trash: '<path d="M4 7h16M9 7V5h6v2M6.5 7l.8 12.1A1.9 1.9 0 0 0 9.2 21h5.6a1.9 1.9 0 0 0 1.9-1.9L17.5 7"/>',
+    edit:  '<path d="M4 20h4L19.5 8.5a2.1 2.1 0 0 0-3-3L5 17v3z"/>',
+  };
+
+  /* ── the window is 1360 × 880 and scales to whatever panel it lands in ── */
+  const DESIGN_W = 1360, DESIGN_H = 880, MIN_FIT = .34;
+  const fit = () => {
+    const wrap = $('#winWrap'), rail = $('#winRail'), win = $('#win');
+    const avail = wrap.clientWidth || DESIGN_W;
+    let k = Math.min(1, avail / DESIGN_W);
+    const room = window.innerHeight - 190;
+    if (DESIGN_H * k > room) k = Math.min(k, room / DESIGN_H);
+    k = Math.max(MIN_FIT, k);
+    win.style.transform = `scale(${k})`;
+    rail.style.width = (DESIGN_W * k) + 'px';
+    rail.style.height = (DESIGN_H * k) + 'px';
+    rail.style.margin = '0 auto';
+    $('#fitNote').textContent = k < .995 ? Math.round(k * 100) + '%' : '1:1';
+  };
+  addEventListener('resize', fit);
+  fit();
+
+  /* ── sidebar ─────────────────────────────────────────────── */
+  // Scoped to the sidebar: the settings rail wears the same .nav-row.
+  $$('.side .nav-row').forEach(b => b.onclick = () => {
+    if (b.dataset.go === 'settings') return openSettings();
+    $$('.side .nav-row').forEach(x => x.classList.toggle('on', x === b));
+    $$('.pane').forEach(p => p.classList.toggle('on', p.id === 'p-' + b.dataset.go));
+    $('.pane.on').scrollTop = 0;
+    if (b.dataset.go === 'commands') runDemo(); else stopDemo();
+  });
+  $('#brandBtn').onclick = () => $('#scrim').classList.add('on');
+  $('#scrim').onclick = e => { if (e.target.id === 'scrim') $('#scrim').classList.remove('on'); };
+  document.addEventListener('keydown', e => e.key === 'Escape' && $('#scrim').classList.remove('on'));
+
+  /* ── overview: last 7 days ───────────────────────────────── */
+  const WEEK = [['Fri',420],['Sat',180],['Sun',95],['Mon',760],['Tue',1120],['Wed',890],['Today',715]];
+  const top = Math.max(...WEEK.map(d => d[1]));
+  $('#week').append(...WEEK.map(([lab, n], i) => {
+    const d = el('button', 'day' + (lab === 'Today' ? ' today' : ''));
+    d.title = n.toLocaleString() + ' words';
+    const col = el('div', 'col'); const r = rng(i * 977 + 13);
+    const h = Math.max(.11, n / top);
+    for (let k = 0; k < 5; k++) {
+      const b = el('i');
+      b.style.height = (h * (0.52 + r() * 0.48) * 100) + '%';
+      col.append(b);
+    }
+    d.append(col, el('span', 'val', n.toLocaleString()), el('span', 'lab', lab));
+    return d;
+  }));
+
+  /* ── overview: recent (this is what replaced the Activity pane) ── */
+  const RECENT = [
+    ['8:25 pm', 'Upload the files folder from the desktop.', 3.2],
+    ['8:04 pm', "Hey there, can you hear me? My name is Sorower Hossan and let's see how fast you can get it from here.", 8.4],
+    ['7:52 pm', 'Pushed the Cerebras retry fix — polish falls back to the raw transcript when the key is rate limited.', 9.1],
+    ['7:49 pm', 'Open Claude.', 1.1],
+    ['6:58 pm', 'Can we move standup to 10:30? I have a call with the RealtyAPI team at 9.', 6.7],
+    ['6:31 pm', 'my email address', 1.4],
+  ];
+  const dur = s => Math.floor(s / 60) + ':' + String(Math.round(s % 60)).padStart(2, '0');
+  $('#recent').append(...RECENT.map(([when, text, secs], i) => {
+    const row = el('div', 'rec');
+    const wave = el('div', 'wave'); const r = rng(i * 613 + 7);
+    for (let k = 0; k < 24; k++) {
+      const b = el('i');
+      const env = Math.sin((k / 23) * Math.PI) ** 0.6;
+      b.style.height = Math.max(12, env * (34 + r() * 66)) + '%';
+      wave.append(b);
+    }
+    const acts = el('div', 'acts');
+    const again = el('button', 'icon-btn', svg(ICON.again)); again.title = 'Paste again';
+    again.onclick = () => toast('Pasted at your cursor');
+    const copy = el('button', 'icon-btn', svg(ICON.copy)); copy.title = 'Copy';
+    copy.onclick = () => toast('Copied');
+    acts.append(again, copy);
+    row.append(el('span', 'when', when), el('span', 'txt', text), wave,
+               el('span', 'meta', `${text.length} chars · ${dur(secs)}`), acts);
+    row.title = text;
+    return row;
+  }));
+
+  /* ── dictionary + phrases ────────────────────────────────── */
+  const DICT = [
+    ['art browser', 'Arc browser', 34, true],
+    ['sorower hussain', 'Sorower Hossan', 61, false],
+    ['realty API', 'RealtyAPI', 28, true],
+    ['n eight n', 'n8n', 19, true],
+    ['cerebrus', 'Cerebras', 12, true],
+    ['req key', 'ReqKey', 9, false],
+    ['say control', 'SayCtrl', 7, false],
+  ];
+  const PHRASES = [
+    ['my email address', 'sorower@example.com', 46],
+    ['my calendar link', 'cal.com/example/30min', 23],
+    ['sign off', 'Thanks,\nSorower', 18],
+    ['organise this', 'Organise these notes into a clear, polished version without changing my words.', 11],
+  ];
+
+  const listRow = (from, to, hits, auto, kind) => {
+    const row = el('div', 'row');
+    const acts = el('div', 'acts');
+    const edit = el('button', 'icon-btn', svg(ICON.edit)); edit.title = 'Edit';
+    edit.onclick = () => toast('Editing inline');
+    const del = el('button', 'icon-btn', svg(ICON.trash)); del.title = 'Delete';
+    del.onclick = () => { row.remove(); toast('Deleted'); };
+    acts.append(edit, del);
+    row.append(el('span', 'from', from), el('span', 'arrow', '→'),
+               el('span', 'to', to.replace(/\n/g, ' ⏎ ')));
+    if (auto) { const c = el('span', 'chip-auto', '✦'); c.title = 'Learned from a fix you made'; row.append(c); }
+    row.append(el('span', 'hits', hits + '×'), acts);
+    return row;
+  };
+  $('#dictList').append(...DICT.map(d => listRow(d[0], d[1], d[2], d[3], 'dict')));
+  $('#phList').append(...PHRASES.map(p => listRow(p[0], p[1], p[2], false, 'ph')));
+
+  /* add-new: the form only exists once you ask for it */
+  $$('[data-add]').forEach(b => b.onclick = () => {
+    const box = $('#add-' + b.dataset.add);
+    box.classList.add('open');
+    box.querySelector('input').focus();
+  });
+  $$('[data-cancel]').forEach(b => b.onclick = () => {
+    const box = $('#add-' + b.dataset.cancel);
+    box.classList.remove('open');
+    $$('input', box).forEach(i => i.value = '');
+  });
+  $$('[data-save]').forEach(b => b.onclick = () => {
+    const kind = b.dataset.save, box = $('#add-' + kind);
+    const [a, c] = $$('input', box);
+    if (!a.value.trim() || !c.value.trim()) return toast('Fill both sides');
+    const target = kind === 'dict' ? $('#dictList') : $('#phList');
+    target.prepend(listRow(a.value, c.value, 0, false, kind));
+    a.value = c.value = ''; box.classList.remove('open');
+    toast('Added');
+  });
+  $$('[data-searchtoggle]').forEach(b => b.onclick = () => {
+    const box = b.closest('.search');
+    box.classList.toggle('open');
+    if (box.classList.contains('open')) box.querySelector('input').focus();
+  });
+
+  /* ── tones ───────────────────────────────────────────────── */
+  const TONES = {
+    Personal: { where: 'iMessage, WhatsApp, Telegram, Signal, Discord, your notes.', pick: 1, opts: [
+      ['Very casual', 'no caps, no full stop', "hey are you free for lunch tomorrow? let's do 12 if that works"],
+      ['Casual', 'caps, light punctuation', "Hey are you free for lunch tomorrow? Let's do 12 if that works"],
+      ['Formal', 'caps and punctuation', "Hey, are you free for lunch tomorrow? Let's do 12 if that works for you."]]},
+    Work: { where: 'Slack, Teams, Linear, Notion, documents.', pick: 0, opts: [
+      ['Brief', 'short lines, plain words', 'Pushed the fix. Can you review before standup?'],
+      ['Neutral', 'full sentences', 'I pushed the fix — could you review it before standup?'],
+      ['Formal', 'no contractions', 'I have pushed the fix. Could you review it before the standup?']]},
+    Email: { where: 'Mail, Gmail, Outlook, Superhuman.', pick: 0, opts: [
+      ['Warm', 'greeting on its own line', "Hi Priya,\n\nThanks for the quick turnaround — I'll send the revised draft tonight."],
+      ['Direct', 'no greeting', "Thanks for the quick turnaround. I'll send the revised draft tonight."],
+      ['Formal', 'no contractions', 'Dear Priya,\n\nThank you for the quick turnaround. I will send the revised draft tonight.']]},
+    Agents: { where: 'Claude, ChatGPT, Cursor, terminals. Code editors are left alone.', pick: 0, opts: [
+      ['Terse', 'no filler, plain ASCII', 'add a retry to the upload, 3 attempts, exponential backoff'],
+      ['Plain', 'normal sentences', 'Add a retry to the upload — three attempts with exponential backoff.'],
+      ['Detailed', 'keeps every qualifier', 'Add a retry to the upload path: three attempts, exponential backoff, log each failure.']]},
+  };
+  let toneKey = 'Personal';
+  const drawTones = () => {
+    const t = TONES[toneKey];
+    $('#toneWhere').textContent = t.where;
+    const grid = $('#toneGrid'); grid.innerHTML = '';
+    t.opts.forEach(([name, rule, say], i) => {
+      const c = el('button', 'tone' + (i === t.pick ? ' on' : ''));
+      c.append(el('b', null, name), el('div', 'rule2', rule), el('div', 'say', say));
+      c.onclick = () => { t.pick = i; drawTones(); };
+      grid.append(c);
+    });
+  };
+  $('#toneTabs').append(...Object.keys(TONES).map(k => {
+    const b = el('button', 'tab' + (k === toneKey ? ' on' : ''), k);
+    b.onclick = () => { toneKey = k; $$('#toneTabs .tab').forEach(x => x.classList.toggle('on', x === b)); drawTones(); };
+    return b;
+  }));
+  drawTones();
+  $$('#cleanupPills .pill').forEach(p => p.onclick = () => {
+    $$('#cleanupPills .pill').forEach(x => x.classList.toggle('on', x === p));
+  });
+
+  /* ── settings: the sheet and its rail ────────────────────── */
+  $$('.set-rail .nav-row').forEach(b => b.onclick = () => {
+    $$('.set-rail .nav-row').forEach(x => x.classList.toggle('on', x === b));
+    $$('.set-body').forEach(s => s.style.display = (s.id === 's-' + b.dataset.set) ? '' : 'none');
+    $('.set-main').scrollTop = 0;
+  });
+  function openSettings() {
+    $('.win').classList.add('set-open');
+    // The sidebar row stays lit while its sheet is up.
+    $$('.side .nav-row').forEach(x => x.classList.toggle('on', x.dataset.go === 'settings'));
+  }
+  function closeSettings() {
+    $('.win').classList.remove('set-open');
+    const showing = $('.pane.on').id.replace('p-', '');
+    $$('.side .nav-row').forEach(x => x.classList.toggle('on', x.dataset.go === showing));
+  }
+  $('#setClose').onclick = closeSettings;
+  $('#setScrim').onclick = e => { if (e.target.id === 'setScrim') closeSettings(); };
+  document.addEventListener('keydown', e => e.key === 'Escape' && closeSettings());
+
+  /* ── settings: model ─────────────────────────────────────── */
+  const PROVIDERS = {
+    OpenRouter: { key: 'sk-or-v1-…', note: 'One key, many vendors. No live streaming — OpenRouter has no realtime endpoint.',
+      live: false, pick: 2, models: [
+        ['microsoft/mai-transcribe-1.5', 'Best on names and jargon', '$0.29/hr', false],
+        ['openai/gpt-4o-transcribe', '', '$0.36/hr', false],
+        ['openai/gpt-4o-mini-transcribe', 'Default', '$0.18/hr', false],
+        ['openai/whisper-1', '', '$0.36/hr', false],
+        ['mistralai/voxtral-mini-transcribe', '', '$0.12/hr', false],
+        ['qwen/qwen3-asr-flash-2026-02-10', 'Cheapest', '$0.09/hr', false]]},
+    OpenAI: { key: 'sk-…', note: 'Straight to OpenAI. Reaches models OpenRouter has not picked up yet.',
+      live: true, pick: 0, models: [
+        ['gpt-live-transcribe', 'Answers in ~150 ms', '$0.36/hr', 'live'],
+        ['gpt-transcribe', '', '$0.36/hr', 'live'],
+        ['gpt-realtime-whisper', '', '$0.30/hr', 'live'],
+        ['gpt-4o-transcribe', 'Streams and uploads', '$0.36/hr', 'both'],
+        ['gpt-4o-mini-transcribe', 'Streams and uploads', '$0.18/hr', 'both'],
+        ['whisper-1', '', '$0.36/hr', 'batch']]},
+    ElevenLabs: { key: 'sk_…', note: 'Scribe — 90+ languages, very fast live streaming.',
+      live: true, pick: 0, models: [
+        ['scribe_v2_realtime', 'Answers in ~150 ms', '$0.39/hr', 'live'],
+        ['scribe_v2_realtime_turbo', '', '$0.39/hr', 'live'],
+        ['scribe_v2', '', '$0.22/hr', 'batch'],
+        ['scribe_v1', '', '$0.22/hr', 'batch']]},
+    AssemblyAI: { key: '32-character key', note: 'Universal 3.5 Pro, tuned for noisy audio. Streaming only.',
+      live: true, liveOnly: true, pick: 0, models: [
+        ['universal-3-5-pro', 'Best on noisy rooms', '$0.15/hr', 'live']]},
+    Local: { key: '', note: 'Runs on this Mac. Nothing leaves your machine.',
+      live: false, pick: 0, models: [
+        ['parakeet-tdt-0.6b-v2', 'Installed', 'free', false],
+        ['whisper-base', 'Installed', 'free', false],
+        ['whisper-large-v3', 'Not downloaded — 1.5 GB', 'free', false]]},
+  };
+  let provKey = 'OpenRouter';
+
+  const allowed = (m, p) => {
+    if (!p.live) return m[3] !== 'live';               // upload mode: live-only models are out
+    return m[3] === 'live' || m[3] === 'both';          // streaming: batch-only models are out
+  };
+
+  const drawModels = () => {
+    const p = PROVIDERS[provKey];
+    const list = $('#modelList'); list.innerHTML = '';
+    const usable = p.models.filter(m => allowed(m, p)).length;
+    $('#modelCount').textContent = usable === p.models.length ? '' : `${p.models.length - usable} unavailable in this mode`;
+    p.models.forEach((m, i) => {
+      const ok = allowed(m, p);
+      const row = el('button', 'model' + (i === p.pick && ok ? ' on' : '') + (ok ? '' : ' off'));
+      if (!ok) { row.disabled = true; row.title = p.live ? 'No realtime socket' : 'Streaming only'; }
+      const mid = el('div', 'mid');
+      mid.append(el('b', null, m[0]));
+      if (m[1]) mid.append(el('span', null, m[1]));
+      row.append(el('div', 'radio'), mid);
+      if (!ok) row.append(el('span', 'badge grey', p.live ? 'no live' : 'live only'));
+      else if (m[3] === 'live') row.append(el('span', 'badge', 'live'));
+      row.append(el('span', 'tag', m[2]));
+      row.onclick = () => { if (!ok) return; p.pick = i; drawModels(); };
+      list.append(row);
+    });
+  };
+
+  const drawProvider = () => {
+    const p = PROVIDERS[provKey];
+    $('#keyNote').textContent = p.note;
+    $('#keyField').placeholder = p.key || 'No key needed';
+    $('#keyField').disabled = !p.key;
+    $('#keyField').value = p.key ? $('#keyField').value : '';
+    $('#liveSwitch').classList.toggle('on', p.live);
+    $('#liveRow').style.opacity = p.liveOnly || provKey === 'OpenRouter' || provKey === 'Local' ? .45 : 1;
+    $('#liveNote').textContent =
+      p.liveOnly ? 'This provider only streams.'
+      : !('live' in p) || (provKey === 'OpenRouter' || provKey === 'Local') ? 'Not available here.'
+      : 'Words land as you talk.';
+    drawModels();
+  };
+  $('#provTabs').append(...Object.keys(PROVIDERS).map(k => {
+    const b = el('button', 'tab' + (k === provKey ? ' on' : ''), k);
+    b.onclick = () => { provKey = k; $$('#provTabs .tab').forEach(x => x.classList.toggle('on', x === b)); drawProvider(); };
+    return b;
+  }));
+  $('#liveSwitch').onclick = () => {
+    const p = PROVIDERS[provKey];
+    if (p.liveOnly || provKey === 'OpenRouter' || provKey === 'Local') return toast('Not available on ' + provKey);
+    p.live = !p.live;
+    if (!allowed(p.models[p.pick], p)) p.pick = p.models.findIndex(m => allowed(m, p));
+    drawProvider();
+  };
+  $('#revealBtn').onclick = e => {
+    const f = $('#keyField');
+    f.type = f.type === 'password' ? 'text' : 'password';
+    e.target.textContent = f.type === 'password' ? 'Show' : 'Hide';
+  };
+  $$('[data-toast]').forEach(b => b.onclick = () => toast(b.dataset.toast));
+  drawProvider();
+
+  /* ── settings: general ───────────────────────────────────── */
+  const BEHAVIOUR = [
+    ['Read the screen for names', 'Names in the front window get spelled right.', true],
+    ['Sound cues', 'A click when recording starts and stops.', true],
+    ['Launch at login', 'Takes effect at your next login.', false],
+  ];
+  BEHAVIOUR.forEach(([title, sub, on], i) => {
+    if (i) $('#behaviour').append(el('div', 'rule'));
+    const row = el('button', 'toggle-row');
+    const tt = el('div', 'tt'); tt.append(el('b', null, title), el('span', null, sub));
+    const sw = el('div', 'switch' + (on ? ' on' : ''));
+    row.append(tt, sw);
+    row.onclick = () => sw.classList.toggle('on');
+    $('#behaviour').append(row);
+  });
+
+  $$('#szPills .pill').forEach(p => p.onclick = () => {
+    $$('#szPills .pill').forEach(x => x.classList.toggle('on', x === p));
+    document.documentElement.style.setProperty('--s', p.dataset.sz);
+  });
+  $$('#apPills .pill').forEach(p => p.onclick = () => {
+    $$('#apPills .pill').forEach(x => x.classList.toggle('on', x === p));
+    if (p.dataset.ap === 'system') delete document.documentElement.dataset.theme;
+    else document.documentElement.dataset.theme = p.dataset.ap;
+  });
+
+
+
+  /* ── Commands ────────────────────────────────────────────── */
+  const bars = (n, cls) => `<span class="wavebars ${cls || ''}">` +
+    [...Array(n)].map((_, i) => `<i style="animation-delay:${(i * 90) % 700}ms"></i>`).join('') + '</span>';
+
+  const CMD_MID = [
+    { say: 'take a screenshot', cap: 'A picture of your screen, pasted mid-sentence.',
+      res: '<div class="shot"></div>' },
+    { say: 'attach the PDF from downloads', cap: 'Newest match wins. Several? A picker floats.',
+      res: '<span class="filechip"><span class="ft">PDF</span>payout-august.pdf</span>' },
+    { say: 'copy the file path', cap: "Whatever Finder has selected, as a full path.",
+      res: '<span class="mono-res">~/Desktop/sayctrl/dist/SayCtrl-2.1.dmg</span>' },
+    { say: 'copy the link', cap: 'The address of the tab in front of you.',
+      res: '<span class="urlpill">🔗 openrouter.ai/settings/keys</span>' },
+    { say: 'ask Claude how to fix this', cap: 'Opens the site with your question already typed.',
+      res: '<span class="bubble">How do I fix this?</span>' },
+  ];
+  const CMD_SOLO = [
+    { say: 'open Arc browser', cap: 'Apps by name, sites by name. Nothing else in the sentence.',
+      res: '<span class="appicon" style="background:linear-gradient(150deg,#5B7CFA,#C44BE0)">A</span><span class="cap" style="margin:0">Arc launches</span>' },
+    { say: 'scratch that', cap: 'Takes back the last paste. Or just its last sentence.',
+      res: '<span class="strike">…and I think we should ship it Friday.</span>' },
+    { say: 'send it', cap: 'Presses Return in whatever app you are in.',
+      res: '<span class="cap" style="margin:0">Message sent</span><span class="enterkey">⏎</span>' },
+    { say: 'go local', cap: 'Switches to the on-device model. “Go back to paid” returns.',
+      res: '<span class="swap"><span class="a">openai/gpt-4o-transcribe</span><span class="b mono">parakeet-tdt-0.6b-v2</span></span>' },
+  ];
+  const CMD_AUTO = [
+    { say: 'um, so I — I think it works', label: 'Polish', cap: 'Ums, stutters and false starts never make it to the page.',
+      res: '<span class="swap"><span class="a strike">um, so I — I think it works</span><span class="b">I think it works.</span></span>' },
+    { say: 'sorower at example dot com', label: 'Spoken formats', cap: 'Emails, URLs and numbers come out written, not spelled.',
+      res: '<span class="swap"><span class="a">sorower at example dot com</span><span class="b mono">sorower@example.com</span></span>' },
+    { say: 'my email address', label: 'Phrases', cap: 'A few words in, the whole thing out — exactly as you saved it.',
+      res: '<span class="swap"><span class="a">my email address</span><span class="b mono">sorower@example.com</span></span>' },
+    { say: 'art browser', label: 'Dictionary', cap: 'Fix a word once and SayCtrl keeps it right after that.',
+      res: '<span class="swap"><span class="a">art browser</span><span class="b">Arc browser</span></span>' },
+    { say: 'can you review this today', label: 'Tones', cap: 'Same words. The app you are in picks the register.',
+      res: '<span class="swap"><span class="a">Slack — can you review this today</span><span class="b">Mail — Could you review this today?</span></span>' },
+    { say: 'the Reqkey dashboard', label: 'Screen reading', cap: 'Names in the window in front of you get spelled right.',
+      res: '<span class="swap"><span class="a">the rec key dashboard</span><span class="b">the ReqKey dashboard</span></span>' },
+  ];
+
+  const cmdCard = c => {
+    const card = el('div', 'cmd');
+    if (c.label) card.append(el('span', 'eyebrow', c.label));
+    card.insertAdjacentHTML('beforeend',
+      `<span class="voice">${bars(5)}<q>${c.say}</q></span>
+       <span class="arrow-down">↓</span>
+       <div class="res">${c.res}</div>`);
+    card.append(el('p', 'cap', c.cap));
+    return card;
+  };
+  CMD_MID.forEach(c => $('#cmdMid').append(cmdCard(c)));
+  CMD_SOLO.forEach(c => $('#cmdSolo').append(cmdCard(c)));
+  CMD_AUTO.forEach(c => $('#cmdAuto').append(cmdCard(c)));
+
+  /* the hero: one dictation, typed out, with the command landing where it was said */
+  const SCRIPT = [
+    { text: "Here's what I'm seeing on the dashboard — ", state: 'Listening' },
+    { cmd: 'take a screenshot', state: 'Command heard' },
+    { text: " — and the totals look wrong after 4pm.", state: 'Listening' },
+  ];
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let demoTimer = null;
+
+  const runDemo = () => {
+    const line = $('#demoLine'), drop = $('#demoDrop'), state = $('#demoState');
+    const clear = () => { line.innerHTML = ''; drop.innerHTML = ''; drop.classList.remove('in'); };
+    if (reduced) {
+      clear();
+      line.innerHTML = `${SCRIPT[0].text}<span class="said">${bars(5)}</span>${SCRIPT[2].text}`;
+      drop.innerHTML = '<div class="shot big" style="width:calc(var(--s) * 268px)"></div>';
+      drop.classList.add('in');
+      state.textContent = 'Ready';
+      return;
+    }
+    let step = 0, ch = 0;
+    clear();
+    const tick = () => {
+      const part = SCRIPT[step];
+      if (!part) {                                   /* hold the finished state, then loop */
+        state.textContent = 'Pasted at your cursor';
+        demoTimer = setTimeout(runDemo, 2600);
+        return;
+      }
+      state.textContent = part.state;
+      if (part.cmd) {
+        line.insertAdjacentHTML('beforeend',
+          `<span class="voice" style="display:inline-flex;vertical-align:middle;padding:3px 10px">${bars(4)}<q>${part.cmd}</q></span>`);
+        drop.innerHTML = '<div class="shot big" style="width:calc(var(--s) * 268px)"></div>';
+        requestAnimationFrame(() => drop.classList.add('in'));
+        step++; ch = 0;
+        demoTimer = setTimeout(tick, 900);
+        return;
+      }
+      if (ch < part.text.length) {
+        const done = SCRIPT.slice(0, step).map(p => p.cmd ? '' : p.text).join('');
+        line.querySelector('.caret')?.remove();
+        const head = line.innerHTML;
+        line.innerHTML = head + part.text[ch] + '<span class="caret"></span>';
+        ch++;
+        demoTimer = setTimeout(tick, 34 + Math.random() * 40);
+      } else {
+        step++; ch = 0;
+        demoTimer = setTimeout(tick, 260);
+      }
+    };
+    tick();
+  };
+  const stopDemo = () => { clearTimeout(demoTimer); demoTimer = null; };
+
+  /* ── the numbers behind Insights ─────────────────────────── */
+  const DAYMS = 86400000, TODAY = new Date(2026, 7, 20);
+  const dayKey = d => d.toISOString().slice(0, 10);
+  const back = n => new Date(TODAY.getTime() - n * DAYMS);
+
+  /* One deterministic history, read every different way the pane asks for it. */
+  const HISTORY = (() => {
+    const out = new Map();
+    const r = rng(20260820);
+    for (let i = 0; i < 371; i++) {
+      const d = back(i), dow = d.getDay();
+      const quiet = (dow === 0 || dow === 6) ? .38 : 1;
+      const ramp = 0.55 + 0.45 * (1 - i / 371);
+      let mins = Math.round(Math.max(0, (r() * 46 - 6) * quiet * ramp));
+      if (r() < .07) mins = 0;
+      const hours = new Array(24).fill(0);
+      let left = mins;
+      /* work hours carry most of it, with an evening tail */
+      const shape = h => (h >= 9 && h <= 12 ? 3 : h >= 13 && h <= 18 ? 2.4 : h >= 19 && h <= 22 ? 1.5 : h >= 7 && h < 9 ? .8 : .06);
+      const tot = [...Array(24)].reduce((a, _, h) => a + shape(h), 0);
+      for (let h = 0; h < 24; h++) {
+        const give = Math.min(left, Math.round(mins * shape(h) / tot * (0.6 + r() * 0.8)));
+        hours[h] = give; left -= give;
+      }
+      if (left > 0) hours[10] += left;
+      out.set(dayKey(d), { mins, hours, words: Math.round(mins * 111) });
+    }
+    return out;
+  })();
+
+  const dayData = d => HISTORY.get(dayKey(d)) || { mins: 0, hours: new Array(24).fill(0), words: 0 };
+  const rangeDays = n => [...Array(n)].map((_, i) => back(n - 1 - i));
+
+  const TOPWORDS = [['the',1840],['and',1212],['that',974],['SayCtrl',612],['just',548],
+                    ['okay',503],['Claude',441],['fix',396],['tomorrow',312],['RealtyAPI',287]];
+
+  const FAQ = [
+    ['Nothing types when I release fn', 'Grant Accessibility, then quit and reopen SayCtrl.'],
+    ['fn opens the emoji picker', 'System Settings → Keyboard → “Press 🌐 key to” → Do Nothing.'],
+    ['“Unexpected reply” mid-dictation', 'Your key hit its rate limit. SayCtrl pastes the raw transcript instead.'],
+    ['A name keeps coming out wrong', 'Fix it right after it lands — SayCtrl remembers it in the Dictionary.'],
+  ];
+
+  const fmt = n => n.toLocaleString();
+  const hhmm = m => m >= 60 ? `${Math.floor(m / 60)}h ${m % 60}m` : `${m}m`;
+  const shortDay = d => d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+
+  const drawStats = days => {
+    const mins = days.reduce((a, d) => a + dayData(d).mins, 0);
+    const words = days.reduce((a, d) => a + dayData(d).words, 0);
+    const active = days.filter(d => dayData(d).mins > 0).length;
+    const tiles = [
+      [hhmm(mins), 'Time dictating'],
+      [fmt(words), 'Words spoken'],
+      [fmt(Math.round(words / Math.max(1, mins))), 'Words per minute'],
+      [`${active}/${days.length}`, 'Days used'],
+    ];
+    $('#insStats').innerHTML = '';
+    tiles.forEach(([n, l]) => {
+      const c = el('div', 'stat');
+      c.append(el('span', 'n', n), el('span', 'l eyebrow', l));
+      $('#insStats').append(c);
+    });
+  };
+
+  const drawChart = days => {
+    const host = $('#dayChart'), axis = $('#dayAxis');
+    host.innerHTML = ''; axis.innerHTML = '';
+    const mins = days.map(d => dayData(d).mins);
+    const words = days.map(d => dayData(d).words);
+    const topM = Math.max(1, ...mins), topW = Math.max(1, ...words);
+
+    days.forEach((d, i) => {
+      const c = el('div', 'col' + (i === days.length - 1 ? ' today' : ''));
+      const bar = el('i');
+      bar.style.height = (mins[i] / topM * 100) + '%';
+      if (!mins[i]) bar.style.opacity = '.35';
+      c.append(bar);
+      c.title = mins[i]
+        ? `${shortDay(d)} — ${hhmm(mins[i])}, ${fmt(words[i])} words`
+        : `${shortDay(d)} — nothing dictated`;
+      host.append(c);
+      const lab = el('span');
+      lab.textContent = (i === 0 || i === days.length - 1 || i % 5 === 0) ? String(d.getDate()) : '';
+      axis.append(lab);
+    });
+
+    /* words ride over the bars as a line, so one chart answers both questions */
+    const n = days.length;
+    const pt = i => [((i + .5) / n * 100).toFixed(2), (100 - words[i] / topW * 92).toFixed(2)];
+    const line = days.map((_, i) => pt(i).join(',')).join(' ');
+    const area = `0,100 ${line} 100,100`;
+    host.insertAdjacentHTML('beforeend',
+      `<svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+         <polygon class="warea" points="${area}"/><polyline class="wline" points="${line}"/>
+       </svg>`);
+
+  };
+
+  const WEEKNAMES = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const hourLabel = h => h === 0 ? 'midnight' : h === 12 ? 'midday'
+    : h < 12 ? `${h}am` : `${h - 12}pm`;
+
+  const drawPeak = days => {
+    const byDow = new Array(7).fill(0), byHour = new Array(24).fill(0);
+    days.forEach(d => {
+      const data = dayData(d);
+      byDow[d.getDay()] += data.mins;
+      data.hours.forEach((m, h) => byHour[h] += m);
+    });
+    const bestDow = byDow.indexOf(Math.max(...byDow));
+    const bestHour = byHour.indexOf(Math.max(...byHour));
+    const quietDow = byDow.indexOf(Math.min(...byDow));
+    const longest = Math.max(...days.map(d => dayData(d).mins));
+
+    $('#peakLine').innerHTML =
+      `You speak most on <b>${WEEKNAMES[bestDow]}s</b>, around <b>${hourLabel(bestHour)}</b>.`;
+    const chips = [
+      [WEEKNAMES[bestDow].slice(0, 3), hhmm(byDow[bestDow]), 'busiest day'],
+      [hourLabel(bestHour), hhmm(byHour[bestHour]), 'busiest hour'],
+      [WEEKNAMES[quietDow].slice(0, 3), hhmm(byDow[quietDow]), 'quietest day'],
+      ['Longest day', hhmm(longest), ''],
+    ];
+    $('#peakChips').innerHTML = '';
+    chips.forEach(([a, b2, tail]) => {
+      const c = el('span', 'chip');
+      c.innerHTML = `${tail ? tail + ' ' : ''}<b>${a}</b> · <b>${b2}</b>`;
+      $('#peakChips').append(c);
+    });
+  };
+
+  const drawWords = () => {
+    const host = $('#wordList'); host.innerHTML = '';
+    const top = TOPWORDS[0][1];
+    TOPWORDS.forEach(([w, n]) => {
+      const row = el('div', 'word');
+      const bar = el('div', 'wb'); const fill = el('i');
+      fill.style.width = (n / top * 100) + '%'; bar.append(fill);
+      row.append(el('b', null, w), bar, el('span', null, fmt(n)));
+      host.append(row);
+    });
+  };
+
+  const drawYear = () => {
+    /* start on the Monday 52 weeks back, so columns line up as weeks */
+    const start = back(364);
+    start.setDate(start.getDate() - ((start.getDay() + 6) % 7));
+    const grid = $('#yearGrid'); grid.innerHTML = '';
+    const months = $('#yearMonths'); months.innerHTML = '';
+    let total = 0, active = 0, lastMonth = -1;
+    for (let w = 0; w < 53; w++) {
+      const col = el('div', 'ycol');
+      const first = new Date(start.getTime() + w * 7 * DAYMS);
+      const lab = el('span');
+      if (first.getMonth() !== lastMonth && first.getDate() <= 7) {
+        lastMonth = first.getMonth();
+        lab.textContent = first.toLocaleDateString('en-GB', { month: 'short' });
+      }
+      months.append(lab);
+      for (let d = 0; d < 7; d++) {
+        const day = new Date(start.getTime() + (w * 7 + d) * DAYMS);
+        const cell = el('span', 'ycell');
+        if (day > TODAY) { cell.style.visibility = 'hidden'; col.append(cell); continue; }
+        const m = dayData(day).mins;
+        total += m; if (m) active++;
+        const lvl = m === 0 ? 0 : m < 8 ? 1 : m < 18 ? 2 : m < 30 ? 3 : 4;
+        if (lvl) cell.classList.add('l' + lvl);
+        cell.title = m ? `${shortDay(day)} — ${hhmm(m)}` : `${shortDay(day)} — nothing`;
+        col.append(cell);
+      }
+      grid.append(col);
+    }
+    /* streak: consecutive days back from today with anything dictated */
+    let cur = 0; while (dayData(back(cur)).mins > 0) cur++;
+    let best = 0, run = 0;
+    for (let i = 370; i >= 0; i--) { run = dayData(back(i)).mins > 0 ? run + 1 : 0; best = Math.max(best, run); }
+    $('#streakN').textContent = cur;
+    $('#streakL').textContent = `day streak · longest ${best} · ${active} days used this year`;
+    $('#yearNote').textContent = `${hhmm(total)} in the last year`;
+  };
+
+  const drawInsights = () => {
+    const days = rangeDays(30);
+    drawStats(days); drawChart(days); drawPeak(days); drawWords();
+  };
+
+  drawYear(); drawInsights();
+
+
+  /* ── System + Privacy toggles ────────────────────────────── */
+  const toggles = (host, rows) => rows.forEach(([title, sub, on], i) => {
+    if (i) $(host).append(el('div', 'rule'));
+    const row = el('button', 'toggle-row');
+    const tt = el('div', 'tt'); tt.append(el('b', null, title));
+    if (sub) tt.append(el('span', null, sub));
+    const sw = el('div', 'switch' + (on ? ' on' : ''));
+    row.append(tt, sw);
+    row.onclick = () => sw.classList.toggle('on');
+    $(host).append(row);
+  });
+  toggles('#notifs', [
+    ['Notify when a dictation fails', 'A banner instead of a silent nothing.', true],
+    ['Weekly summary', 'Your numbers, every Monday.', false],
+  ]);
+  toggles('#privToggles', [
+    ['Keep dictation history', 'Needed for Insights and Recent.', true],
+    ['Read the screen for names', 'Names in the front window get spelled right.', true],
+    ['Share anonymous usage', 'Off. SayCtrl ships with no telemetry.', false],
+  ]);
+
+  FAQ.forEach(([q, a], i) => {
+    if (i) $('#faq').append(el('div', 'rule'));
+    const row = el('div', 'frow');
+    const fl = el('div', 'fl'); fl.append(el('b', null, q), el('span', null, a));
+    row.append(fl);
+    $('#faq').append(row);
+  });
+
+  /* ── account popover ─────────────────────────────────────── */
+  let signedIn = true;
+  const drawAccount = () => {
+    const pop = $('#accountPop'); pop.innerHTML = '';
+    $('#avatarBtn').textContent = signedIn ? 'SH' : '';
+    $('#avatarBtn').classList.toggle('out', !signedIn);
+    if (!signedIn) {
+      $('#avatarBtn').innerHTML = svg('<circle cx="12" cy="8.5" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/>');
+      const b = el('div');
+      b.append(el('div', 'note', 'Sign in to buy credits and sync your plan across Macs. Your dictionary and phrases stay on this Mac either way.'));
+      const go = el('button', 'btn primary', 'Sign in');
+      go.style.marginTop = 'calc(var(--s) * 14px)';
+      go.onclick = () => { signedIn = true; drawAccount(); toast('Signed in'); };
+      b.append(go);
+      pop.append(b);
+      return;
+    }
+    const who = el('div', 'who');
+    const av = el('div', 'avatar', 'SH');
+    const nm = el('div');
+    nm.append(el('b', null, 'Sorower Hossan'), el('span', null, 'sorower@example.com'));
+    who.append(av, nm);
+    pop.append(who);
+
+    const use = el('div', 'grp');
+    const line = el('div', 'mline');
+    line.append(el('b', null, '18 of 30 min used'), el('span', null, 'Free'));
+    const meter = el('div', 'meter'); meter.append(el('i'));
+    meter.firstChild.style.width = '60%';
+    const up = el('button', 'btn primary', 'Add $10 credit — 500 min');
+    up.style.marginTop = 'calc(var(--s) * 12px)';
+    up.onclick = () => { closePop(); goSetting('billing'); };
+    use.append(line, meter, up);
+    pop.append(use);
+
+    const menu = el('div', 'grp');
+    const item = (icon, label, fn, cls) => {
+      const b = el('button', 'mrow' + (cls ? ' ' + cls : ''), svg(icon) + `<span>${label}</span>`);
+      b.onclick = fn; return b;
+    };
+    menu.append(
+      item('<circle cx="12" cy="8.5" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/>', 'Account', () => { closePop(); goSetting('account'); }),
+      item('<rect x="3" y="6" width="18" height="12" rx="2.5"/><path d="M3 10h18"/>', 'Plan &amp; billing', () => { closePop(); goSetting('billing'); }),
+      item('<circle cx="12" cy="12" r="9"/><path d="M9.4 9.3a2.7 2.7 0 1 1 3.4 3.4c-.5.2-.8.7-.8 1.3v.4M12 17.4h.01"/>', 'Help', () => { closePop(); $('[data-go="help"]').click(); }),
+      item('<path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3"/><path d="M10 8 6 12l4 4M6 12h9"/>', 'Sign out',
+           () => { signedIn = false; drawAccount(); toast('Signed out'); }, 'danger'),
+    );
+    pop.append(menu);
+  };
+  const closePop = () => $('#accountPop').classList.remove('on');
+  const goSetting = key => {
+    openSettings();
+    [...$$('.set-rail .nav-row')].find(t => t.dataset.set === key)?.click();
+  };
+  $('#avatarBtn').onclick = e => { e.stopPropagation(); $('#accountPop').classList.toggle('on'); };
+  document.addEventListener('click', e => { if (!e.target.closest('.topright')) closePop(); });
+  document.addEventListener('keydown', e => e.key === 'Escape' && closePop());
+  $('#signOutBtn').onclick = () => { signedIn = false; drawAccount(); toast('Signed out'); };
+  drawAccount();
+
+  /* ── settings: permissions ───────────────────────────────── */
+  const PERMS = [
+    ['Microphone', 'Granted', 'ok'],
+    ['Accessibility', 'Granted', 'ok'],
+    ['Input Monitoring', 'Granted', 'ok'],
+    ['fn key', 'Set “Press 🌐 key to” → Do Nothing', 'warn'],
+    ['Screen Recording', 'For screenshots and reading names', 'off'],
+    ['Finder', 'Granted', 'ok'],
+    ['Web browser', 'For picking up the front tab', 'off'],
+  ];
+  PERMS.forEach(([name, state, kind]) => {
+    const row = el('div', 'perm');
+    const pn = el('div', 'pn'); pn.append(el('b', null, name), el('span', null, state));
+    row.append(el('div', 'dot ' + (kind === 'ok' ? '' : kind)), pn);
+    if (kind !== 'ok') {
+      const b = el('button', 'btn', 'Open');
+      b.onclick = () => toast('System Settings');
+      row.append(b);
+    }
+    $('#permList').append(row);
+  });
+})();
+</script>

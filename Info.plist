@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDisplayName</key>
+	<string>SayControl</string>
+	<key>CFBundleExecutable</key>
+	<string>SayCtrl</string>
+	<key>CFBundleIconFile</key>
+	<string>AppIcon</string>
+	<key>CFBundleIdentifier</key>
+	<string>com.sayctrl.app</string>
+	<key>CFBundleName</key>
+	<string>SayControl</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>0.1.8</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.sayctrl.app.signin</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>saycontrol</string>
+			</array>
+		</dict>
+	</array>
+	<key>CFBundleVersion</key>
+	<string>2</string>
+	<key>LSMinimumSystemVersion</key>
+	<string>13.0</string>
+	<key>LSUIElement</key>
+	<true/>
+	<key>NSAppleEventsUsageDescription</key>
+	<string>SayControl asks Finder which files are selected when you say “copy the file path”, and asks your browser for the current page’s address when you say “copy the link”, so it can paste them for you. With the agent voice on, it also opens Terminal or iTerm to start a coding agent and types your spoken replies into that agent’s window.</string>
+	<key>NSHighResolutionCapable</key>
+	<true/>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>SayControl records your voice so it can transcribe what you say and paste it for you.</string>
+	<key>SUEnableAutomaticChecks</key>
+	<true/>
+	<key>SUFeedURL</key>
+	<string>https://cdn.sayctrl.com/appcast.xml</string>
+	<key>SUPublicEDKey</key>
+	<string>5KSPZH39i7+gyvk76R0JoXqC+hJiBZbBmxdFJFCILFw=</string>
+</dict>
+</plist>

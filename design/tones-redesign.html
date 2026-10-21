@@ -1,0 +1,853 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tones redesign</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600&display=swap">
+<style>
+/* Tones, redesigned — direction A ("One list") picked. This is the build
+   target: what ships in TonesPane.swift should look like this page.
+
+   The four places are four quiet rows: icon, name, one short line, the app
+   icons and the tone switch. Pointing at a row (or one of its tones) opens
+   it to show what you said above what it types, with ToneDiff's changes
+   washed in straight away. Pointing never moves what is under the pointer:
+   opening a row closes only the rows below it, rows above stay open until
+   the pointer leaves the box, and then all of them fold 250 ms later. Auto
+   cleanup changes only on a click; pointing at it never changes its size.
+
+   Colours are Theme.swift's, light then dark, as in settings-redesign.html.
+   Ember is the one accent (the cleanup strength). The change hues are
+   ToneDiff.swift's, and the diff below is a port of its algorithm. Every
+   sentence is a sample from Tones.swift, word for word. Motion is
+   Motion.swift's "Subtle" curve, cubic-bezier(.2,.8,.2,1); the row timings
+   are in the notes under the window. */
+:root {
+  --paper: #faf9f7; --rail: #f1efeb; --rail-line: #e5e2dc; --surface: #fff;
+  --hair: #e8e6e1; --hairsoft: #f0eeea; --well: #f2f0ec; --key: #f6f4f0; --lip: #dddad3;
+  --ink: #1c1b19; --ink2: #44423e; --muted: #6c6963; --faint: #9a968f;
+  --ember: #e5501f; --ember-ink: #c2410c; --ember-soft: rgb(229 80 31 / .10); --ember-ring: rgb(229 80 31 / .45);
+  --moss: #1a7a50; --moss-soft: rgb(26 122 80 / .10);
+  --amber: #9a6412; --amber-soft: rgb(183 121 31 / .13);
+  --pick: #e7e3da; --hover: #ece9e3;
+  --thumb: #fff; --thumb-ring: rgb(0 0 0 / .09);
+  --babg: #f4f2ee;
+  /* ToneDiff's kinds: Theme.Hue ink, and its wash laid twice (as ToneSampleView does). */
+  --d-cap: #2f6fdb; --d-cap-w: rgb(47 111 219 / .19);
+  --d-punct: #1f8a5b; --d-punct-w: rgb(31 138 91 / .19);
+  --d-words: #6d4ed8; --d-words-w: rgb(109 78 216 / .19);
+  --d-lb: #b06a0c; --d-lb-w: rgb(176 106 12 / .2);
+  --d-rm: #c23a5e;
+  --desk: linear-gradient(160deg, #c3d1e8 0%, #e6dcd6 55%, #d9b9a5 100%);
+  --ease: cubic-bezier(.2,.8,.2,1);
+  --glide: cubic-bezier(.3,1.18,.45,1);
+  --font-display: 'Bricolage Grotesque', -apple-system, system-ui, sans-serif;
+  --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --paper: #111113; --rail: #1a1a1d; --rail-line: #2b2b30; --surface: #1b1b1e;
+  --hair: #2b2b30; --hairsoft: #232327; --well: #0c0c0e; --key: #2e2e33; --lip: #0a0a0b;
+  --ink: #f3f3f1; --ink2: #c8c8cd; --muted: #95959b; --faint: #6a6a70;
+  --ember: #ff6a3d; --ember-ink: #ff8a63; --ember-soft: rgb(255 106 61 / .14); --ember-ring: rgb(255 106 61 / .5);
+  --moss: #3cc48a; --moss-soft: rgb(60 196 138 / .13);
+  --amber: #f0b44c; --amber-soft: rgb(240 180 76 / .13);
+  --pick: rgb(255 255 255 / .09); --hover: rgb(255 255 255 / .05);
+  --thumb: #44444b; --thumb-ring: rgb(255 255 255 / .14);
+  --babg: rgb(0 0 0 / .24);
+  --d-cap: #7aa8ff; --d-cap-w: rgb(122 168 255 / .26);
+  --d-punct: #4fd39a; --d-punct-w: rgb(79 211 154 / .24);
+  --d-words: #b09cff; --d-words-w: rgb(176 156 255 / .26);
+  --d-lb: #f3b652; --d-lb-w: rgb(243 182 82 / .24);
+  --d-rm: #ff8fae;
+  --desk: linear-gradient(160deg, #1b2233 0%, #25232a 55%, #2e221d 100%);
+  color-scheme: dark;
+}}
+:root[data-theme="dark"] {
+  --paper: #111113; --rail: #1a1a1d; --rail-line: #2b2b30; --surface: #1b1b1e;
+  --hair: #2b2b30; --hairsoft: #232327; --well: #0c0c0e; --key: #2e2e33; --lip: #0a0a0b;
+  --ink: #f3f3f1; --ink2: #c8c8cd; --muted: #95959b; --faint: #6a6a70;
+  --ember: #ff6a3d; --ember-ink: #ff8a63; --ember-soft: rgb(255 106 61 / .14); --ember-ring: rgb(255 106 61 / .5);
+  --moss: #3cc48a; --moss-soft: rgb(60 196 138 / .13);
+  --amber: #f0b44c; --amber-soft: rgb(240 180 76 / .13);
+  --pick: rgb(255 255 255 / .09); --hover: rgb(255 255 255 / .05);
+  --thumb: #44444b; --thumb-ring: rgb(255 255 255 / .14);
+  --babg: rgb(0 0 0 / .24);
+  --d-cap: #7aa8ff; --d-cap-w: rgb(122 168 255 / .26);
+  --d-punct: #4fd39a; --d-punct-w: rgb(79 211 154 / .24);
+  --d-words: #b09cff; --d-words-w: rgb(176 156 255 / .26);
+  --d-lb: #f3b652; --d-lb-w: rgb(243 182 82 / .24);
+  --d-rm: #ff8fae;
+  --desk: linear-gradient(160deg, #1b2233 0%, #25232a 55%, #2e221d 100%);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { min-height: 100vh; background: var(--desk); font-family: var(--font-sans); color: var(--ink);
+  -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+button, input { font: inherit; color: inherit; }
+svg.i { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+
+/* ── The demo bar: not part of the app ─────────────────────────────── */
+.demo { position: sticky; top: 0; z-index: 50; display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; justify-content: center;
+  padding: 12px 16px; background: rgb(255 255 255 / .55); backdrop-filter: blur(16px) saturate(1.4); -webkit-backdrop-filter: blur(16px) saturate(1.4);
+  border-bottom: 1px solid rgb(0 0 0 / .06); }
+:root[data-theme="dark"] .demo { background: rgb(20 20 24 / .6); border-color: rgb(255 255 255 / .06); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .demo { background: rgb(20 20 24 / .6); border-color: rgb(255 255 255 / .06); } }
+.demo .lbl { font: 600 10.5px var(--font-sans); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-right: 2px; }
+.seg { display: inline-flex; align-items: center; gap: 2px; padding: 3px; border-radius: 999px; background: rgb(0 0 0 / .06); }
+:root[data-theme="dark"] .seg { background: rgb(255 255 255 / .07); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .seg { background: rgb(255 255 255 / .07); } }
+.seg button { border: 0; background: transparent; padding: 5px 11px; border-radius: 999px; font-size: 12px; font-weight: 500; cursor: pointer; color: var(--ink2);
+  transition: background .2s var(--ease), color .2s var(--ease); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+.grp-ctl { display: inline-flex; align-items: center; gap: 6px; }
+
+/* ── The stage: a scaled copy of the app window ────────────────────── */
+.stage { display: flex; justify-content: center; padding: 22px 16px 10px; }
+.scaler { width: 1240px; height: 860px; flex: none; transform-origin: top center; }
+.win { position: relative; width: 1240px; height: 860px; border-radius: 14px; overflow: hidden; background: var(--paper);
+  box-shadow: 0 0 0 .5px rgb(0 0 0 / .25), 0 24px 70px rgb(0 0 0 / .32); display: grid; grid-template-columns: 236px minmax(0, 1fr); }
+
+/* The window's own sidebar: sand, floating, Tones picked. */
+.side { margin: 10px 0 10px 10px; border-radius: 12px; background: var(--rail); box-shadow: 0 0 0 1px var(--rail-line); padding: 46px 10px 10px;
+  display: flex; flex-direction: column; gap: 1px; min-height: 0; }
+.traffic { position: absolute; top: 22px; left: 24px; display: flex; gap: 8px; z-index: 3; }
+.traffic i { width: 12px; height: 12px; border-radius: 50%; background: #ff5f57; }
+.traffic i:nth-child(2) { background: #febc2e; } .traffic i:nth-child(3) { background: #28c840; }
+.wordmark { display: flex; align-items: center; gap: 7px; font: 600 17px var(--font-display); letter-spacing: -.035em; padding: 0 10px 14px; }
+.wordmark b { width: 20px; height: 20px; border-radius: 6px; background: var(--ink); display: grid; place-items: center; }
+.wordmark b::after { content: ""; width: 0; height: 0; border-left: 6px solid var(--ember); border-top: 4px solid transparent; border-bottom: 4px solid transparent; margin-left: 2px; }
+.ready { margin: 0 2px 12px; padding: 10px 12px; border-radius: 10px; background: var(--surface); box-shadow: 0 0 0 1px var(--hair); font-size: 12.5px; }
+.ready .st { display: flex; align-items: center; gap: 7px; font-weight: 500; }
+.ready .st i { width: 7px; height: 7px; border-radius: 50%; background: var(--moss); box-shadow: 0 0 0 3px var(--moss-soft); }
+.ready .hk { display: flex; align-items: center; justify-content: space-between; color: var(--muted); margin-top: 8px; }
+.kc { display: inline-flex; align-items: center; justify-content: center; min-width: 24px; height: 21px; padding: 0 6px; border-radius: 6px; background: var(--key);
+  box-shadow: 0 0 0 1px var(--hair), 0 1px 0 var(--lip); font-size: 11px; font-weight: 500; color: var(--ink2); margin: 0 4px; }
+.snav { display: flex; align-items: center; gap: 10px; height: 34px; padding: 0 10px; border-radius: 8px; font-size: 13.5px; color: var(--ink2); }
+.snav svg.i { width: 17px; height: 17px; color: var(--muted); }
+.snav.on { background: var(--pick); color: var(--ink); font-weight: 500; }
+.snav.on svg.i { color: var(--ink); }
+.side .caps { margin: 14px 10px 5px; }
+.side .grow { flex: 1; }
+.acct { display: flex; align-items: center; gap: 10px; padding: 10px 8px 2px; margin-top: 6px; border-top: 1px solid var(--rail-line); }
+.avatar { width: 30px; height: 30px; border-radius: 50%; background: linear-gradient(135deg, #f1a37c, #d4491c); color: #fff; display: grid; place-items: center; font-size: 12px; font-weight: 600; flex: none; }
+.acct b { display: block; font-size: 12.5px; font-weight: 500; } .acct span { font-size: 11.5px; color: var(--muted); }
+
+.main { position: relative; min-width: 0; min-height: 0; display: flex; flex-direction: column; }
+.topbar { height: 46px; flex: none; display: flex; align-items: center; justify-content: flex-end; padding: 0 20px; }
+.mic-chip { display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 11px; border-radius: 999px; background: var(--surface); box-shadow: 0 0 0 1px var(--hair); font-size: 12px; color: var(--ink2); }
+.mic-chip svg.i { width: 13px; height: 13px; color: var(--moss); }
+.pane { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; padding: 2px 44px 48px; scrollbar-width: thin;
+  transition: opacity .38s var(--ease), transform .38s var(--ease); }
+.pane.out { opacity: 0; transform: translateY(-4px); transition: opacity .11s ease-in, transform .11s ease-in; }
+
+/* ── Page parts ────────────────────────────────────────────────────── */
+.blk { animation: rise .38s var(--ease) both; animation-delay: calc(var(--k, 0) * 40ms); }
+@keyframes rise { from { opacity: 0; transform: translateY(10px); } }
+.caps { font: 600 10.5px var(--font-sans); letter-spacing: .09em; text-transform: uppercase; color: var(--faint); }
+.ph { margin: 4px 0 22px; }
+.ph h1 { font: 500 30px/1.1 var(--font-display); letter-spacing: -.035em; margin: 0; }
+.ph p { margin: 8px 0 0; font-size: 14.5px; color: var(--muted); line-height: 1.45; }
+.ph p b { color: var(--ink); font-weight: 500; }
+.box { background: var(--surface); border-radius: 14px; box-shadow: 0 0 0 1px var(--hair), 0 1px 2px rgb(20 24 34 / .03); overflow: hidden; }
+.tile { width: 32px; height: 32px; border-radius: 9px; display: grid; place-items: center; flex: none; }
+.tile svg.i { width: 16px; height: 16px; }
+.tile.n { background: var(--key); color: var(--ink2); box-shadow: inset 0 0 0 1px var(--hair); }
+.tile.e { background: var(--ember-soft); color: var(--ember); }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 32px; padding: 0 14px; border-radius: 9px; border: 0;
+  font-size: 13px; font-weight: 500; cursor: pointer; white-space: nowrap; background: var(--surface); color: var(--ink);
+  box-shadow: 0 0 0 1px var(--hair), 0 1px 0 var(--lip); transition: transform .14s var(--ease), background .15s, box-shadow .15s, opacity .15s; }
+.btn:hover { background: var(--key); }
+.btn:active { transform: scale(.97); }
+
+/* App marks: the real icons in the app; tinted initials here. */
+.at { display: inline-grid; place-items: center; width: var(--s, 18px); height: var(--s, 18px); border-radius: calc(var(--s, 18px) * .28);
+  background: var(--t); color: #fff; font: 600 calc(var(--s, 18px) * .48)/1 var(--font-sans); flex: none; filter: saturate(.78); letter-spacing: -.02em; }
+.stack { display: inline-flex; flex: none; cursor: default; }
+.stack .at { box-shadow: 0 0 0 2px var(--surface); }
+.stack .at + .at { margin-left: -5px; }
+
+/* States the pane can be in. */
+.strip { display: flex; align-items: center; gap: 12px; padding: 11px 12px 11px 14px; border-radius: 12px; margin: -6px 0 20px; font-size: 13px; color: var(--ink2); line-height: 1.45; }
+.strip.warn { background: var(--amber-soft); }
+.strip.warn > svg.i { color: var(--amber); }
+.strip.off { background: var(--well); box-shadow: inset 0 0 0 1px var(--hair); }
+.strip.off > svg.i { color: var(--muted); }
+.strip b { color: var(--ink); font-weight: 600; }
+.strip .btn { margin-left: auto; }
+.tones-sec { transition: opacity .3s var(--ease), filter .3s var(--ease); }
+.is-paused .tones-sec { opacity: .45; filter: saturate(.3); }
+.is-noplan .gated { opacity: .55; }
+.is-raw .places .pills { opacity: .55; }
+
+/* What you say → what it types. */
+.ba { display: grid; grid-template-columns: 58px minmax(0, 1fr); gap: 7px 12px; padding: 12px 14px; border-radius: 10px;
+  background: var(--babg); box-shadow: inset 0 0 0 1px var(--hairsoft); }
+.ba-k { font: 600 10px/19.5px var(--font-sans); letter-spacing: .08em; text-transform: uppercase; color: var(--faint); white-space: nowrap; }
+.ba-said { font-size: 13px; line-height: 1.5; color: var(--muted); }
+.ba-out { font-size: 14px; line-height: 1.5; color: var(--ink); white-space: pre-line; }
+.js-out, .js-said { display: block; transition: opacity .38s var(--ease), transform .38s var(--ease); }
+.sw-out { opacity: 0 !important; transform: translateY(-3px); transition: opacity .11s ease-in, transform .11s ease-in !important; }
+.sw-in { opacity: 0; transform: translateY(6px); transition: none !important; }
+
+/* The changes. Washed while .show is on: a row's preview always, the
+   cleanup's while it is pointed at. */
+.m { border-radius: 4px; transition: background-color .2s var(--ease), color .2s var(--ease); -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+.m.k-punct { padding: 1px 2.5px; margin: -1px -2.5px; }
+.m.k-cap, .m.k-words { padding: 1px 1px; margin: -1px -1px; }
+.show .m.k-cap { background: var(--d-cap-w); color: var(--d-cap); }
+.show .m.k-punct { background: var(--d-punct-w); color: var(--d-punct); }
+.show .m.k-words { background: var(--d-words-w); color: var(--d-words); }
+.m.k-lb { display: none; }
+.show .m.k-lb { display: inline-block; font-size: .78em; line-height: 1.35; padding: 0 4px; margin-left: 3px; border-radius: 4px; background: var(--d-lb-w); color: var(--d-lb); vertical-align: 1px; }
+.cut { text-decoration: line-through; text-decoration-color: currentColor; color: var(--faint); transition: color .2s; }
+.show .cut { color: var(--d-rm); }
+.show .rw { color: var(--d-words); text-decoration: underline dotted var(--d-words); text-underline-offset: 3px; }
+
+/* The tone switch: a segmented trough, the picked one raised. */
+.pills { display: inline-flex; padding: 3px; border-radius: 10px; background: var(--well); box-shadow: inset 0 0 0 1px var(--hair); position: relative; flex: none; transition: opacity .3s var(--ease); }
+.pills button { position: relative; z-index: 1; border: 0; background: transparent; height: 28px; padding: 0 13px; border-radius: 7px; font-size: 12.5px; font-weight: 500; color: var(--muted); cursor: pointer; transition: color .2s, background .2s; }
+.pills button:hover, .pills button.peek:not(.on) { color: var(--ink); background: var(--hover); }
+.pills button.on { color: var(--ink); background: transparent; }
+.pills .pk { position: absolute; z-index: 0; top: 3px; left: 3px; height: 28px; border-radius: 7px; background: var(--thumb);
+  box-shadow: 0 0 0 1px var(--thumb-ring), 0 1px 2px rgb(0 0 0 / .1); transition: left .3s var(--glide), width .3s var(--glide); }
+
+/* ── The four places ───────────────────────────────────────────────── */
+.prow + .prow { box-shadow: inset 0 1px 0 var(--hairsoft); }
+.prow-h { display: flex; align-items: center; gap: 13px; min-height: 68px; padding: 14px 16px 14px 18px; }
+.prow-h .pt { flex: 1; min-width: 0; }
+.prow-h .pt b { display: block; font: 500 16px/20px var(--font-display); letter-spacing: -.025em; }
+.prow-h .pt span { display: block; margin-top: 2px; font-size: 12.5px; line-height: 17px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.prow-h .stack { margin: 0 3px; }
+.pv { height: 0; overflow: hidden; transition: height .24s var(--ease); }
+.prow.open .pv { transition-duration: .32s; }
+.pv-in { padding: 0 16px 14px 63px; opacity: 0; transform: translateY(-4px); transition: opacity .16s var(--ease), transform .24s var(--ease); }
+.prow.open .pv-in { opacity: 1; transform: none; transition: opacity .22s var(--ease) .06s, transform .32s var(--ease); }
+.pv-d { font-size: 12.5px; line-height: 17px; color: var(--muted); margin: -2px 0 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pv-d b { color: var(--ink); font-weight: 600; margin-right: 6px; }
+
+/* ── Auto cleanup + Your rules (unchanged from the pick) ───────────── */
+.cleanbox { margin-top: 20px; }
+.clean { padding: 16px 18px 16px; }
+.clean-h { display: flex; gap: 13px; align-items: flex-start; }
+.t { font-size: 13.5px; font-weight: 500; letter-spacing: -.005em; }
+.d { font-size: 12.5px; color: var(--muted); margin-top: 2px; line-height: 1.4; }
+.txt { flex: 1; min-width: 0; }
+.steps { position: relative; display: grid; grid-template-columns: repeat(3, 1fr); margin: 18px 6px 16px 51px; }
+.steps .track { position: absolute; left: 9px; right: 9px; top: 8px; height: 3px; border-radius: 3px; background: var(--hair); }
+.steps .track i { position: absolute; left: 0; top: 0; bottom: 0; width: var(--f, 50%); border-radius: 3px; background: var(--ember); transition: width .45s var(--glide); }
+.stop { position: relative; border: 0; background: transparent; padding: 0; display: flex; flex-direction: column; gap: 3px; cursor: pointer; text-align: left; align-items: flex-start; }
+.stop:nth-of-type(2) { align-items: center; text-align: center; }
+.stop:nth-of-type(3) { align-items: flex-end; text-align: right; }
+.knob { width: 19px; height: 19px; border-radius: 50%; background: var(--surface); box-shadow: inset 0 0 0 2px var(--lip); margin-bottom: 7px; transition: background .3s var(--ease), box-shadow .3s var(--ease), transform .3s var(--glide); }
+.stop:hover .knob { transform: scale(1.12); }
+.stop:hover b { color: var(--ink); }
+.stop.past .knob { box-shadow: inset 0 0 0 2px var(--ember); }
+.stop.on .knob { background: var(--ember); box-shadow: inset 0 0 0 2px var(--ember), 0 0 0 4px var(--ember-soft); }
+.stop b { font-size: 13.5px; font-weight: 500; color: var(--ink2); }
+.stop.on b { color: var(--ink); font-weight: 600; }
+.stop .s { font-size: 12px; color: var(--muted); }
+.clean .ba { margin-left: 45px; align-content: start; }
+.clean + .collapse .rules { box-shadow: inset 0 1px 0 var(--hairsoft); }
+.collapse { display: grid; grid-template-rows: 1fr; transition: grid-template-rows .38s var(--ease), opacity .3s var(--ease); }
+.collapse > * { overflow: hidden; min-height: 0; }
+.collapse.shut { grid-template-rows: 0fr; opacity: 0; }
+.rules { padding: 16px 18px 18px; }
+.rules-h { display: flex; align-items: flex-start; gap: 13px; }
+.count { font-size: 11.5px; color: var(--faint); font-variant-numeric: tabular-nums; padding-top: 2px; }
+.rlist { margin: 12px 0 0 45px; border-radius: 10px; background: var(--well); box-shadow: inset 0 0 0 1px var(--hair); padding: 4px; }
+.rrow { display: flex; align-items: center; gap: 10px; height: 36px; padding: 0 5px 0 10px; border-radius: 7px; transition: background .15s, opacity .2s, height .2s var(--ease); }
+.rrow:hover, .rrow:focus-within { background: var(--surface); box-shadow: 0 0 0 1px var(--hair); }
+.rrow .n { font-size: 11px; color: var(--faint); width: 14px; text-align: right; font-variant-numeric: tabular-nums; flex: none; }
+.rrow input { flex: 1; min-width: 0; border: 0; background: transparent; font-size: 13px; color: var(--ink); outline: none; padding: 0; }
+.rrow.bad input { color: var(--muted); text-decoration: line-through; text-decoration-color: var(--amber); }
+.rrow .tag { display: none; font-size: 10.5px; font-weight: 600; letter-spacing: .03em; color: var(--amber); background: var(--amber-soft); padding: 2px 7px; border-radius: 999px; white-space: nowrap; }
+.rrow.bad .tag, .rrow.over .tag { display: inline; }
+.rrow .del { width: 26px; height: 26px; border-radius: 7px; border: 0; background: transparent; color: var(--faint); display: grid; place-items: center; cursor: pointer; opacity: 0; transition: opacity .15s, background .15s, color .15s; }
+.rrow:hover .del, .rrow:focus-within .del { opacity: 1; }
+.rrow .del:hover { background: var(--hover); color: var(--ink); }
+.rrow .del svg.i { width: 13px; height: 13px; }
+.rrow.gone { opacity: 0; height: 0; }
+.rrow.new { animation: rise .38s var(--ease) both; }
+.radd { display: flex; align-items: center; gap: 10px; height: 36px; padding: 0 10px; border-radius: 7px; color: var(--faint); transition: background .15s, box-shadow .15s; }
+.radd svg.i { width: 14px; height: 14px; }
+.radd input { flex: 1; border: 0; background: transparent; outline: none; font-size: 13px; color: var(--ink); padding: 0; }
+.radd input::placeholder { color: var(--faint); }
+.radd:focus-within { background: var(--surface); box-shadow: 0 0 0 1.5px var(--ember-ring); }
+.radd.shake { animation: shake .32s var(--ease); }
+@keyframes shake { 25% { transform: translateX(-4px); } 75% { transform: translateX(3px); } }
+.tries { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 10px 0 0 45px; font-size: 12px; color: var(--muted); min-height: 24px; }
+.try { display: inline-flex; align-items: center; gap: 4px; height: 24px; padding: 0 10px 0 8px; border-radius: 999px; border: 0; background: var(--surface);
+  box-shadow: 0 0 0 1px var(--hair); font-size: 12px; color: var(--ink2); cursor: pointer; transition: background .15s, transform .14s var(--ease); }
+.try:hover { background: var(--hover); }
+.try:active { transform: scale(.96); }
+.try svg.i { width: 11px; height: 11px; color: var(--muted); stroke-width: 2.2; }
+.rnote { margin: 8px 0 0 45px; font-size: 12px; color: var(--amber); line-height: 1.45; }
+.rnote:empty { display: none; }
+
+/* Notes under the window. */
+.shared { max-width: 1240px; margin: 8px auto 60px; padding: 0 16px; font-size: 13px; line-height: 1.55; color: #2c2a26; }
+:root[data-theme="dark"] .shared { color: #d6d3cc; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .shared { color: #d6d3cc; } }
+.shared h4 { font: 500 16px var(--font-display); margin: 14px 0 4px; letter-spacing: -.02em; }
+.shared ul { margin: 4px 0 0; padding-left: 18px; columns: 2; column-gap: 32px; }
+.shared li { margin: 3px 0; break-inside: avoid; }
+.shared code { font: 12px ui-monospace, SFMono-Regular, Menlo, monospace; }
+@media (max-width: 900px) { .shared ul { columns: 1; } }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+</style>
+</head>
+<body>
+
+<div class="demo" role="toolbar" aria-label="Demo controls">
+  <span class="grp-ctl"><span class="lbl">State</span>
+    <span class="seg" data-ctl="state"><button data-v="ready">Working</button><button data-v="noplan">No plan</button><button data-v="tonesoff">Tones off</button></span></span>
+  <span class="grp-ctl"><span class="lbl">Theme</span>
+    <span class="seg" data-ctl="theme"><button data-v="light">Light</button><button data-v="dark">Dark</button><button data-v="system">System</button></span></span>
+</div>
+
+<div class="stage"><div class="scaler" id="scaler">
+  <div class="win" id="win">
+    <div class="traffic"><i></i><i></i><i></i></div>
+    <aside class="side" id="side"></aside>
+    <main class="main">
+      <div class="topbar"><span class="mic-chip"><svg class="i" viewBox="0 0 24 24"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M19 10v1a7 7 0 0 1-14 0v-1M12 18v4"/></svg>MacBook Pro Microphone</span></div>
+      <div class="pane" id="pane"></div>
+    </main>
+  </div>
+</div></div>
+
+<div class="shared">
+  <h4>v2: what gets built</h4>
+  <ul>
+    <li><b>Direction A, trimmed.</b> Title, one line under it, then the four places as rows, then Auto cleanup and Your rules in one box. No hero banner, no section labels, no hints.</li>
+    <li><b>A closed row</b> is 68 px: 14 px top and bottom, 18 px left, 16 px right. A 32 px icon tile (radius 9), 13 px gap, the name (display face 16/20, weight 500) over one short line (12.5/17, muted, one line). Then up to four 18 px app icons (radius 5, 5 px overlap, a tooltip naming every app) and the tone switch.</li>
+    <li><b>The tone switch</b>: a trough with 3 px padding and radius 10. Buttons are 28 px tall, 13 px side padding, 12.5 px weight 500, radius 7. The picked one sits on a raised thumb that slides 300 ms on <code>cubic-bezier(.3,1.18,.45,1)</code>. A pointed-at one gets the hover fill.</li>
+    <li><b>Opening</b>: moving the pointer onto a row, or focusing one of its buttons, opens it straight away. Only rows <i>below</i> it close; rows above stay open, so the row under the pointer never moves. The height grows over 320 ms on <code>cubic-bezier(.2,.8,.2,1)</code>. The content fades in over 220 ms after 60 ms and rises 4 px. A row opens on pointer <i>movement</i>, not on enter.</li>
+    <li><b>Closing</b>: 250 ms after the pointer leaves the whole places box, every open row folds over 240 ms, and the content fades out over 160 ms. Moving between buttons or rows never closes the row under the pointer.</li>
+    <li><b>An open row</b> adds the preview, inset 63 px left (lined up with the name), 16 px right, 14 px bottom. First a line with the tone's name (600, ink) and its short line (12.5/17, muted). Then 8 px down, the well: 12/14 px padding, radius 10, a 58 px label column, 7/12 px gaps. <i>You say</i> is 13/19.5 muted, with the cut words struck. <i>It types</i> is 14/21 ink, with the changes washed. The highlights are on whenever the row is open.</li>
+    <li><b>Which tone it previews</b>: the button under the pointer. Off the buttons, an open row keeps showing the last tone pointed at, and a row that just opened shows the picked one. Switching tones changes the text at once, and the height grows or shrinks downward over 320 ms. A click picks, and the row stays open.</li>
+    <li><b>Cleanup None and No plan</b>: both lines show exactly what was heard, with no highlights, and the switches fade to 55%. <b>Tones off</b>: the rows fade to 45% under the existing alert. <b>Auto cleanup</b> changes only on a click. Pointing at a stop scales its knob 1.12× and darkens its name; pointing at the well washes its changes in. The well’s min-height is its tallest level (None), so nothing jumps. Your rules are as picked.</li>
+  </ul>
+</div>
+
+<script>
+// ── State ─────────────────────────────────────────────────────────────
+const DEFAULTS = { personal: 'casual', work: 'balanced', email: 'professional', agents: 'verbatim' };
+const S = { theme: 'system', state: 'ready', clean: 'light', picks: { ...DEFAULTS },
+  rules: ['Write numbers as digits.', 'Write “OK”, never “okay”.'] };
+try { const saved = JSON.parse(localStorage.getItem('tones-redesign-v2') || '{}'); Object.assign(S, saved); S.picks = { ...DEFAULTS, ...(saved.picks || {}) }; } catch (e) {}
+const save = () => { try { localStorage.setItem('tones-redesign-v2', JSON.stringify(S)); } catch (e) {} };
+// A link can open a given view: ?theme=dark&state=noplan&clean=none
+new URLSearchParams(location.search).forEach((v, k) => { if (['theme', 'state', 'clean'].includes(k)) S[k] = v; });
+const reduce = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+// ── Icons ─────────────────────────────────────────────────────────────
+const P = {
+  grid: '<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>',
+  bars: '<rect x="3" y="11" width="4" height="9" rx="1"/><rect x="10" y="5" width="4" height="15" rx="1"/><rect x="17" y="14" width="4" height="6" rx="1"/>',
+  book: '<path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/><path d="M9 7h6"/>',
+  phrases: '<path d="M4 6h16M4 12h11M4 18h7"/><path d="m17 15 3 3-3 3"/>',
+  sliders: '<path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/>',
+  sparkle: '<path d="M12 3l1.9 5.6L19.5 10l-5.6 1.9L12 17.5l-1.9-5.6L4.5 10l5.6-1.4z"/><path d="M19 3v4M17 5h4"/>',
+  bulb: '<path d="M9 18h6M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.74V16h8v-1.26A7 7 0 0 0 12 2z"/>',
+  gear: '<path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/>',
+  chat: '<path d="M14 9a2 2 0 0 1-2 2H6l-4 4V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2z"/><path d="M18 9h2a2 2 0 0 1 2 2v11l-4-4h-6a2 2 0 0 1-2-2v-1"/>',
+  brief: '<rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>',
+  mail: '<rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/>',
+  wand: '<path d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72"/><path d="m14 7 3 3M5 6v4M19 14v4M10 2v2M7 8H3M21 16h-4M11 3H9"/>',
+  rules: '<path d="m3 17 2 2 4-4M3 7l2 2 4-4M13 6h8M13 12h8M13 18h8"/>',
+  alert: '<circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/>',
+  pause: '<circle cx="12" cy="12" r="10"/><path d="M10 15V9M14 15V9"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>',
+  x: '<path d="M18 6 6 18M6 6l12 12"/>',
+};
+const ic = (n, cls = '') => `<svg class="i ${cls}" viewBox="0 0 24 24">${P[n]}</svg>`;
+const tile = (n, kind = 'n') => `<span class="tile ${kind}">${ic(n)}</span>`;
+
+// ── Facts, from Tones.swift, AppStyle.swift and AppMarks.swift ─────────
+// `line` is the row's one line, cut down from ToneContext.blurb; a tone's
+// `short` is its ToneOption.detail cut to its first clause. The rest is as written.
+const PLACES = [
+  { id: 'personal', title: 'Personal', icon: 'chat', line: 'Friends, family and your own notes',
+    appliesTo: 'Messages · WhatsApp · Telegram · Signal · Discord · Messenger · Notes · Bear · Obsidian · Day One',
+    apps: [['Messages', '#35C759'], ['WhatsApp', '#25D366'], ['Telegram', '#2AABEE'], ['Notes', '#E8C547']],
+    said: 'hey so um I was thinking maybe we could grab dinner tomorrow around seven if that works for you',
+    options: [
+      { id: 'casual', title: 'Casual', short: 'Talks the way you text.',
+        sample: 'hey so I was thinking maybe we could grab dinner tomorrow around seven if that works for you' },
+      { id: 'balanced', title: 'Balanced', short: 'Ordinary written sentences, still relaxed.',
+        sample: 'Hey, so I was thinking maybe we could grab dinner tomorrow around seven, if that works for you.' },
+      { id: 'polished', title: 'Polished', short: 'Careful punctuation and sentence breaks.',
+        sample: 'Hey, I was thinking maybe we could grab dinner tomorrow around seven if that works for you.' },
+    ] },
+  { id: 'work', title: 'Work', icon: 'brief', line: 'Team chat, tickets and documents',
+    appliesTo: 'Slack · Teams · Linear · Jira · Asana · Notion · Google Docs · Word · Pages · Confluence · long-form writing apps',
+    apps: [['Slack', '#4A154B'], ['Teams', '#5059C9'], ['Linear', '#5E6AD2'], ['Notion', '#2F2F2F']],
+    said: 'so the deploy is is blocked on the migration and um I don\'t think we can ship on Wednesday we should push the release to Thursday',
+    options: [
+      { id: 'casual', title: 'Casual', short: 'Standup voice. Short and plain.',
+        sample: 'so the deploy is blocked on the migration and I don\'t think we can ship on Wednesday; we should push the release to Thursday' },
+      { id: 'balanced', title: 'Balanced', short: 'Complete sentences, straight to the point.',
+        sample: 'The deploy is blocked on the migration. I don\'t think we can ship on Wednesday — we should push the release to Thursday.' },
+      { id: 'formal', title: 'Formal', short: 'For the message that gets forwarded.',
+        sample: 'So the deploy is blocked on the migration, and I do not think we can ship on Wednesday. We should push the release to Thursday.' },
+    ] },
+  { id: 'email', title: 'Email', icon: 'mail', line: 'Mail clients and webmail',
+    appliesTo: 'Mail · Outlook · Spark · Superhuman · Mimestream · Missive · Gmail · Proton · Fastmail · Zoho',
+    apps: [['Mail', '#3A76F0'], ['Outlook', '#0F6CBD'], ['Gmail', '#EA4335'], ['Spark', '#E8452C']],
+    said: 'hi Sarah um thanks for sending the deck over I had a look this morning and I think the numbers on slide four need another pass let me know when you\'re free',
+    options: [
+      { id: 'friendly', title: 'Friendly', short: 'Warm and direct, for someone you already know.',
+        sample: 'Hi Sarah,\n\nThanks for sending the deck over. I had a look this morning and I think the numbers on slide four need another pass. Let me know when you\'re free.' },
+      { id: 'professional', title: 'Professional', short: 'The everyday work email.',
+        sample: 'Hi Sarah,\n\nThanks for sending the deck over. I had a look this morning and I think the numbers on slide four need another pass.\n\nLet me know when you\'re free.' },
+      { id: 'formal', title: 'Formal', short: 'Nothing contracted, nothing casual.',
+        sample: 'Hi Sarah,\n\nThanks for sending the deck over. I had a look this morning and I think the numbers on slide four need another pass. Let me know when you are free.' },
+    ] },
+  { id: 'agents', title: 'Agents', icon: 'sparkle', line: 'AI chats, AI editors and the terminal',
+    appliesTo: 'ChatGPT · Claude · Gemini · Perplexity · Copilot · Cursor · Windsurf · Zed · Terminal · iTerm · Warp · Ghostty',
+    apps: [['Claude', '#C4451A'], ['ChatGPT', '#10A37F'], ['Cursor', '#2B2B2B'], ['Terminal', '#2E2E2E', '›_']],
+    said: 'okay so um I was wondering if you could take a look at the login flow and figure out why the session drops after an hour and then fix it and also add a test for it',
+    options: [
+      { id: 'verbatim', title: 'As spoken', short: 'Every word you said, cleaned up.',
+        sample: 'Okay, so I was wondering if you could take a look at the login flow and figure out why the session drops after an hour, and then fix it and also add a test for it.' },
+      { id: 'terse', title: 'Terse', short: 'The same words, minus the polite opening.',
+        sample: 'Take a look at the login flow and figure out why the session drops after an hour, and then fix it and also add a test for it.' },
+    ] },
+];
+const byId = Object.fromEntries(PLACES.map(p => [p.id, p]));
+const optOf = (p, id) => p.options.find(o => o.id === id) || p.options[0];
+
+const CLEAN = {
+  said: 'so I think we should, we should probably just um ship the thing on Friday you know and then like see what happens',
+  levels: [
+    { id: 'none', title: 'None', short: 'Pastes what was heard' },
+    { id: 'light', title: 'Light', short: 'Takes the ums and stutters',
+      out: 'So I think we should, we should probably just ship the thing on Friday, you know, and then like see what happens.' },
+    { id: 'moderate', title: 'Moderate', short: 'Drops false starts too',
+      out: 'So I think we should probably just ship the thing on Friday, you know, and then see what happens.' },
+  ],
+};
+const LEVEL = Object.fromEntries(CLEAN.levels.map(l => [l.id, l]));
+const SUGGESTIONS = ['Write numbers as digits.', 'Use British spelling.', 'No exclamation marks.', 'Write “OK”, never “okay”.'];
+const RULE_LIMIT = 600, MAX_RULES = 12;
+
+// With no cleanup pass to run, every app gets the words exactly as heard.
+const isRaw = () => S.clean === 'none' || S.state === 'noplan';
+
+// ── ToneDiff, ported from ToneDiff.swift ──────────────────────────────
+const isLN = c => /[\p{L}\p{N}]/u.test(c);
+const tok = (text, start, end, kind) => ({ text, start, end, kind, key: kind === 'word' ? text.toLowerCase().replace(/’/g, "'") : text });
+function tokens(s) {
+  const out = []; let i = 0;
+  while (i < s.length) {
+    const c = s[i];
+    if (c === '\n') { out.push(tok('\n', i, i + 1, 'nl')); i++; }
+    else if (/\s/.test(c)) i++;
+    else if (isLN(c)) {
+      let e = i + 1;
+      while (e < s.length) {
+        const d = s[e];
+        if (isLN(d)) { e++; continue; }
+        if ((d === "'" || d === '’') && e + 1 < s.length && /\p{L}/u.test(s[e + 1])) { e += 2; continue; }
+        break;
+      }
+      out.push(tok(s.slice(i, e), i, e, 'word')); i = e;
+    } else { out.push(tok(c, i, i + 1, 'mark')); i++; }
+  }
+  return out;
+}
+function diff(said, written) {
+  const a = tokens(said), b = tokens(written), n = a.length, m = b.length;
+  const L = Array.from({ length: n + 1 }, () => new Int16Array(m + 1));
+  for (let i = n - 1; i >= 0; i--) for (let j = m - 1; j >= 0; j--)
+    L[i][j] = a[i].key === b[j].key ? L[i + 1][j + 1] + 1 : Math.max(L[i + 1][j], L[i][j + 1]);
+  const marks = [], cutIdx = new Set(), rwIdx = new Set();
+  let gone = [], neu = [];
+  const flush = () => {
+    const newWords = neu.filter(j => b[j].kind === 'word');
+    const goneWords = gone.filter(i => a[i].kind === 'word');
+    let rewritten = new Set();
+    if (newWords.length) {
+      const contracted = goneWords.filter(i => /['’]/.test(a[i].text));
+      rewritten = new Set(contracted.length ? contracted : goneWords);
+    }
+    rewritten.forEach(i => rwIdx.add(i));
+    let run = null;
+    const close = () => { if (run) marks.push({ start: b[run.first].start, end: b[run.last].end, kind: run.kind }); run = null; };
+    for (const j of neu) {
+      const kind = b[j].kind === 'word' ? 'words' : b[j].kind === 'mark' ? 'punct' : 'lb';
+      if (run && run.kind === kind && run.last === j - 1 && kind !== 'punct') run.last = j;
+      else { close(); run = { kind, first: j, last: j }; }
+    }
+    close();
+    goneWords.filter(i => !rewritten.has(i)).forEach(i => cutIdx.add(i));
+    gone = []; neu = [];
+  };
+  const capitals = (s, w) => {
+    if (s.text === w.text) return;
+    if (s.text.length !== w.text.length) { marks.push({ start: w.start, end: w.end, kind: 'cap' }); return; }
+    let prev = null;
+    for (let q = 0; q < s.text.length; q++) {
+      const x = s.text[q], y = w.text[q];
+      if (x !== y && x.toLowerCase() === y.toLowerCase()) {
+        const st = w.start + q;
+        if (prev && prev.end === st) prev.end = st + 1;
+        else { prev = { start: st, end: st + 1, kind: 'cap' }; marks.push(prev); }
+      }
+    }
+  };
+  let i = 0, j = 0;
+  while (i < n || j < m) {
+    if (i < n && j < m && a[i].key === b[j].key) { flush(); capitals(a[i], b[j]); i++; j++; }
+    else if (j < m && (i === n || L[i][j + 1] >= L[i + 1][j])) { neu.push(j); j++; }
+    else { gone.push(i); i++; }
+  }
+  flush();
+  marks.sort((x, y) => x.start - y.start);
+  return { a, marks, cutIdx, rwIdx };
+}
+const DC = new Map();
+const D = (s, w) => { const k = s + '\u0000' + w; if (!DC.has(k)) DC.set(k, diff(s, w)); return DC.get(k); };
+function renderWritten(written, d) {
+  let html = '', pos = 0;
+  for (const mk of d.marks) {
+    html += esc(written.slice(pos, mk.start));
+    const t = written.slice(mk.start, mk.end);
+    html += mk.kind === 'lb' ? `<span class="m k-lb" aria-hidden="true">↵</span>${t}` : `<span class="m k-${mk.kind}">${esc(t)}</span>`;
+    pos = mk.end;
+  }
+  return html + esc(written.slice(pos));
+}
+function renderSaid(said, d) {
+  let html = '', pos = 0, k = 0;
+  const a = d.a;
+  while (k < a.length) {
+    const cls = d.cutIdx.has(k) ? 'cut' : d.rwIdx.has(k) ? 'rw' : '';
+    if (!cls) { k++; continue; }
+    const set = cls === 'cut' ? d.cutIdx : d.rwIdx;
+    let e = k; while (e + 1 < a.length && set.has(e + 1)) e++;
+    html += esc(said.slice(pos, a[k].start)) + `<span class="${cls}">${esc(said.slice(a[k].start, a[e].end))}</span>`;
+    pos = a[e].end; k = e + 1;
+  }
+  return html + esc(said.slice(pos));
+}
+// What a preview shows: the words as heard on both lines when nothing runs.
+function pair(said, written) {
+  if (isRaw() || written == null) return { said: esc(said), out: esc(said) };
+  const d = D(said, written);
+  return { said: renderSaid(said, d), out: renderWritten(written, d) };
+}
+
+// ── Pieces ────────────────────────────────────────────────────────────
+const atile = app => `<span class="at" style="--t:${app[1]}">${app[2] || app[0][0]}</span>`;
+const pills = (grp, items, sel) => `<div class="pills" data-pick="${grp}">${items.map(([id, t]) => `<button data-choice="${id}" class="${id === sel ? 'on' : ''}">${t}</button>`).join('')}<span class="pk"></span></div>`;
+function strip() {
+  if (S.state === 'noplan') return `<div class="strip warn blk" style="--k:1">${ic('alert')}<div><b>Tones need a SayControl plan.</b> Until then, your words paste as heard.</div><button class="btn" title="Opens Settings › Plan">See plans</button></div>`;
+  if (S.state === 'tonesoff') return `<div class="strip off blk" style="--k:1">${ic('pause')}<div><b>Tones are off.</b> Every app gets the same plain cleanup.</div><button class="btn" data-tones-on>Turn tones on</button></div>`;
+  return '';
+}
+const prow = p => `
+  <div class="prow" data-place="${p.id}">
+    <div class="prow-h">
+      ${tile(p.icon)}
+      <div class="pt"><b>${p.title}</b><span>${p.line}</span></div>
+      <span class="stack" title="${esc(p.appliesTo)}">${p.apps.map(atile).join('')}</span>
+      ${pills(p.id, p.options.map(o => [o.id, o.title]), S.picks[p.id])}
+    </div>
+    <div class="pv"><div class="pv-in">
+      <div class="pv-d"><b class="js-tname"></b><span class="js-tshort"></span></div>
+      <div class="ba show"><span class="ba-k">You say</span><span class="ba-said js-said"></span><span class="ba-k">It types</span><span class="ba-out js-out"></span></div>
+    </div></div>
+  </div>`;
+function cleanBlock() {
+  const i = CLEAN.levels.findIndex(l => l.id === S.clean);
+  return `<div class="clean" data-clean>
+      <div class="clean-h">${tile('wand', 'e')}<div class="txt"><div class="t">Auto cleanup</div><div class="d">How much of the way you talk gets tidied, in every app, before the tone.</div></div></div>
+      <div class="steps" data-pick="clean" style="--f:${i * 50}%">
+        <div class="track"><i></i></div>
+        ${CLEAN.levels.map((l, k) => `<button class="stop ${k === i ? 'on' : ''} ${k < i ? 'past' : ''}" data-choice="${l.id}"><span class="knob"></span><b>${l.title}</b><span class="s">${l.short}</span></button>`).join('')}
+      </div>
+      <div class="ba" data-cba><span class="ba-k">You say</span><span class="ba-said js-said"></span><span class="ba-k">It types</span><span class="ba-out js-out"></span></div>
+    </div>`;
+}
+function rulesBlock() {
+  return `<div class="collapse rules-c gated ${S.clean === 'none' ? 'shut' : ''}"><div><div class="rules" data-rules>
+    <div class="rules-h">${tile('rules')}<div class="txt"><div class="t">Your rules</div><div class="d">Tell the cleanup how you like your text, in your own words. It still never changes what you said.</div></div><span class="count js-count"></span></div>
+    <div class="rlist js-rlist"></div>
+    <div class="tries js-tries"></div>
+    <div class="rnote js-rnote"></div>
+  </div></div></div>`;
+}
+
+// ── A row's preview ───────────────────────────────────────────────────
+// Pointing never moves the row under the pointer: a row opens downward, only
+// rows BELOW it close, rows above stay open until the pointer leaves the whole
+// box, and then everything folds 250 ms later.
+let closeT = 0;
+const rowList = () => [...pane.querySelectorAll('.prow')];
+const rowEl = id => pane.querySelector(`.prow[data-place="${id}"]`);
+function fill(id, tone) {
+  const row = rowEl(id); if (!row) return;
+  if (row._tone === tone && row._raw === isRaw()) return;
+  row._tone = tone; row._raw = isRaw();
+  const p = byId[id], o = optOf(p, tone), t = pair(p.said, o.sample);
+  row.querySelector('.js-tname').textContent = o.title;
+  row.querySelector('.js-tshort').textContent = o.short;
+  row.querySelector('.js-said').innerHTML = t.said;
+  row.querySelector('.js-out').innerHTML = t.out;
+  row.querySelectorAll('.pills button').forEach(b => b.classList.toggle('peek', b.dataset.choice === tone));
+  if (row.classList.contains('open')) size(row);
+}
+function size(row) { const pv = row.querySelector('div.pv'); pv.style.height = row.classList.contains('open') ? pv.firstElementChild.offsetHeight + 'px' : '0px'; }
+function openRow(id, tone = S.picks[id]) {
+  clearTimeout(closeT);
+  const rows = rowList(), at = rows.findIndex(r => r.dataset.place === id);
+  if (at < 0) return;
+  rows.forEach((r, k) => { if (k > at && r.classList.contains('open')) shut(r); });
+  const row = rows[at];
+  fill(id, tone);
+  if (!row.classList.contains('open')) { row.classList.add('open'); size(row); }
+}
+function shut(row) {
+  row.classList.remove('open'); size(row);
+  row.querySelectorAll('.pills button').forEach(b => b.classList.remove('peek'));
+}
+const foldAll = () => rowList().forEach(r => r.classList.contains('open') && shut(r));
+const foldSoon = () => { clearTimeout(closeT); closeT = setTimeout(foldAll, 250); };
+
+// ── The cleanup's own preview (pointed at, it washes its changes) ─────
+function cleanPair(level) {
+  if (level === 'none' || S.state === 'noplan') return { said: esc(CLEAN.said), out: esc(CLEAN.said), raw: true };
+  const d = D(CLEAN.said, LEVEL[level].out);
+  return { said: renderSaid(CLEAN.said, d), out: renderWritten(LEVEL[level].out, d) };
+}
+function paintClean({ level = S.clean, show = false, anim = false } = {}) {
+  const box = pane.querySelector('[data-cba]'); if (!box) return;
+  const t = cleanPair(level);
+  box.classList.toggle('show', show && !t.raw);
+  swap(box.querySelector('.js-said'), t.said, anim);
+  swap(box.querySelector('.js-out'), t.out, anim);
+}
+// The well is as tall as its tallest level (None, unwrapped speech), so a click never resizes it.
+function fixCleanHeight() {
+  const box = pane.querySelector('[data-cba]'); if (!box) return;
+  const said = box.querySelector('.js-said'), out = box.querySelector('.js-out'), keep = [said.innerHTML, out.innerHTML];
+  box.style.minHeight = '';
+  let tallest = 0;
+  for (const l of CLEAN.levels) { const t = cleanPair(l.id); said.innerHTML = t.said; out.innerHTML = t.out; tallest = Math.max(tallest, box.offsetHeight); }
+  said.innerHTML = keep[0]; out.innerHTML = keep[1];
+  box.style.minHeight = tallest + 'px';
+}
+function swap(el, html, anim) {
+  if (!el || (el._html === html && !el.classList.contains('sw-out'))) return;
+  el._html = html; clearTimeout(el._t);
+  if (!anim || reduce()) { el.classList.remove('sw-out'); el.innerHTML = html; return; }
+  el.classList.add('sw-out');
+  el._t = setTimeout(() => { el.innerHTML = html; el.classList.remove('sw-out'); el.classList.add('sw-in'); el.offsetHeight; el.classList.remove('sw-in'); }, 110);
+}
+
+// ── Picking ───────────────────────────────────────────────────────────
+function syncPick(grp) {
+  const val = grp === 'clean' ? S.clean : S.picks[grp];
+  pane.querySelectorAll(`[data-pick="${grp}"]`).forEach(g => {
+    const btns = [...g.querySelectorAll('[data-choice]')], idx = btns.findIndex(b => b.dataset.choice === val);
+    btns.forEach((b, i) => { b.classList.toggle('on', i === idx); b.classList.toggle('past', i < idx); b.setAttribute('aria-pressed', i === idx); });
+    if (g.classList.contains('steps')) g.style.setProperty('--f', (idx / (btns.length - 1) * 100) + '%');
+    if (g.querySelector('.pk')) putThumb(g, true);
+  });
+}
+function putThumb(g, anim) {
+  const pk = g.querySelector('.pk'), on = g.querySelector('button.on');
+  if (!pk || !on) return;
+  if (!anim) pk.style.transition = 'none';
+  pk.style.left = on.offsetLeft + 'px'; pk.style.width = on.offsetWidth + 'px';
+  if (!anim) { pk.offsetHeight; pk.style.transition = ''; }
+}
+function pickClean(level) {
+  if (S.clean === level) return;
+  S.clean = level; save(); syncPick('clean');
+  paintClean({ level, show: true, anim: true });
+  pane.classList.toggle('is-raw', isRaw());
+  pane.querySelectorAll('.rules-c').forEach(c => c.classList.toggle('shut', level === 'none'));
+}
+
+// ── Your rules (CustomRules.swift): one per line, vetted ──────────────
+const OFF_TASK = [
+  /\b(ignore|disregard|forget|override|bypass)\b.{0,40}\b(previous|prior|above|earlier|all|system|these|those|your|the)\b.{0,20}\b(instructions?|rules?|prompts?|guidelines?)\b/i,
+  /\b(ignore|disregard|forget)\b.{0,20}\b(everything|anything|all)\b.{0,20}\b(above|before|previous|prior|earlier|said)\b/i,
+  /\b(system|developer|hidden|internal)\s+(prompts?|messages?|instructions?)\b/i,
+  /\b(reveal|print|show|repeat|output|tell|display|leak|dump|share|return)\b.{0,40}\b(prompts?|instructions?|api[\s_-]*keys?|secrets?|passwords?|credentials?|tokens?)\b/i,
+  /\b(you are now|act as|pretend (to be|you)|role[\s-]?play|jailbreak|developer mode)\b/i,
+  /^\s*(system|assistant|user)\s*:/i,
+  /<\s*\/?\s*[a-z_]+\s*>|<<<|>>>/i,
+  /\b(answer|respond to|reply to)\b.{0,30}\b(questions?|transcripts?|dictation|the text)\b/i,
+];
+const clean1 = r => r.trim().replace(/^([-*•]|\d+[.)])\s*/, '');
+function vet(rules) {
+  const v = { kept: [], offTask: [], overflow: 0, status: [] };
+  rules.forEach(raw => {
+    const r = clean1(raw);
+    if (!r) { v.status.push(''); return; }
+    if (OFF_TASK.some(rx => rx.test(r))) { v.offTask.push(r); v.status.push('bad'); }
+    else if (v.kept.length >= MAX_RULES) { v.overflow++; v.status.push('over'); }
+    else { v.kept.push(r); v.status.push(''); }
+  });
+  return v;
+}
+const ruleText = () => S.rules.join('\n');
+function drawRules(fresh = -1) {
+  pane.querySelectorAll('[data-rules]').forEach(root => {
+    root.querySelector('.js-rlist').innerHTML = S.rules.map((r, i) =>
+      `<div class="rrow ${i === fresh ? 'new' : ''}" data-i="${i}"><span class="n">${i + 1}</span><input value="${esc(r)}" aria-label="Rule ${i + 1}" spellcheck="false"><span class="tag"></span><button class="del" title="Remove this rule">${ic('x')}</button></div>`).join('')
+      + `<label class="radd">${ic('plus')}<input class="js-add" placeholder="Add a rule in your own words. For example: Use British spelling." spellcheck="false"></label>`;
+    ruleMeta(root);
+    root.querySelectorAll('.rrow').forEach(row => {
+      const i = +row.dataset.i, input = row.querySelector('input');
+      input.oninput = () => {
+        const next = [...S.rules]; next[i] = input.value;
+        if (next.join('\n').length > RULE_LIMIT) { input.value = S.rules[i]; return nudge(root); }
+        S.rules = next; save(); ruleMeta(root);
+      };
+      input.onkeydown = e => {
+        if (e.key === 'Enter') { e.preventDefault(); root.querySelector('.js-add').focus(); }
+        if (e.key === 'Backspace' && !input.value) { e.preventDefault(); removeRule(i, true); }
+      };
+      input.onblur = () => { if (!input.value.trim() && S.rules[i] !== undefined && !S.rules[i].trim()) removeRule(i); };
+      row.querySelector('.del').onclick = () => { row.classList.add('gone'); setTimeout(() => removeRule(i), 180); };
+    });
+    const add = root.querySelector('.js-add');
+    add.onkeydown = e => {
+      if (e.key !== 'Enter') return;
+      e.preventDefault();
+      if (add.value.trim() && addRule(add.value)) pane.querySelector('[data-rules] .js-add')?.focus();
+    };
+    root.querySelector('.js-tries').onclick = e => { const b = e.target.closest('[data-try]'); if (b) addRule(b.dataset.try); };
+  });
+}
+function nudge(root) { const a = root.querySelector('.radd'); a.classList.remove('shake'); a.offsetWidth; a.classList.add('shake'); }
+function addRule(r) {
+  r = clean1(r);
+  if (!r || S.rules.includes(r)) return false;
+  if ((ruleText() + (S.rules.length ? '\n' : '') + r).length > RULE_LIMIT) { pane.querySelectorAll('[data-rules]').forEach(nudge); return false; }
+  S.rules.push(r); save(); drawRules(S.rules.length - 1); return true;
+}
+function removeRule(i, focusPrev) {
+  S.rules.splice(i, 1); save(); drawRules();
+  if (focusPrev) { const ins = pane.querySelectorAll('[data-rules] .rrow input'); (ins[i - 1] || pane.querySelector('[data-rules] .js-add'))?.focus(); }
+}
+function ruleMeta(root) {
+  const v = vet(S.rules);
+  root.querySelector('.js-count').textContent = `${ruleText().length}/${RULE_LIMIT}`;
+  root.querySelectorAll('.rrow').forEach((row, i) => {
+    const st = v.status[i] || '';
+    row.classList.toggle('bad', st === 'bad'); row.classList.toggle('over', st === 'over');
+    row.querySelector('.tag').textContent = st === 'bad' ? 'Left out' : st === 'over' ? 'Not used' : '';
+  });
+  const left = SUGGESTIONS.filter(s => !S.rules.includes(s));
+  root.querySelector('.js-tries').innerHTML = left.length ? `<span>Try</span>${left.map(s => `<button class="try" data-try="${esc(s)}">${ic('plus')}${esc(s)}</button>`).join('')}` : '';
+  let note = '';
+  if (v.offTask.length) {
+    const f = v.offTask[0], q = f.length > 40 ? f.slice(0, 40) + '…' : f;
+    note = `Left out: “${esc(q)}”${v.offTask.length > 1 ? ` and ${v.offTask.length - 1} more` : ''}. Rules can change how text is tidied, not what the cleanup does.`;
+  } else if (v.overflow) note = `Only the first ${MAX_RULES} rules are used.`;
+  root.querySelector('.js-rnote').innerHTML = note;
+}
+
+// ── Drawing the pane ──────────────────────────────────────────────────
+const pane = document.getElementById('pane');
+function render(fade = true) {
+  const draw = () => {
+    clearTimeout(closeT);
+    pane.className = 'pane' + (isRaw() ? ' is-raw' : '') + (S.state === 'noplan' ? ' is-noplan' : '') + (S.state === 'tonesoff' ? ' is-paused' : '');
+    pane.innerHTML = `<header class="ph blk" style="--k:0"><h1>Tones</h1><p><b>You talk the same way everywhere.</b> SayControl writes it to fit the app you’re in.</p></header>`
+      + strip()
+      + `<section class="box places tones-sec gated blk" style="--k:2">${PLACES.map(prow).join('')}</section>`
+      + `<section class="box cleanbox gated blk" style="--k:3">${cleanBlock()}${rulesBlock()}</section>`;
+    wire();
+  };
+  if (fade) { pane.classList.add('out'); setTimeout(() => { pane.scrollTop = 0; draw(); }, 110); } else draw();
+}
+function wire() {
+  PLACES.forEach(p => fill(p.id, S.picks[p.id]));
+  paintClean(); drawRules();
+  requestAnimationFrame(() => pane.querySelectorAll('.pills').forEach(g => putThumb(g, false)));
+
+  // The rows: open on movement and show the tone under the pointer. Off the
+  // buttons, an open row keeps the tone it shows, so its height never changes
+  // under the pointer. Everything folds 250 ms after the pointer leaves the box.
+  const places = pane.querySelector('.places');
+  places.addEventListener('pointerleave', foldSoon);
+  places.addEventListener('focusout', e => { if (!places.contains(e.relatedTarget)) foldSoon(); });
+  pane.querySelectorAll('.prow').forEach(row => {
+    const id = row.dataset.place;
+    row.addEventListener('pointermove', e => {
+      if (e.pointerType === 'touch') return;
+      const b = e.target.closest('.pills button');
+      openRow(id, b ? b.dataset.choice : row.classList.contains('open') ? row._tone : S.picks[id]);
+    });
+    row.addEventListener('focusin', e => { const b = e.target.closest('.pills button'); openRow(id, b ? b.dataset.choice : S.picks[id]); });
+    row.querySelectorAll('.pills button').forEach(b => b.onclick = () => {
+      S.picks[id] = b.dataset.choice; save(); syncPick(id); openRow(id, b.dataset.choice);
+    });
+  });
+
+  // Auto cleanup: a click changes the level. Pointing only scales the knob, and
+  // pointing at the well washes its changes in (colour only, no size change).
+  fixCleanHeight();
+  pane.querySelectorAll('[data-pick="clean"] [data-choice]').forEach(b => b.onclick = () => pickClean(b.dataset.choice));
+  const cba = pane.querySelector('[data-cba]');
+  cba.onmouseenter = () => paintClean({ show: true });
+  cba.onmouseleave = () => paintClean();
+
+  pane.querySelectorAll('[data-tones-on]').forEach(b => b.onclick = () => { S.state = 'ready'; save(); syncCtl(); render(true); });
+}
+
+// ── The window's sidebar ──────────────────────────────────────────────
+document.getElementById('side').innerHTML = `
+  <div class="wordmark"><b></b>SayControl</div>
+  <div class="ready"><div class="st"><i></i>Ready</div><div class="hk"><span>Hold<span class="kc">fn</span></span><span>to dictate</span></div></div>
+  <div class="snav">${ic('grid')}Overview</div>
+  <div class="snav">${ic('bars')}Insights</div>
+  <div class="caps">Voice</div>
+  <div class="snav">${ic('book')}Dictionary</div>
+  <div class="snav">${ic('phrases')}Phrases</div>
+  <div class="snav on">${ic('sliders')}Tones</div>
+  <div class="caps">Coding</div>
+  <div class="snav">${ic('sparkle')}Agents</div>
+  <div class="grow"></div>
+  <div class="snav">${ic('bulb')}How it works</div>
+  <div class="snav">${ic('gear')}Settings</div>
+  <div class="acct"><div class="avatar">S</div><div><b>Sorower</b><span>Pro</span></div></div>`;
+
+// ── Demo controls ─────────────────────────────────────────────────────
+function syncCtl() {
+  document.querySelectorAll('.seg[data-ctl]').forEach(seg => seg.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', S[seg.dataset.ctl] === b.dataset.v)));
+  if (S.theme === 'system') document.documentElement.removeAttribute('data-theme'); else document.documentElement.dataset.theme = S.theme;
+}
+document.querySelectorAll('.seg[data-ctl]').forEach(seg => seg.querySelectorAll('button').forEach(b => b.onclick = () => {
+  if (S[seg.dataset.ctl] === b.dataset.v) return;
+  S[seg.dataset.ctl] = b.dataset.v; save(); syncCtl();
+  if (seg.dataset.ctl !== 'theme') render(true);
+}));
+
+function fit() {
+  const s = Math.min(1, (document.documentElement.clientWidth - 32) / 1240);
+  const sc = document.getElementById('scaler');
+  sc.style.transform = `scale(${s})`;
+  sc.style.marginBottom = `${-860 * (1 - s)}px`;
+  sc.style.marginLeft = sc.style.marginRight = `${-1240 * (1 - s) / 2}px`;
+}
+addEventListener('resize', fit);
+fit(); syncCtl(); render(false);
+</script>
+</body>
+</html>

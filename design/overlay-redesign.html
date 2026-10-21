@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SayCtrl overlay redesign — one organism, not three widgets</title>
+<style>
+  /* ---------- SayCtrl palette (verbatim from PillView / AgentPanel) ---------- */
+  :root {
+    --ash:      #1C1A16;   /* PillView.glass       */
+    --ink:      #ECE8DF;   /* PillView.glassInk    */
+    --muted:    #9A9488;   /* PillView.glassMuted  */
+    --ember:    #F26A3F;   /* PillView.emberBar    */
+    --moss:     #7FAE8C;   /* PillView.mossBadge   */
+    --amber:    #D9A855;   /* PillView.amberBadge  */
+    --say:      #7AB8FF;   /* AgentPanel.sayTint   */
+    --you:      #FFC773;   /* AgentPanel.youTint   */
+    --edge:     rgba(255,255,255,0.09);
+    --sans:  -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+    --serif: ui-serif, "New York", Georgia, serif;       /* spoken words wear the serif */
+    --mono:  ui-monospace, "SF Mono", Menlo, monospace;  /* machine facts wear the mono */
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    font-family: var(--sans);
+    color: var(--ink);
+    overflow: hidden;
+    background: #14110d;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ---------- The desktop the overlays float on ---------- */
+  .desktop {
+    position: fixed; inset: 0;
+    background:
+      radial-gradient(1200px 800px at 30% 20%, #2c2519 0%, transparent 60%),
+      radial-gradient(900px 700px at 85% 85%, rgba(242,106,63,0.10) 0%, transparent 55%),
+      radial-gradient(700px 500px at 80% 10%, rgba(127,174,140,0.07) 0%, transparent 60%),
+      linear-gradient(160deg, #221d15 0%, #14110d 55%, #100d0a 100%);
+  }
+  .desktop::after {  /* faint grain so the glass has something to chew on */
+    content: ""; position: absolute; inset: 0; opacity: 0.05; pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.6'/%3E%3C/svg%3E");
+  }
+
+  /* ---------- Menu bar ---------- */
+  .menubar {
+    position: fixed; top: 0; left: 0; right: 0; height: 26px; z-index: 5;
+    display: flex; align-items: center; gap: 18px; padding: 0 14px;
+    font-size: 12.5px; color: rgba(236,232,223,0.85);
+    background: rgba(28,26,22,0.55);
+    backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px);
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+  .menubar .apple { font-size: 13px; }
+  .menubar b { font-weight: 600; }
+  .menubar .spacer { flex: 1; }
+  .menubar .right { display: flex; gap: 14px; font-size: 12px; color: rgba(236,232,223,0.7); }
+
+  /* ---------- A window under the overlays, so the frost reads ---------- */
+  .window {
+    position: fixed; left: 8%; top: 15%; width: 620px; max-width: 46vw; height: 62%;
+    z-index: 1; border-radius: 10px; overflow: hidden;
+    background: #211e19;
+    border: 1px solid rgba(255,255,255,0.08);
+    box-shadow: 0 30px 70px rgba(0,0,0,0.5);
+  }
+  .titlebar {
+    height: 36px; display: flex; align-items: center; padding: 0 12px; gap: 7px;
+    background: #26221c; border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+  .dot { width: 11px; height: 11px; border-radius: 50%; }
+  .dot.r { background: #574039; } .dot.y { background: #57503a; } .dot.g { background: #43523f; }
+  .titlebar .name { flex: 1; text-align: center; font-size: 12px; color: rgba(236,232,223,0.5); }
+  .docbody {
+    padding: 26px 30px; font-family: var(--serif); font-size: 14.5px; line-height: 1.75;
+    color: rgba(236,232,223,0.72);
+  }
+  .docbody p { margin-bottom: 14px; }
+  .docbody .pasted {
+    color: var(--ink); border-radius: 3px;
+    animation: pasteflash 1.6s ease-out;
+  }
+  @keyframes pasteflash {
+    0%   { background: rgba(242,106,63,0.35); }
+    100% { background: transparent; }
+  }
+  .docbody .cursor {
+    display: inline-block; width: 1.5px; height: 1.05em; background: var(--ink);
+    vertical-align: text-bottom; margin-left: 1px; animation: blink 1.1s steps(1) infinite;
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  /* =====================================================================
+     GLASS — one recipe for every SayCtrl surface (pill, speech card, chat)
+     ===================================================================== */
+  .glass {
+    background: rgba(28,26,22,0.74);
+    backdrop-filter: blur(28px) saturate(1.15);
+    -webkit-backdrop-filter: blur(28px) saturate(1.15);
+    border: 1px solid var(--edge);
+    box-shadow: 0 18px 48px rgba(0,0,0,0.45);
+  }
+
+  /* ---------- Wave bars — the one identity that moves between homes ---------- */
+  .bars { display: flex; align-items: center; gap: 3px; height: 18px; }
+  .bars i {
+    width: 3px; border-radius: 2px; background: var(--ember);
+    height: 4px; transform-origin: center;
+  }
+  .bars.live i { animation: bar 0.9s ease-in-out infinite alternate; }
+  .bars i:nth-child(1) { --hi: 8px;  animation-duration: 0.82s; animation-delay: -0.10s; }
+  .bars i:nth-child(2) { --hi: 12px; animation-duration: 0.74s; animation-delay: -0.32s; }
+  .bars i:nth-child(3) { --hi: 15px; animation-duration: 0.66s; animation-delay: -0.55s; }
+  .bars i:nth-child(4) { --hi: 17px; animation-duration: 0.78s; animation-delay: -0.21s; }
+  .bars i:nth-child(5) { --hi: 18px; animation-duration: 0.62s; animation-delay: -0.40s; }
+  .bars i:nth-child(6) { --hi: 17px; animation-duration: 0.72s; animation-delay: -0.05s; }
+  .bars i:nth-child(7) { --hi: 15px; animation-duration: 0.68s; animation-delay: -0.48s; }
+  .bars i:nth-child(8) { --hi: 12px; animation-duration: 0.80s; animation-delay: -0.26s; }
+  .bars i:nth-child(9) { --hi: 8px;  animation-duration: 0.70s; animation-delay: -0.60s; }
+  @keyframes bar { from { height: 4px; } to { height: var(--hi); } }
+  .bars.quiet i { height: 4px; background: rgba(236,232,223,0.30); animation: none; }
+
+  .timer { font-family: var(--mono); font-size: 11.5px; color: var(--ink); font-weight: 500; }
+
+  /* =====================================================================
+     THE SPEECH CARD — dictation. The pill IS the header; the transcript
+     unfolds out of it at whatever seat the pill is docked.
+     ===================================================================== */
+  .speech {
+    position: fixed; z-index: 20;
+    width: 132px; border-radius: 17px;
+    display: flex; flex-direction: column;
+    transition: width 0.45s cubic-bezier(0.32, 0.72, 0.28, 1),
+                border-radius 0.45s ease, opacity 0.3s ease, transform 0.3s ease;
+    opacity: 0; pointer-events: none; transform: scale(0.9);
+  }
+  .speech.on { opacity: 1; transform: scale(1); }
+  .speech.wide { width: 380px; }
+
+  .speech-head {
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    height: 34px; flex: none; padding: 0 16px;
+  }
+  .speech-head .state {
+    display: none; font-size: 12px; color: var(--muted); font-weight: 500;
+  }
+  .speech.thinking .bars i { animation: none; height: 4px; width: 4px; border-radius: 50%;
+    background: rgba(236,232,223,0.85); }
+  .speech.thinking .bars i:nth-child(n+4) { display: none; }
+  .speech.thinking .bars i { animation: pulse 1.2s ease-in-out infinite; }
+  .speech.thinking .bars i:nth-child(2) { animation-delay: 0.2s; }
+  .speech.thinking .bars i:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes pulse { 0%,100% { opacity: 0.25; } 50% { opacity: 0.95; } }
+  .speech.thinking .timer { display: none; }
+  .speech.thinking .state { display: block; }
+
+  .speech-body {
+    max-height: 0; overflow: hidden; flex: none;
+    transition: max-height 0.5s cubic-bezier(0.32, 0.72, 0.28, 1);
+  }
+  .speech.wide .speech-body { max-height: 190px; }
+  .speech-body .txtwrap {
+    padding: 2px 18px 14px;
+    font-family: var(--serif); font-size: 14.5px; line-height: 1.55;
+    color: var(--ink);
+  }
+  .speech-body .caret {
+    display: inline-block; width: 7px; height: 7px; border-radius: 50%;
+    background: var(--ember); margin-left: 5px; vertical-align: baseline;
+    animation: pulse 1s ease-in-out infinite;
+  }
+
+  /* Seats: the card anchors to the pill's dock and grows INTO the screen. */
+  .speech[data-seat="top"]    { top: 40px; left: 50%; translate: -50% 0; }
+  .speech[data-seat="bottom"] { bottom: 26px; left: 50%; translate: -50% 0;
+                                flex-direction: column-reverse; }   /* head stays at the edge, words grow upward */
+  .speech[data-seat="bottom"] .txtwrap { padding: 12px 18px 4px; }
+  .speech[data-seat="side"]   { right: 16px; top: 50%; translate: 0 -50%; }
+
+  /* The idle pill — three dots asleep at its seat. */
+  .pill {
+    position: fixed; z-index: 19; width: 56px; height: 14px; border-radius: 7px;
+    display: flex; align-items: center; justify-content: center; gap: 5px;
+    transition: opacity 0.3s ease;
+  }
+  .pill s { width: 3px; height: 3px; border-radius: 50%; background: rgba(255,255,255,0.34); }
+  .pill[data-seat="top"]    { top: 40px; left: 50%; translate: -50% 0; }
+  .pill[data-seat="bottom"] { bottom: 26px; left: 50%; translate: -50% 0; }
+  .pill[data-seat="side"]   { right: 16px; top: 50%; translate: 0 -50%;
+                              width: 14px; height: 56px; flex-direction: column; }
+  .pill.gone { opacity: 0; }
+
+  /* =====================================================================
+     THE AGENT CARD — the chat absorbs the pill: same bars, same timer,
+     living in the card's footer while the mic is open.
+     ===================================================================== */
+  .agent {
+    position: fixed; right: 18px; bottom: 18px; z-index: 22;
+    width: 400px; border-radius: 17px; overflow: hidden;
+    opacity: 0; transform: translateY(14px); pointer-events: none;
+    transition: opacity 0.35s ease, transform 0.35s cubic-bezier(0.32,0.72,0.28,1);
+  }
+  .agent.on { opacity: 1; transform: translateY(0); }
+  .agent.bye { opacity: 0; transform: translateY(8px); transition-duration: 0.45s; }
+
+  .agent-head {
+    display: flex; align-items: center; gap: 8px; padding: 11px 12px 9px 14px;
+  }
+  .cmark { flex: none; display: block; }
+  .sess {
+    flex: 1; min-width: 0; display: flex; align-items: baseline; gap: 6px;
+    font-size: 11.5px; white-space: nowrap;
+  }
+  .sess .agentname { font-weight: 600; color: rgba(236,232,223,0.92); }
+  .sess .sep { color: rgba(236,232,223,0.28); }
+  .sess .folder { font-family: var(--mono); font-size: 10.5px; color: var(--muted); }
+  .sess .stitle {
+    color: rgba(236,232,223,0.68); overflow: hidden; text-overflow: ellipsis;
+    min-width: 0;
+  }
+  .agent-head .x {
+    flex: none; width: 20px; height: 20px; border: 0; border-radius: 6px;
+    background: transparent; color: rgba(236,232,223,0.6); font-size: 12px;
+    cursor: pointer; line-height: 1;
+  }
+  .agent-head .x:hover { background: rgba(255,255,255,0.08); }
+
+  .agent-body { padding: 2px 12px 12px; display: flex; flex-direction: column; gap: 9px; }
+  .msg { display: flex; flex-direction: column; max-width: 312px; }
+  .msg .who { font-size: 11px; font-weight: 600; margin: 0 4px 3px; }
+  .msg.say  { align-self: flex-start; } .msg.say .who { color: var(--say); }
+  .msg.user { align-self: flex-end; align-items: flex-end; } .msg.user .who { color: var(--you); }
+  .bubble {
+    padding: 8px 11px; border-radius: 13px; font-size: 13px; line-height: 1.45;
+    color: var(--ink); animation: rise 0.3s ease;
+  }
+  .msg.say .bubble  { background: rgba(255,255,255,0.10); border-top-left-radius: 5px; }
+  .msg.user .bubble { background: rgba(255,199,115,0.18); border-top-right-radius: 5px; }
+  .msg.user .bubble.forming {
+    background: rgba(255,199,115,0.08);
+    border: 1px dashed rgba(255,199,115,0.45);
+    color: rgba(236,232,223,0.9); min-width: 40px;
+  }
+  .bubble .tick { color: var(--moss); font-weight: 700; margin-left: 3px; }
+  .bubble .dotcaret {
+    display: inline-block; width: 6px; height: 6px; border-radius: 50%;
+    background: var(--you); margin-left: 5px; animation: pulse 1s ease-in-out infinite;
+  }
+  @keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+  /* The absorbed pill: a listening bar across the card's foot. */
+  .agent-foot {
+    display: none; align-items: center; gap: 10px;
+    margin: 0 12px 12px; padding: 8px 14px; border-radius: 11px;
+    background: rgba(242,106,63,0.09);
+    border: 1px solid rgba(242,106,63,0.22);
+  }
+  .agent.listening .agent-foot { display: flex; animation: rise 0.3s ease; }
+  .agent-foot .note { flex: 1; font-size: 12px; font-weight: 500; color: var(--muted); }
+  .agent-foot.sending { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.10); }
+
+  /* =====================================================================
+     MOCKUP CHROME — the control card. Not part of the pitched design.
+     ===================================================================== */
+  .controls {
+    position: fixed; left: 16px; top: 42px; z-index: 40; width: 285px;
+    border-radius: 14px; background: rgba(16,14,11,0.92);
+    border: 1px solid rgba(255,255,255,0.10);
+    box-shadow: 0 18px 48px rgba(0,0,0,0.5);
+    padding: 14px; font-size: 12.5px;
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  }
+  .controls .eyebrow {
+    font-family: var(--mono); font-size: 10px; letter-spacing: 1.4px;
+    color: var(--muted); text-transform: uppercase; margin-bottom: 4px;
+  }
+  .controls h1 { font-size: 14px; font-weight: 600; margin-bottom: 12px; line-height: 1.35; }
+  .controls h1 em { font-style: normal; color: var(--ember); }
+  .scenes { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+  .scenes button {
+    display: flex; align-items: center; gap: 9px; width: 100%; text-align: left;
+    padding: 8px 10px; border-radius: 9px; border: 1px solid transparent;
+    background: rgba(255,255,255,0.05); color: var(--ink);
+    font: 500 12.5px var(--sans); cursor: pointer;
+  }
+  .scenes button:hover { background: rgba(255,255,255,0.09); }
+  .scenes button.active { border-color: rgba(242,106,63,0.55); background: rgba(242,106,63,0.10); }
+  .scenes button .k {
+    font-family: var(--mono); font-size: 10px; color: var(--muted);
+    border: 1px solid rgba(255,255,255,0.14); border-radius: 4px;
+    padding: 1px 5px; flex: none;
+  }
+  .scenes button.active .k { color: var(--ember); border-color: rgba(242,106,63,0.5); }
+  .caption { color: rgba(236,232,223,0.68); line-height: 1.55; min-height: 76px; }
+  .caption b { color: var(--ink); font-weight: 600; }
+  .replay {
+    margin-top: 10px; width: 100%; padding: 7px; border-radius: 9px; border: 0;
+    background: rgba(255,255,255,0.08); color: var(--ink);
+    font: 500 12px var(--sans); cursor: pointer;
+  }
+  .replay:hover { background: rgba(255,255,255,0.12); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .bars.live i, .speech.thinking .bars i, .bubble, .agent, .speech { animation: none !important; }
+    .speech, .speech-body, .agent { transition: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="desktop"></div>
+
+<div class="menubar">
+  <span class="apple">&#63743;</span><b>Notes</b>
+  <span>File</span><span>Edit</span><span>Format</span><span>View</span><span>Window</span><span>Help</span>
+  <span class="spacer"></span>
+  <div class="right"><span>&#9679;&#9679;&#9679;</span><span>Mon 24 Aug&ensp;9:41</span></div>
+</div>
+
+<div class="window">
+  <div class="titlebar">
+    <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+    <span class="name">release-notes.md</span>
+  </div>
+  <div class="docbody">
+    <p>The 1.4 build wraps the recognizer work: prompts now read as prose, and short
+       clips keep their final consonant thanks to the key-up tail.</p>
+    <p id="paste-target">Left to write before Friday:&nbsp;<span class="cursor"></span></p>
+  </div>
+</div>
+
+<!-- ===== The idle pill, at whichever seat is chosen ===== -->
+<div class="pill glass" id="pill" data-seat="top"><s></s><s></s><s></s></div>
+
+<!-- ===== The speech card: pill-as-header + unfolding transcript ===== -->
+<div class="speech glass" id="speech" data-seat="top">
+  <div class="speech-head">
+    <div class="bars live" id="speech-bars"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+    <span class="timer" id="speech-timer">0:00</span>
+    <span class="state">polishing&hellip;</span>
+  </div>
+  <div class="speech-body">
+    <div class="txtwrap"><span id="speech-txt"></span><span class="caret" id="speech-caret"></span></div>
+  </div>
+</div>
+
+<!-- ===== The agent card: chat with the pill absorbed into its foot ===== -->
+<div class="agent glass" id="agent">
+  <div class="agent-head">
+    <svg class="cmark" viewBox="0 0 24 24" width="14" height="14" fill="none"
+         stroke="#D97757" stroke-width="2.6" stroke-linecap="round" aria-hidden="true">
+      <line x1="12" y1="2.5" x2="12" y2="7"/><line x1="12" y1="17" x2="12" y2="21.5"/>
+      <line x1="2.5" y1="12" x2="7" y2="12"/><line x1="17" y1="12" x2="21.5" y2="12"/>
+      <line x1="5.3" y1="5.3" x2="8.5" y2="8.5"/><line x1="15.5" y1="15.5" x2="18.7" y2="18.7"/>
+      <line x1="5.3" y1="18.7" x2="8.5" y2="15.5"/><line x1="15.5" y1="8.5" x2="18.7" y2="5.3"/>
+    </svg>
+    <span class="sess">
+      <span class="agentname">Claude</span><span class="sep">/</span><span
+        class="folder">SayCtrl-dev</span><span class="sep">/</span><span
+        class="stitle">Voice agent chat UI layout</span>
+    </span>
+    <button class="x" aria-label="Close">&#10005;</button>
+  </div>
+  <div class="agent-body" id="agent-body"></div>
+  <div class="agent-foot" id="agent-foot">
+    <div class="bars live" id="agent-bars"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+    <span class="note" id="agent-note">Listening&hellip;</span>
+    <span class="timer" id="agent-timer">0:00</span>
+  </div>
+</div>
+
+<!-- ===== Mockup chrome ===== -->
+<div class="controls">
+  <div class="eyebrow">SayCtrl &middot; design mockup</div>
+  <h1>One organism, not three widgets — everything grows <em>out of the pill</em></h1>
+  <div class="scenes">
+    <button data-scene="top"><span class="k">1</span>Dictation — pill at top</button>
+    <button data-scene="bottom"><span class="k">2</span>Dictation — pill at bottom</button>
+    <button data-scene="side"><span class="k">3</span>Dictation — pill at side</button>
+    <button data-scene="agent"><span class="k">4</span>Agent session</button>
+  </div>
+  <div class="caption" id="caption"></div>
+  <button class="replay" id="replay">&#8635;&ensp;Replay scene</button>
+</div>
+
+<script>
+  const $ = (s) => document.querySelector(s);
+  const pill    = $('#pill'),   speech = $('#speech'), agent = $('#agent');
+  const sTxt    = $('#speech-txt'), sCaret = $('#speech-caret');
+  const sTimer  = $('#speech-timer'), aTimer = $('#agent-timer');
+  const aBody   = $('#agent-body'), aFoot = $('#agent-foot'), aNote = $('#agent-note');
+  const aBars   = $('#agent-bars'), caption = $('#caption');
+  const pasteP  = $('#paste-target');
+
+  const DICTATION = "The onboarding flow needs one more pass — the permissions screen "
+    + "should explain why the microphone matters before it asks, and the fn key hint "
+    + "deserves its own quiet beat at the end.";
+  const SAY_LINES = [
+    "Claude is done.",
+    "It rewrote the recognizer prompt as prose and all nine clips now come back clean.",
+    "Want me to send anything back?",
+  ];
+  const USER_LINE = "Looks good — commit it and start the release build.";
+
+  const CAPTIONS = {
+    top:    "<b>The transcript unfolds from the pill.</b> Wave bars and timer become the card's header; your words fill a squarish body in the serif, growing line by line — right where you're already looking, not at the bottom edge.",
+    bottom: "<b>Same card, any seat.</b> Docked at the bottom, the header stays pinned to the edge and the words grow upward into the screen. The six dock seats all keep this rule: grow inward, never off-screen.",
+    side:   "<b>Side seats too.</b> The upright pill turns into the same card, hung from the screen edge at mid-height. One recording surface everywhere — no separate HUD strip to hunt for.",
+    agent:  "<b>The chat absorbs the pill.</b> While the agent listens, the bars + timer live in the card's foot and your words type straight into a forming bubble. “Sent.” plays from a cached voice clip (no ElevenLabs round-trip) and the card leaves after <b>1 second</b>, not 4.",
+  };
+
+  /* ---------- tiny scene engine: switching scenes cancels the old run ---------- */
+  let token = 0, timers = [];
+  const sleep = (ms) => new Promise((r) => { timers.push(setTimeout(r, ms)); });
+  function newRun() { const t = ++token; return async (ms) => { await sleep(ms); return t === token; }; }
+
+  let clockHandle = null;
+  function startClock(el) {
+    stopClock(); let s = 0; el.textContent = '0:00';
+    clockHandle = setInterval(() => { s++;
+      el.textContent = Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); }, 1000);
+  }
+  function stopClock() { if (clockHandle) clearInterval(clockHandle); clockHandle = null; }
+
+  function reset() {
+    timers.forEach(clearTimeout); timers = []; stopClock();
+    speech.classList.remove('on', 'wide', 'thinking');
+    agent.classList.remove('on', 'bye', 'listening');
+    aFoot.classList.remove('sending');
+    aBody.innerHTML = ''; sTxt.textContent = '';
+    sCaret.style.display = ''; aBars.classList.add('live'); aBars.classList.remove('quiet');
+    pill.classList.remove('gone');
+    pasteP.innerHTML = 'Left to write before Friday:&nbsp;<span class="cursor"></span>';
+  }
+
+  async function typeWords(alive, el, text, msPerWord) {
+    for (const w of text.split(' ')) {
+      el.textContent += (el.textContent ? ' ' : '') + w;
+      if (!await alive(msPerWord + Math.random() * 60)) return false;
+    }
+    return true;
+  }
+
+  /* ---------- Scenes 1–3: dictation at a seat ---------- */
+  async function sceneDictation(seat) {
+    reset(); const alive = newRun();
+    pill.dataset.seat = seat; speech.dataset.seat = seat;
+    caption.innerHTML = CAPTIONS[seat];
+    if (!await alive(700)) return;
+
+    pill.classList.add('gone');                     // fn goes down —
+    speech.classList.add('on'); startClock(sTimer); // — the pill wakes as the card's header
+    if (!await alive(900)) return;
+
+    speech.classList.add('wide');                   // first words: the body unfolds
+    if (!await alive(450)) return;
+    if (!await typeWords(alive, sTxt, DICTATION, 120)) return;
+    if (!await alive(700)) return;
+
+    speech.classList.add('thinking');               // key up: bars become thinking dots
+    sCaret.style.display = 'none'; stopClock();
+    if (!await alive(1400)) return;
+
+    speech.classList.remove('on', 'wide', 'thinking');   // pasted: the card folds away
+    pill.classList.remove('gone');
+    pasteP.innerHTML = 'Left to write before Friday: <span class="pasted">' + DICTATION
+      + '</span>&nbsp;<span class="cursor"></span>';
+  }
+
+  /* ---------- Scene 4: the agent episode ---------- */
+  function msg(who, name) {
+    const m = document.createElement('div'); m.className = 'msg ' + who;
+    m.innerHTML = '<span class="who">' + name + '</span><span class="bubble"></span>';
+    aBody.appendChild(m); return m.querySelector('.bubble');
+  }
+
+  async function sceneAgent() {
+    reset(); const alive = newRun();
+    pill.dataset.seat = 'top';
+    caption.innerHTML = CAPTIONS.agent;
+    if (!await alive(600)) return;
+
+    pill.classList.add('gone');            // the pill folds into the chat card
+    agent.classList.add('on');
+    const say = msg('say', 'SayCtrl');
+    for (const line of SAY_LINES) {        // sentences land as the audio reaches them
+      say.textContent = (say.textContent + ' ' + line).trim();
+      if (!await alive(950)) return;
+    }
+
+    agent.classList.add('listening'); startClock(aTimer);   // the absorbed pill: bars in the foot
+    aNote.textContent = 'Listening…';
+    if (!await alive(900)) return;
+
+    const user = msg('user', 'Sorower');   // live transcription types into a forming bubble
+    user.classList.add('forming');
+    user.innerHTML = '<span class="w"></span><span class="dotcaret"></span>';
+    if (!await typeWords(alive, user.querySelector('.w'), USER_LINE, 130)) return;
+    if (!await alive(500)) return;
+
+    user.classList.remove('forming');      // key up: the bubble solidifies
+    user.querySelector('.dotcaret').remove();
+    aBars.classList.remove('live'); aBars.classList.add('quiet'); stopClock();
+    aFoot.classList.add('sending'); aNote.textContent = 'Sending…';
+    if (!await alive(900)) return;
+
+    agent.classList.remove('listening');   // "Sent." — cached clip, no API call
+    const done = msg('say', 'SayCtrl');
+    done.innerHTML = 'Sent.<span class="tick">✓</span>';
+    if (!await alive(1000)) return;        // …and the card leaves after ONE second
+
+    agent.classList.add('bye');
+    if (!await alive(500)) return;
+    agent.classList.remove('on', 'bye');
+    pill.classList.remove('gone');
+  }
+
+  /* ---------- wiring ---------- */
+  const scenes = { top: () => sceneDictation('top'), bottom: () => sceneDictation('bottom'),
+                   side: () => sceneDictation('side'), agent: sceneAgent };
+  let current = 'top';
+  function play(name) {
+    current = name;
+    document.querySelectorAll('.scenes button').forEach((b) =>
+      b.classList.toggle('active', b.dataset.scene === name));
+    scenes[name]();
+  }
+  document.querySelectorAll('.scenes button').forEach((b) =>
+    b.addEventListener('click', () => play(b.dataset.scene)));
+  $('#replay').addEventListener('click', () => play(current));
+  addEventListener('keydown', (e) => {
+    const map = { 1: 'top', 2: 'bottom', 3: 'side', 4: 'agent' };
+    if (map[e.key]) play(map[e.key]);
+  });
+  document.querySelector('.agent .x').addEventListener('click', () => {
+    agent.classList.remove('on', 'listening'); pill.classList.remove('gone'); stopClock();
+  });
+
+  play('top');
+</script>
+</body>
+</html>

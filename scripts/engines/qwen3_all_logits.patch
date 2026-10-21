@@ -1,0 +1,55 @@
+diff --git a/src/qwen3_asr.cpp b/src/qwen3_asr.cpp
+index 5216dec..35cdee6 100644
+--- a/src/qwen3_asr.cpp
++++ b/src/qwen3_asr.cpp
+@@ -1898,8 +1898,10 @@ extern "C" void qwen3_asr_kv_reset(qwen3_asr_context* ctx) {
+         ctx->kv_n_used = 0;
+ }
+ 
+-extern "C" float* qwen3_asr_run_llm_kv(qwen3_asr_context* ctx, const float* inputs_embeds, int n_tokens, int n_past,
+-                                       int* out_n_tokens, int* out_vocab_size) {
++// SayControl: `all_logits` returns a row for every position of the batch, not
++// just the last — what checking a draft of several tokens in one call needs.
++static float* run_llm_kv_impl(qwen3_asr_context* ctx, const float* inputs_embeds, int n_tokens, int n_past,
++                              bool all_logits, int* out_n_tokens, int* out_vocab_size) {
+     if (!ctx || !inputs_embeds || n_tokens <= 0)
+         return nullptr;
+     if (!ctx->kv_k) {
+@@ -1940,7 +1942,8 @@ extern "C" float* qwen3_asr_run_llm_kv(qwen3_asr_context* ctx, const float* inpu
+         }
+     }
+ 
+-    ggml_cgraph* gf = qwen3_asr_build_graph_llm_kv(ctx, n_past, n_tokens);
++    const int rows = all_logits ? n_tokens : 1;
++    ggml_cgraph* gf = qwen3_asr_build_graph_llm_kv(ctx, n_past, n_tokens, rows == 1);
+     ggml_backend_sched_reset(ctx->sched);
+     if (!ggml_backend_sched_alloc_graph(ctx->sched, gf)) {
+         fprintf(stderr, "qwen3_asr: failed to alloc llm_kv graph\n");
+@@ -1967,14 +1970,24 @@ extern "C" float* qwen3_asr_run_llm_kv(qwen3_asr_context* ctx, const float* inpu
+     ctx->kv_n_used = n_past + n_tokens;
+     // Output is only the last token's logits — see lm_head slice in build_graph_llm_kv.
+     if (out_n_tokens)
+-        *out_n_tokens = 1;
++        *out_n_tokens = rows;
+     if (out_vocab_size)
+         *out_vocab_size = vocab;
+-    float* result = (float*)malloc((size_t)vocab * sizeof(float));
+-    ggml_backend_tensor_get(out, result, 0, (size_t)vocab * sizeof(float));
++    float* result = (float*)malloc((size_t)vocab * rows * sizeof(float));
++    ggml_backend_tensor_get(out, result, 0, (size_t)vocab * rows * sizeof(float));
+     return result;
+ }
+ 
++extern "C" float* qwen3_asr_run_llm_kv(qwen3_asr_context* ctx, const float* inputs_embeds, int n_tokens, int n_past,
++                                       int* out_n_tokens, int* out_vocab_size) {
++    return run_llm_kv_impl(ctx, inputs_embeds, n_tokens, n_past, false, out_n_tokens, out_vocab_size);
++}
++
++extern "C" float* qwen3_asr_run_llm_kv_all(qwen3_asr_context* ctx, const float* inputs_embeds, int n_tokens,
++                                           int n_past, int* out_n_tokens, int* out_vocab_size) {
++    return run_llm_kv_impl(ctx, inputs_embeds, n_tokens, n_past, true, out_n_tokens, out_vocab_size);
++}
++
+ extern "C" float* qwen3_asr_embed_tokens(qwen3_asr_context* ctx, const int32_t* input_ids, int n_tokens) {
+     if (!ctx || !input_ids || n_tokens <= 0)
+         return nullptr;

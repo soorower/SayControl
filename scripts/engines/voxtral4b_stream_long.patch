@@ -1,0 +1,155 @@
+diff --git a/src/voxtral4b.cpp b/src/voxtral4b.cpp
+index 1f4596a..c6eddcf 100644
+--- a/src/voxtral4b.cpp
++++ b/src/voxtral4b.cpp
+@@ -1693,7 +1693,8 @@ struct voxtral4b_stream {
+     ggml_backend_buffer_t enc_kv_buf;
+     ggml_tensor* enc_kv_k;
+     ggml_tensor* enc_kv_v;
+-    int enc_T_so_far;
++    int enc_T_so_far; // encoder frames produced: the next frame's position
++    int enc_n_cached; // of those, how many the K/V cache still holds
+     int enc_max_T;
+ 
+     // ── Projector pending ─────────────────────────────────────────────────
+@@ -1785,7 +1786,10 @@ static int vox_stream_alloc_enc_kv(voxtral4b_stream* s) {
+     const int hd = (int)hp.audio_head_dim;
+     const int n_kv = (int)hp.audio_n_heads; // MHA
+     const int nl = (int)hp.audio_n_layers;
+-    s->enc_max_T = (int)hp.audio_swa; // 750 frames = 15s
++    // The sliding window (750 frames = 15 s) plus room to slide into: once
++    // full, the oldest frames are dropped in one move (vox_stream_make_room)
++    // rather than one chunk at a time.
++    s->enc_max_T = (int)hp.audio_swa + 256;
+ 
+     ggml_init_params ip = {2 * ggml_tensor_overhead(), nullptr, true};
+     s->enc_kv_ctx = ggml_init(ip);
+@@ -1871,6 +1875,42 @@ static std::vector<ggml_fp16_t> vox_stream_build_mask(int T_chunk_enc, int n_pas
+     return mask;
+ }
+ 
++// Make room in the encoder K/V cache for `T_new` more frames. A frame only
++// attends to the `audio_swa` frames before it, so frames older than that are
++// dropped and the rest moved to the front. Positions stay absolute (RoPE is
++// applied before a frame is cached) and the mask works on cache slots, so a
++// moved frame means the same as it did. Without this the stream stopped
++// encoding once 15 s of audio (12½ s of speech after the silent lead-in) had
++// been fed, and everything said after that was lost.
++static void vox_stream_make_room(voxtral4b_stream* s, int T_new) {
++    if (s->enc_n_cached + T_new <= s->enc_max_T)
++        return;
++    const auto& hp = s->ctx->model.hparams;
++    const int keep = std::min(s->enc_n_cached, (int)hp.audio_swa - 1);
++    const int drop = s->enc_n_cached - keep;
++    if (drop <= 0)
++        return;
++    const int hd = (int)hp.audio_head_dim;
++    const size_t slice = (size_t)hd * s->enc_max_T; // one head of one layer
++    const size_t n_slices = (size_t)hp.audio_n_heads * hp.audio_n_layers;
++    for (ggml_tensor* t : {s->enc_kv_k, s->enc_kv_v}) {
++        std::vector<float> host;
++        float* base;
++        if (ggml_backend_buffer_is_host(s->enc_kv_buf)) {
++            base = (float*)t->data;
++        } else {
++            host.resize(ggml_nelements(t));
++            ggml_backend_tensor_get(t, host.data(), 0, ggml_nbytes(t));
++            base = host.data();
++        }
++        for (size_t i = 0; i < n_slices; i++)
++            std::memmove(base + i * slice, base + i * slice + (size_t)drop * hd, (size_t)keep * hd * sizeof(float));
++        if (!host.empty())
++            ggml_backend_tensor_set(t, host.data(), 0, ggml_nbytes(t));
++    }
++    s->enc_n_cached = keep;
++}
++
+ // Run the streaming encoder graph on s->mel_pending's first chunk_mel_frames worth.
+ // Consumes those frames, advances enc_T_so_far by chunk_mel_frames/2, appends
+ // the post-RMSNorm encoder output to enc_frames_pending.
+@@ -1890,10 +1930,7 @@ static int vox_stream_run_encoder_chunk(voxtral4b_stream* s) {
+         return 0; // not enough yet
+     const int T_pending = (int)(s->mel_pending.size() / (size_t)n_mels);
+ 
+-    if (s->enc_T_so_far + T_chunk_enc > s->enc_max_T) {
+-        // SWA window full — silently drop the oldest chunk. Phase 1 limitation.
+-        return 0;
+-    }
++    vox_stream_make_room(s, T_chunk_enc);
+ 
+     // Build mel input buffer: per-band [conv0_lctx (2 frames) ; mel_pending[0..T_chunk_mel)]
+     // Layout (n_mels, T_chunk_mel + 2) — per-band-row contiguous.
+@@ -1906,7 +1943,7 @@ static int vox_stream_run_encoder_chunk(voxtral4b_stream* s) {
+     }
+ 
+     ggml_cgraph* gf =
+-        voxtral4b_build_graph_encoder_stream(s->ctx, T_chunk_mel, s->enc_T_so_far, s->enc_kv_k, s->enc_kv_v);
++        voxtral4b_build_graph_encoder_stream(s->ctx, T_chunk_mel, s->enc_n_cached, s->enc_kv_k, s->enc_kv_v);
+     ggml_backend_sched_reset(s->ctx->sched);
+     if (!ggml_backend_sched_alloc_graph(s->ctx->sched, gf))
+         return -2;
+@@ -1919,7 +1956,7 @@ static int vox_stream_run_encoder_chunk(voxtral4b_stream* s) {
+     for (int i = 0; i < T_chunk_enc; i++)
+         pos[i] = s->enc_T_so_far + i;
+     ggml_backend_tensor_set(ggml_graph_get_tensor(gf, "stream_positions"), pos.data(), 0, pos.size() * sizeof(int32_t));
+-    auto mask = vox_stream_build_mask(T_chunk_enc, s->enc_T_so_far, (int)hp.audio_swa);
++    auto mask = vox_stream_build_mask(T_chunk_enc, s->enc_n_cached, (int)hp.audio_swa);
+     ggml_backend_tensor_set(ggml_graph_get_tensor(gf, "stream_mask"), mask.data(), 0,
+                             mask.size() * sizeof(ggml_fp16_t));
+ 
+@@ -1962,6 +1999,7 @@ static int vox_stream_run_encoder_chunk(voxtral4b_stream* s) {
+     }
+ 
+     s->enc_T_so_far += T_chunk_enc;
++    s->enc_n_cached += T_chunk_enc;
+     s->first_chunk_seen = true;
+     return 1;
+ }
+@@ -2044,7 +2082,11 @@ static int vox_stream_maybe_prefill(voxtral4b_stream* s) {
+             dst[j] += src[j];
+     }
+ 
+-    constexpr int kMaxNewTokens = 512;
++    // One decode step per audio frame, 12.5 a second: the 512 this was
++    // stopped a take at 41 s. 4041 plus the prompt and margin is the 4096
++    // the batch path sizes the shared LLM cache to — it is sized once, by
++    // whichever call comes first, so neither may ask for more.
++    constexpr int kMaxNewTokens = 4096 - kStreamingPromptLen - 16;
+     if (!s->kv_initialised) {
+         if (!voxtral4b_kv_init(s->ctx, kStreamingPromptLen + kMaxNewTokens + 16)) {
+             std::free(prompt_emb);
+@@ -2092,7 +2134,7 @@ static int vox_stream_drain_decode(voxtral4b_stream* s) {
+     const auto& hp = s->ctx->model.hparams;
+     const int proj_out = (int)hp.proj_out_dim;
+     const int N_audio = (int)(s->audio_embeds.size() / proj_out);
+-    constexpr int kMaxNewTokens = 512;
++    constexpr int kMaxNewTokens = 4096 - kStreamingPromptLen - 16; // see vox_stream_maybe_prefill
+     constexpr int eos_id = 2;
+     if (s->decode_logits.empty() || s->decode_out_vocab <= 0)
+         return -1;
+@@ -2247,6 +2289,7 @@ extern "C" struct voxtral4b_stream* voxtral4b_stream_open(struct voxtral4b_conte
+     s->mel_primed = false;
+     s->first_chunk_seen = false;
+     s->enc_T_so_far = 0;
++    s->enc_n_cached = 0;
+     s->enc_frames_pending_count = 0;
+     s->kv_initialised = false;
+     s->n_past = 0;
+@@ -2431,7 +2474,7 @@ extern "C" int voxtral4b_stream_flush(struct voxtral4b_stream* s) {
+                 }
+                 s->mel_pending = std::move(padded);
+             }
+-            if (s->enc_T_so_far + T_padded / 2 <= s->enc_max_T) {
++            {
+                 const int saved_chunk = s->chunk_mel_frames;
+                 s->chunk_mel_frames = T_padded;
+                 const int rc = vox_stream_run_encoder_chunk(s);
+@@ -2542,7 +2585,7 @@ extern "C" int voxtral4b_stream_flush(struct voxtral4b_stream* s) {
+     // Run the streaming-prompt prefill if it didn't happen during feed
+     // (very short utterances, or batch path). Sets up s->prefill_logits
+     // + decode_n_past + decode_adapter_pos for vox_stream_drain_decode.
+-    constexpr int kMaxNewTokens = 512;
++    constexpr int kMaxNewTokens = 4096 - kStreamingPromptLen - 16; // see vox_stream_maybe_prefill
+     if (!s->prefill_done) {
+         std::vector<int32_t> prompt_ids((size_t)kStreamingPromptLen);
+         prompt_ids[0] = 1;

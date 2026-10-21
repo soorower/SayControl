@@ -1,0 +1,1017 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How it works redesign</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600&display=swap">
+<style>
+/* How it works, redesigned — v2.1, "show, don't tell". The sheet the Overview
+   and the sidebar's foot open: three tabs (Dictation · Controls · Command
+   mode), and on each a dial. The knob turns through six points, one at a time
+   (eight on Controls), and only the point it's on opens: a 2–4 word title, one
+   line, and a demo a few seconds long. Everything else stays a faint title.
+   It advances every 3.8 s on its own; the wheel, a drag, a click, or the arrow
+   keys move it too, and pointing at a demo holds it. "See more" (Controls,
+   Command mode) and "All terminal commands" open the rest in place; the
+   dial waits, dimmed, while they're open. A soft WebAudio tick plays on each
+   step, muted until the first click in the page. Same visual language as
+   settings-redesign.html: Theme.swift's colours, light then dark; Bricolage
+   Grotesque for display, the system sans for the rest; ember only on what is
+   spoken and what is live. Motion is Motion.swift's "Subtle" page (out 110 ms,
+   in 380 ms, 10 px lift, 40 ms stagger, cubic-bezier(.2,.8,.2,1)), plus one
+   spring for the knob. Every phrase is one CommandsPane.swift already lists. */
+:root {
+  --paper: #faf9f7; --rail: #f1efeb; --rail-line: #e5e2dc; --surface: #fff;
+  --hair: #e8e6e1; --hairsoft: #f0eeea; --well: #f2f0ec; --key: #f6f4f0; --lip: #dddad3;
+  --ink: #1c1b19; --ink2: #44423e; --muted: #6c6963; --faint: #a19d96;
+  --ember: #e5501f; --ember-ink: #c2410c; --ember-soft: rgb(229 80 31 / .10);
+  --pick: #e7e3da; --hover: #ece9e3; --ring: rgb(0 0 0 / .10);
+  --sel: rgb(47 111 219 / .19); --pro-ring: rgb(0 0 0 / .12); --knurl: rgb(0 0 0 / .08);
+  --tpick: #ffffff; --tpick-ring: rgb(0 0 0 / .07);
+  --tpick-shadow: 0 1px 2px rgb(20 24 34 / .08), 0 8px 20px -10px rgb(20 24 34 / .28);
+  --keytop: #ffffff; --keyedge: rgb(0 0 0 / .09); --keyhi: rgb(255 255 255 / .9);
+  --desk: linear-gradient(160deg, #c3d1e8 0%, #e6dcd6 55%, #d9b9a5 100%);
+  --shot-desk: linear-gradient(150deg, #d9dfe8 0%, #ebe6e0 100%);
+  --shadow: 0 0 0 1px var(--ring), 0 2px 6px rgb(20 24 34 / .06), 0 30px 70px -20px rgb(20 24 34 / .38);
+  --scrim: rgb(14 14 18 / .28);
+  --demo-bg: rgb(255 255 255 / .55); --demo-line: rgb(0 0 0 / .06); --seg-bg: rgb(0 0 0 / .06);
+  --note-bg: rgb(255 255 255 / .6); --note-ink: #2c2a26;
+  --term: #1b1b1e; --term-ring: rgb(0 0 0 / .12);
+  --ease: cubic-bezier(.2,.8,.2,1);
+  --glide: cubic-bezier(.3,1.18,.45,1);
+  --spring: cubic-bezier(.34,1.42,.5,1);
+  --font-display: 'Bricolage Grotesque', -apple-system, system-ui, sans-serif;
+  --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --paper: #111113; --rail: #1a1a1d; --rail-line: #2b2b30; --surface: #1b1b1e;
+  --hair: #2b2b30; --hairsoft: #232327; --well: #0c0c0e; --key: #2e2e33; --lip: #0a0a0b;
+  --ink: #f3f3f1; --ink2: #c8c8cd; --muted: #95959b; --faint: #5f5f66;
+  --ember: #ff6a3d; --ember-ink: #ff8a63; --ember-soft: rgb(255 106 61 / .14);
+  --pick: rgb(255 255 255 / .09); --hover: rgb(255 255 255 / .05); --ring: rgb(255 255 255 / .08);
+  --sel: rgb(122 168 255 / .30); --pro-ring: rgb(255 255 255 / .2); --knurl: rgb(255 255 255 / .07);
+  --tpick: #2d2d33; --tpick-ring: rgb(255 255 255 / .16);
+  --tpick-shadow: inset 0 1px 0 rgb(255 255 255 / .06), 0 8px 20px -8px rgb(0 0 0 / .9);
+  --keytop: #3a3a40; --keyedge: rgb(0 0 0 / .5); --keyhi: rgb(255 255 255 / .08);
+  --desk: linear-gradient(160deg, #1b2233 0%, #25232a 55%, #2e221d 100%);
+  --shot-desk: linear-gradient(150deg, #29303d 0%, #2b292f 100%);
+  --shadow: 0 0 0 1px var(--ring), 0 30px 80px -20px rgb(0 0 0 / .7);
+  --scrim: rgb(0 0 0 / .5);
+  --demo-bg: rgb(20 20 24 / .6); --demo-line: rgb(255 255 255 / .06); --seg-bg: rgb(255 255 255 / .07);
+  --note-bg: rgb(28 28 32 / .7); --note-ink: #d6d3cc;
+  --term: #0b0b0d; --term-ring: rgb(255 255 255 / .08);
+  color-scheme: dark;
+}}
+:root[data-theme="dark"] {
+  --paper: #111113; --rail: #1a1a1d; --rail-line: #2b2b30; --surface: #1b1b1e;
+  --hair: #2b2b30; --hairsoft: #232327; --well: #0c0c0e; --key: #2e2e33; --lip: #0a0a0b;
+  --ink: #f3f3f1; --ink2: #c8c8cd; --muted: #95959b; --faint: #5f5f66;
+  --ember: #ff6a3d; --ember-ink: #ff8a63; --ember-soft: rgb(255 106 61 / .14);
+  --pick: rgb(255 255 255 / .09); --hover: rgb(255 255 255 / .05); --ring: rgb(255 255 255 / .08);
+  --sel: rgb(122 168 255 / .30); --pro-ring: rgb(255 255 255 / .2); --knurl: rgb(255 255 255 / .07);
+  --tpick: #2d2d33; --tpick-ring: rgb(255 255 255 / .16);
+  --tpick-shadow: inset 0 1px 0 rgb(255 255 255 / .06), 0 8px 20px -8px rgb(0 0 0 / .9);
+  --keytop: #3a3a40; --keyedge: rgb(0 0 0 / .5); --keyhi: rgb(255 255 255 / .08);
+  --desk: linear-gradient(160deg, #1b2233 0%, #25232a 55%, #2e221d 100%);
+  --shot-desk: linear-gradient(150deg, #29303d 0%, #2b292f 100%);
+  --shadow: 0 0 0 1px var(--ring), 0 30px 80px -20px rgb(0 0 0 / .7);
+  --scrim: rgb(0 0 0 / .5);
+  --demo-bg: rgb(20 20 24 / .6); --demo-line: rgb(255 255 255 / .06); --seg-bg: rgb(255 255 255 / .07);
+  --note-bg: rgb(28 28 32 / .7); --note-ink: #d6d3cc;
+  --term: #0b0b0d; --term-ring: rgb(255 255 255 / .08);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { min-height: 100vh; background: var(--desk); font-family: var(--font-sans); color: var(--ink);
+  -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+button { font: inherit; color: inherit; }
+svg.i { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+
+/* ── The demo bar: not part of the app ─────────────────────────────── */
+.demo { position: sticky; top: 0; z-index: 50; display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; justify-content: center;
+  padding: 12px 16px; background: var(--demo-bg); backdrop-filter: blur(16px) saturate(1.4); -webkit-backdrop-filter: blur(16px) saturate(1.4);
+  border-bottom: 1px solid var(--demo-line); }
+.demo .lbl { font: 600 10.5px var(--font-sans); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-right: 2px; }
+.seg { display: inline-flex; align-items: center; gap: 2px; padding: 3px; border-radius: 999px; background: var(--seg-bg); }
+.seg button { border: 0; background: transparent; padding: 5px 11px; border-radius: 999px; font-size: 12px; font-weight: 500; cursor: pointer; color: var(--ink2);
+  transition: background .2s var(--ease), color .2s var(--ease); }
+.seg button[aria-pressed="true"], .seg button.go { background: var(--ink); color: var(--paper); }
+.seg button.go:active { transform: scale(.97); }
+.grp-ctl { display: inline-flex; align-items: center; gap: 6px; }
+
+/* ── The stage: a scaled copy of the app window ────────────────────── */
+.stage { display: flex; justify-content: center; padding: 22px 16px 10px; }
+.scaler { width: 1240px; height: 820px; flex: none; transform-origin: top center; }
+.win { position: relative; width: 1240px; height: 820px; border-radius: 14px; overflow: hidden; background: var(--paper);
+  box-shadow: 0 0 0 .5px rgb(0 0 0 / .25), 0 24px 70px rgb(0 0 0 / .32); display: grid; grid-template-columns: 236px 1fr; }
+
+/* The app behind the glass. */
+.app-side { margin: 10px 0 10px 10px; border-radius: 12px; background: var(--rail); box-shadow: 0 0 0 1px var(--rail-line); padding: 46px 10px 10px; display: flex; flex-direction: column; gap: 1px; }
+.traffic { position: absolute; top: 22px; left: 24px; display: flex; gap: 8px; z-index: 3; }
+.traffic i { width: 12px; height: 12px; border-radius: 50%; background: #ff5f57; }
+.traffic i:nth-child(2) { background: #febc2e; } .traffic i:nth-child(3) { background: #28c840; }
+.wordmark { display: flex; align-items: center; gap: 7px; font: 600 17px var(--font-display); letter-spacing: -.035em; padding: 0 10px 14px; }
+.wordmark b { width: 20px; height: 20px; border-radius: 6px; background: var(--ink); display: grid; place-items: center; }
+.wordmark b::after { content: ""; width: 0; height: 0; border-left: 6px solid var(--ember); border-top: 4px solid transparent; border-bottom: 4px solid transparent; margin-left: 2px; }
+.app-nav { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 8px; font-size: 13.5px; color: var(--ink2); transition: background .25s var(--ease), color .25s; }
+.app-nav svg.i { color: var(--muted); width: 15px; height: 15px; }
+.app-nav.on { background: var(--pick); color: var(--ink); font-weight: 500; }
+.app-nav.on svg.i { color: var(--ink); }
+.app-nav.btn-like { cursor: pointer; }
+.app-nav.btn-like:hover:not(.on) { background: var(--hover); }
+.side-caps { font: 600 10px var(--font-sans); letter-spacing: .09em; text-transform: uppercase; color: var(--faint); padding: 14px 10px 5px; }
+.side-foot { margin-top: auto; display: flex; flex-direction: column; gap: 1px; }
+.acct { display: flex; align-items: center; gap: 10px; margin-top: 8px; padding: 10px; border-radius: 10px; background: var(--surface); box-shadow: 0 0 0 1px var(--hair); }
+.avatar { width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, #f1a37c, #d4491c); color: #fff; display: grid; place-items: center; font-size: 12px; font-weight: 600; flex: none; }
+.acct b { display: block; font-size: 12.5px; font-weight: 500; }
+.acct span { font-size: 11.5px; color: var(--muted); }
+.app-main { padding: 54px 44px; overflow: hidden; }
+.app-main h1 { font: 500 30px var(--font-display); letter-spacing: -.035em; margin: 0 0 6px; }
+.app-main > p { margin: 0 0 26px; color: var(--muted); font-size: 14px; }
+.app-hero { display: flex; align-items: center; gap: 18px; padding: 20px 22px; border-radius: 14px; background: var(--surface); box-shadow: 0 0 0 1px var(--hair); margin-bottom: 14px; }
+.app-hero b { display: block; font: 500 18px var(--font-display); letter-spacing: -.02em; }
+.app-hero span { font-size: 13px; color: var(--muted); }
+.app-hero .btn { margin-left: auto; }
+.app-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.app-card { height: 118px; border-radius: 14px; background: var(--surface); box-shadow: 0 0 0 1px var(--hair); padding: 18px; }
+.app-card b { display: block; font: 500 30px var(--font-display); letter-spacing: -.03em; }
+.app-card span { font-size: 12.5px; color: var(--muted); }
+.app-wide { margin-top: 14px; height: 250px; border-radius: 14px; background: var(--surface); box-shadow: 0 0 0 1px var(--hair); padding: 18px; display: flex; align-items: flex-end; gap: 10px; }
+.app-wide i { flex: 1; border-radius: 5px; background: var(--hairsoft); }
+.app-wide i.t { background: var(--ember); }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 32px; padding: 0 14px; border-radius: 9px; border: 0;
+  font-size: 13px; font-weight: 500; cursor: pointer; white-space: nowrap; background: var(--ink); color: var(--paper); box-shadow: 0 1px 2px rgb(0 0 0 / .18);
+  transition: transform .14s var(--ease), opacity .15s; }
+.btn:hover { opacity: .9; } .btn:active { transform: scale(.97); }
+
+/* ── Overlay: scrim + sheet (Settings' recipe) ─────────────────────── */
+.scrim { position: absolute; inset: 0; z-index: 10; background: transparent; backdrop-filter: blur(0); -webkit-backdrop-filter: blur(0);
+  pointer-events: none; transition: background .32s var(--ease), backdrop-filter .32s var(--ease), -webkit-backdrop-filter .32s var(--ease); }
+.win.open .scrim { background: var(--scrim); backdrop-filter: blur(6px) saturate(1.1); -webkit-backdrop-filter: blur(6px) saturate(1.1); pointer-events: auto; }
+.sheet { --w: 940px; --h: 748px;
+  position: absolute; z-index: 11; left: 50%; top: 50%; width: var(--w); height: var(--h);
+  margin-left: calc(var(--w) / -2); margin-top: calc(var(--h) / -2);
+  border-radius: 16px; background: var(--paper); box-shadow: var(--shadow);
+  display: flex; flex-direction: column; overflow: hidden;
+  opacity: 0; transform: translateY(14px) scale(.965); pointer-events: none;
+  transition: opacity .18s ease-in, transform .2s ease-in; }
+.win.open .sheet { opacity: 1; transform: none; pointer-events: auto; transition: opacity .3s var(--ease), transform .48s var(--glide); }
+
+.head { position: relative; z-index: 2; padding: 22px 22px 16px 32px; }
+.h-top { display: flex; align-items: center; gap: 6px; margin-bottom: 16px; }
+.h-top h2 { font: 500 26px var(--font-display); letter-spacing: -.04em; margin: 0 auto 0 0; }
+.xbtn { width: 30px; height: 30px; border-radius: 9px; border: 0; background: transparent; color: var(--muted); display: grid; place-items: center; cursor: pointer; transition: background .15s, color .15s, transform .15s; }
+.xbtn:hover { background: var(--hover); color: var(--ink); }
+.xbtn:active { transform: scale(.92); }
+.xbtn[aria-pressed="true"] { color: var(--ink); }
+.sheet.enter .hb { animation: rise .38s var(--ease) both; animation-delay: calc(90ms + var(--k, 0) * 40ms); }
+@keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+/* Three tabs: a well, and one raised card that slides to the one you pick. */
+.tabs { position: relative; display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 4px; margin-right: 10px; border-radius: 14px;
+  background: var(--well); box-shadow: inset 0 0 0 1px var(--hair); }
+.tpick { position: absolute; z-index: 0; top: 4px; bottom: 4px; left: 4px; width: 0; border-radius: 10px; background: var(--tpick);
+  box-shadow: 0 0 0 1px var(--tpick-ring), var(--tpick-shadow); transition: left .36s var(--glide), width .36s var(--glide); }
+.tab { position: relative; z-index: 1; display: flex; align-items: center; gap: 12px; height: 58px; padding: 0 14px 0 12px; border: 0; border-radius: 10px;
+  background: transparent; text-align: left; cursor: pointer; transition: background .15s; outline: none; }
+.tab:hover:not(.on) { background: var(--hover); }
+.tab:focus-visible { box-shadow: 0 0 0 2px var(--ink); }
+.tab .ti { width: 32px; height: 32px; border-radius: 9px; display: grid; place-items: center; flex: none; color: var(--faint);
+  box-shadow: inset 0 0 0 1px var(--hair); transition: color .25s, background .25s, box-shadow .25s; }
+.tab.on .ti { color: var(--paper); background: var(--ink); box-shadow: none; }
+.tab .tt { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.tab .tt b { font-size: 14px; font-weight: 500; color: var(--muted); letter-spacing: -.005em; transition: color .2s; }
+.tab .tt small { font-size: 12px; color: var(--faint); transition: color .2s; }
+.tab.on .tt b { color: var(--ink); font-weight: 600; }
+.tab.on .tt small { color: var(--muted); }
+.tab .pro { margin-left: auto; }
+.pro { display: inline-flex; align-items: center; height: 18px; padding: 0 7px; border-radius: 999px; flex: none; vertical-align: 2px;
+  font: 600 10px var(--font-sans); letter-spacing: .05em; color: var(--muted); box-shadow: inset 0 0 0 1px var(--pro-ring); }
+
+/* The body under the tabs. */
+.body { flex: 1; min-height: 0; padding: 14px 32px 28px; display: flex; flex-direction: column; overflow-y: auto; scrollbar-width: thin; }
+.body.notrans .pt-b, .body.notrans .pt-in { transition: none !important; }
+.head { transition: box-shadow .25s var(--ease); }
+.head.lifted { box-shadow: 0 1px 0 var(--hair), 0 10px 18px -16px rgb(0 0 0 / .4); }
+.body.out { opacity: 0; transform: translateY(-4px); transition: opacity .11s ease-in, transform .11s ease-in; }
+.blk { animation: rise .38s var(--ease) both; animation-delay: calc(var(--d, 0ms) + var(--k, 0) * 40ms); }
+
+/* One sentence on top of each tab. */
+.intro { display: flex; align-items: center; gap: 10px; min-height: 44px; margin: 0 2px 6px; font-size: 14px; color: var(--muted); }
+.hero { display: flex; align-items: center; gap: 10px; font: 500 24px var(--font-display); letter-spacing: -.035em; color: var(--ink); }
+.hero .w { transition: color .3s; }
+.hero-sub { margin-left: 10px; font: 400 14px var(--font-sans); letter-spacing: 0; color: var(--muted); }
+.hero .w1 { animation: hw1 3.2s var(--ease) infinite; } .hero .w2 { animation: hw2 3.2s var(--ease) infinite; } .hero .w3 { animation: hw3 3.2s var(--ease) infinite; }
+@keyframes hw1 { 0%, 22% { color: var(--ink); } 30%, 100% { color: var(--faint); } }
+@keyframes hw2 { 0%, 24% { color: var(--faint); } 30%, 64% { color: var(--ink); } 72%, 100% { color: var(--faint); } }
+@keyframes hw3 { 0%, 66% { color: var(--faint); } 72%, 98% { color: var(--ink); } 100% { color: var(--faint); } }
+.hero .key { animation: press 3.2s var(--ease) infinite; }
+@keyframes press {
+  0%, 8% { transform: none; box-shadow: 0 0 0 1px var(--keyedge), 0 2px 0 var(--lip), 0 3px 6px -2px rgb(0 0 0 / .18), inset 0 1px 0 var(--keyhi); color: var(--ink2); }
+  14%, 66% { transform: translateY(2px); box-shadow: 0 0 0 1px var(--keyedge), 0 0 0 var(--lip), 0 0 0 4px var(--ember-soft), inset 0 1px 0 var(--keyhi); color: var(--ember-ink); }
+  72%, 100% { transform: none; box-shadow: 0 0 0 1px var(--keyedge), 0 2px 0 var(--lip), 0 3px 6px -2px rgb(0 0 0 / .18), inset 0 1px 0 var(--keyhi); color: var(--ink2); } }
+
+/* ── The dial ──────────────────────────────────────────────────────── */
+.dialwrap { flex: none; display: grid; grid-template-columns: 272px minmax(0, 1fr); gap: 40px; align-items: start; }
+.dialcol { position: sticky; top: 12px; display: flex; justify-content: center; }
+.dialcol .dial { transition: opacity .45s var(--ease); }
+.dialcol.dim .dial { opacity: .45; }
+.dial { position: relative; width: 256px; height: 256px; justify-self: center; touch-action: none; user-select: none; -webkit-user-select: none; cursor: grab; }
+.dial.drag { cursor: grabbing; }
+.dial svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.dial .track { fill: none; stroke: var(--hair); stroke-width: 3; stroke-linecap: round; }
+.dial .lit { fill: none; stroke: var(--ink); stroke-width: 3; stroke-linecap: round; stroke-dasharray: 100 100; transition: stroke-dashoffset .7s var(--spring); }
+.dial .prog { fill: none; stroke: var(--ink); stroke-opacity: .32; stroke-width: 2; stroke-linecap: butt; stroke-dasharray: 100 100; transition: stroke-opacity .3s; }
+.dial.paused .prog { stroke-opacity: .12; }
+.dial .tk { cursor: pointer; }
+.dial .tk .hit { stroke: transparent; stroke-width: 16; }
+.dial .tk .mk { stroke: var(--faint); stroke-width: 2; stroke-linecap: round; transition: stroke .3s, stroke-width .3s; }
+.dial .tk.past .mk { stroke: var(--ink2); }
+.dial .tk.on .mk { stroke: var(--ink); stroke-width: 3.5; }
+.kbody { position: absolute; inset: 20.5%; border-radius: 50%;
+  background: radial-gradient(circle at 50% 28%, var(--keytop), var(--key) 78%);
+  box-shadow: 0 0 0 1px var(--keyedge), 0 2px 0 var(--lip), 0 14px 30px -12px rgb(0 0 0 / .4), inset 0 1px 0 var(--keyhi);
+  transition: transform .7s var(--spring); }
+.kbody::before { content: ""; position: absolute; inset: 4px; border-radius: 50%;
+  background: repeating-conic-gradient(var(--knurl) 0 1.4deg, transparent 1.4deg 7.5deg);
+  -webkit-mask: radial-gradient(circle closest-side, transparent 83%, #000 84%); mask: radial-gradient(circle closest-side, transparent 83%, #000 84%); }
+.kbody::after { content: ""; position: absolute; left: 50%; top: 12px; width: 7px; height: 7px; margin-left: -3.5px; border-radius: 50%;
+  background: var(--ember); box-shadow: 0 0 0 3px var(--ember-soft); }
+.kface { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; pointer-events: none; }
+.kface b { display: block; font: 500 40px/1 var(--font-display); letter-spacing: -.04em; color: var(--ink); }
+.kface b.flip { animation: flip .38s var(--ease) both; }
+@keyframes flip { from { opacity: 0; transform: translateY(6px); } }
+.kface span { font-size: 11px; color: var(--muted); margin-top: 3px; }
+
+/* The points: faint titles; the one the knob is on opens. */
+.pts { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.pt-h { display: flex; align-items: baseline; gap: 12px; width: 100%; padding: 5px 0; border: 0; background: transparent; cursor: pointer; text-align: left; outline: none; }
+.pt-h:focus-visible .pt-t { text-decoration: underline; text-underline-offset: 4px; }
+.pt-n { width: 16px; flex: none; font-size: 12px; font-weight: 500; color: var(--faint); font-variant-numeric: tabular-nums; transition: color .3s; }
+.pt-t { font: 500 20px var(--font-display); letter-spacing: -.025em; color: var(--faint); transition: color .35s var(--ease); }
+.pt-h:hover .pt-t { color: var(--muted); }
+.pt-tag { font-size: 12px; color: var(--muted); opacity: 0; transition: opacity .3s; }
+.pt.on .pt-t, .pt.on .pt-n { color: var(--ink); }
+.pt.on .pt-tag { opacity: 1; }
+.pt-b { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .5s var(--ease); }
+.pt.on .pt-b { grid-template-rows: 1fr; }
+.pt-b > div { overflow: hidden; min-height: 0; }
+.pt-in { padding: 0 0 12px 28px; opacity: 0; transform: translateY(6px); transition: opacity .2s, transform .3s var(--ease); }
+.pt.on .pt-in { opacity: 1; transform: none; transition: opacity .35s .12s, transform .45s var(--ease) .12s; }
+.pt-c { margin: 0 0 10px; font-size: 14px; color: var(--muted); }
+
+/* A demo: one small surface, a few words moving. */
+.dm { position: relative; height: var(--dh, 64px); padding: 0 18px; border-radius: 12px; background: var(--surface); overflow: hidden; cursor: pointer;
+  box-shadow: 0 0 0 1px var(--hair), 0 1px 2px rgb(20 24 34 / .03); display: flex; flex-direction: column; justify-content: center; }
+.line { font-size: 15.5px; line-height: 1.5; color: var(--ink); white-space: nowrap; }
+.caret { display: inline-block; width: 1.5px; height: 1.1em; background: var(--ember); vertical-align: -.18em; margin-left: 1px; border-radius: 1px; animation: blink 1.05s steps(1) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+mark.said { display: inline-block; background: var(--ember-soft); color: var(--ember-ink); border-radius: 6px; padding: 0 6px; margin: 0 1px; line-height: 1.45;
+  transition: opacity .2s, transform .2s var(--ease); }
+mark.said.new { animation: pop .4s var(--spring) both; }
+mark.said.out { opacity: 0; transform: scale(.85); }
+@keyframes pop { from { opacity: 0; transform: scale(.8); } }
+/* A word morphing into its fixed spelling. */
+.mo { display: inline-block; position: relative; vertical-align: bottom; white-space: pre; transition: width .45s var(--ease); }
+.mo > span { white-space: pre; transition: opacity .4s var(--ease), filter .4s var(--ease), transform .45s var(--ease); }
+.mo .a { display: inline-block; }
+.mo .b { position: absolute; left: 0; top: 0; opacity: 0; filter: blur(4px); transform: translateY(5px); }
+.mo.go .a { opacity: 0; filter: blur(4px); transform: translateY(-5px); }
+.mo.go .b { opacity: 1; filter: none; transform: none; animation: wash 1.6s var(--ease) both; border-radius: 4px; }
+.mo.flag .a { text-decoration: underline wavy var(--faint); text-underline-offset: 4px; }
+@keyframes wash { 0%, 30% { background: var(--pick); } 100% { background: transparent; } }
+/* Strike, then vanish. */
+.x { display: inline-block; position: relative; vertical-align: bottom; white-space: pre; overflow: hidden; max-width: 40em;
+  transition: max-width .5s var(--ease), opacity .35s var(--ease), color .25s; }
+.x::after { content: ""; position: absolute; left: 0; top: 54%; height: 1.5px; width: 0; background: var(--muted); transition: width .35s var(--ease); }
+.x.strike { color: var(--muted); } .x.strike::after { width: 100%; }
+.x.vanish { max-width: 0; opacity: 0; }
+.add { opacity: 0; transition: opacity .3s; } .add.on { opacity: 1; }
+.app-chip, .win-chip { display: inline-flex; align-items: center; gap: 5px; height: 22px; padding: 0 8px; border-radius: 6px; font-size: 11.5px; color: var(--muted); background: var(--well); }
+.app-chip svg.i, .win-chip svg.i { width: 12px; height: 12px; }
+.app-chip { margin-right: 10px; vertical-align: 1px; }
+.win-chip { position: absolute; right: 14px; top: 50%; margin-top: -11px; }
+/* What lands. */
+.thumb { display: inline-block; position: relative; width: 58px; height: 36px; margin: 0 4px; vertical-align: -11px; border-radius: 5px; background: var(--shot-desk);
+  box-shadow: 0 0 0 1px var(--hair), 0 6px 12px -6px rgb(0 0 0 / .35); overflow: hidden; animation: drop .6s var(--spring) both; }
+.thumb::before { content: ""; position: absolute; left: 6px; right: 6px; top: 6px; bottom: 0; border-radius: 3px 3px 0 0; background: var(--surface); }
+.thumb::after { content: ""; position: absolute; right: 11px; bottom: 4px; width: 4px; height: 14px; border-radius: 1px; background: var(--ink2);
+  box-shadow: -6px 6px 0 -0 var(--hair), -12px 3px 0 var(--hair), -18px 8px 0 var(--hair); }
+@keyframes drop { from { opacity: 0; transform: translateY(-18px) scale(.7); } }
+.lchip { display: inline-flex; align-items: center; gap: 5px; height: 24px; padding: 0 9px; margin: 0 2px; vertical-align: 1px; border-radius: 999px; font-size: 13px; color: var(--ink2);
+  background: var(--well); box-shadow: inset 0 0 0 1px var(--hair); animation: pop .45s var(--spring) both; }
+.lchip svg.i { width: 12px; height: 12px; color: var(--muted); }
+.att { display: flex; height: 0; transition: height .4s var(--ease), margin .4s var(--ease); }
+.att.on { height: 32px; margin-bottom: 8px; }
+.fchip { display: inline-flex; align-items: center; gap: 7px; height: 32px; padding: 0 12px 0 10px; border-radius: 8px; font-size: 12.5px; color: var(--ink);
+  background: var(--surface); box-shadow: 0 0 0 1px var(--hair), 0 6px 14px -8px rgb(0 0 0 / .3); animation: drop .55s var(--spring) both; }
+.fchip svg.i { width: 15px; height: 15px; color: var(--muted); }
+.res { display: flex; align-items: center; gap: 10px; height: 0; overflow: hidden; transition: height .35s var(--ease), margin .35s var(--ease); }
+.res.on { height: 40px; margin-top: 8px; }
+.badge { width: 36px; height: 36px; border-radius: 9px; background: var(--ink); color: var(--paper); display: grid; place-items: center; font: 600 17px var(--font-display);
+  box-shadow: 0 6px 14px -8px rgb(0 0 0 / .5); animation: popbig .6s var(--spring) both; }
+@keyframes popbig { from { opacity: 0; transform: scale(.4); } }
+.res .lab { font-size: 13px; color: var(--muted); animation: rise .38s var(--ease) .15s both; }
+.res .lab b { color: var(--ink); font-weight: 500; }
+.fly { transition: transform .45s var(--ease), opacity .35s var(--ease); }
+.fly.gone { transform: translateY(-16px); opacity: 0; }
+.sentrow { position: absolute; left: 18px; right: 18px; top: 50%; margin-top: -13px; display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted);
+  opacity: 0; transform: translateY(8px); transition: opacity .35s var(--ease), transform .45s var(--ease); }
+.sentrow.on { opacity: 1; transform: none; }
+.sentrow svg.i { width: 14px; height: 14px; color: var(--ink2); }
+.retkey { position: absolute; right: 16px; top: 50%; margin-top: -15px; }
+.term { margin: 0 -18px; height: 100%; padding: 0 18px; display: flex; align-items: center; background: var(--term); color: #e8e8e6; font: 13px/1.5 var(--font-mono); }
+.term .tp { color: #8fbf7f; } .term .ts { color: rgb(255 255 255 / .5); margin: 0 8px 0 6px; }
+.term mark.said { font-family: var(--font-sans); font-size: 14.5px; background: rgb(255 106 61 / .18); color: #ff9a78; }
+.term .tcur { display: inline-block; width: 8px; height: 15px; margin-left: 3px; background: rgb(255 255 255 / .75); vertical-align: -2px; animation: blink 1.05s steps(1) infinite; }
+/* Command mode: the keys, what you said, the text box rewriting itself. */
+.cm-top { display: flex; align-items: center; gap: 12px; height: 32px; margin-bottom: 10px; }
+.cm-top .bub { font-size: 14px; }
+.cfield { font-size: 14.5px; line-height: 1.5; color: var(--ink); min-height: 66px; }
+.cb { border-radius: 3px; transition: background .35s var(--ease); -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+.cb.sel { background: var(--sel); }
+.rew { display: block; border-radius: 4px; animation: landin .5s var(--ease) both, wash 1.8s var(--ease) both; }
+@keyframes landin { from { opacity: 0; filter: blur(4px); } }
+
+/* Ask an AI: the five it can open, and Claude's composer. */
+.svc { display: flex; flex-wrap: wrap; gap: 5px; margin: -3px 0 10px; }
+.svc span { display: inline-flex; align-items: center; height: 20px; padding: 0 8px; border-radius: 999px; font-size: 11.5px; color: var(--muted); background: var(--well); box-shadow: inset 0 0 0 1px var(--hairsoft); }
+.stagex { position: relative; height: 100%; }
+.stagex > * { position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-50%); }
+.stagex .fly.gone { transform: translateY(calc(-50% - 16px)); }
+.bro { opacity: 0; transform: translateY(calc(-50% + 10px)) !important; transition: opacity .4s var(--ease), transform .5s var(--ease); border-radius: 9px; box-shadow: 0 0 0 1px var(--hair); background: var(--paper); overflow: hidden; }
+.bro.on { opacity: 1; transform: translateY(-50%) !important; }
+.bro-bar { display: flex; align-items: center; gap: 7px; height: 26px; padding: 0 10px; border-bottom: 1px solid var(--hairsoft); font-size: 11.5px; color: var(--muted); }
+.bro-bar .fav { width: 14px; height: 14px; border-radius: 4px; background: var(--ink); color: var(--paper); display: grid; place-items: center; font: 600 9px var(--font-display); }
+.bro-bar .url { display: inline-flex; align-items: center; gap: 4px; padding: 1px 8px; border-radius: 6px; background: var(--well); }
+.bro-bar .url svg.i { width: 9px; height: 9px; }
+.compose { display: flex; align-items: center; gap: 4px; min-height: 40px; margin: 8px 10px; padding: 4px 10px; border-radius: 9px; background: var(--surface); box-shadow: 0 0 0 1px var(--hair); font-size: 13.5px; color: var(--ink); white-space: nowrap; }
+.compose .thumb { width: 44px; height: 28px; vertical-align: middle; }
+
+/* "See more": a quiet button under the last title, and the rest in place. */
+.more-li { list-style: none; }
+.seemore, .seeless, .plink { display: inline-flex; align-items: center; gap: 5px; padding: 7px 0; border: 0; background: transparent; cursor: pointer;
+  font-size: 13px; color: var(--muted); transition: color .15s; }
+.seemore:hover, .seeless:hover, .plink:hover { color: var(--ink); }
+.seemore svg.i, .seeless svg.i, .plink svg.i { width: 13px; height: 13px; transition: transform .32s var(--glide); }
+.seemore { margin-left: 28px; }
+.more-li.open .seemore { display: none; }
+.more-b, .pmore { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .45s var(--ease); }
+.more-li.open .more-b, .pmore.open { grid-template-rows: 1fr; }
+.more-b > div, .pmore > div { overflow: hidden; min-height: 0; }
+.more-in { padding: 6px 0 0 28px; }
+.mg + .mg { margin-top: 12px; }
+.mg .caps { display: block; margin: 0 0 4px; font: 600 10px var(--font-sans); letter-spacing: .09em; text-transform: uppercase; color: var(--faint); }
+.mrow { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 14px; align-items: baseline; padding: 5px 0; border-top: 1px solid var(--hairsoft); font-size: 13.5px; }
+.mg .caps + .mrow { border-top: 0; }
+.mrow .mp { color: var(--ink); }
+.mrow .mr { color: var(--muted); font-size: 12.5px; }
+.more-li.open .mg, .more-li.open .says, .more-li.open .mfoot, .more-li.open .seeless { animation: rise .38s var(--ease) both; animation-delay: calc(80ms + var(--j, 0) * 40ms); }
+.says { display: flex; flex-wrap: wrap; gap: 6px; }
+.say { display: inline-flex; align-items: center; height: 26px; padding: 0 11px; border-radius: 999px; font-size: 12.5px; color: var(--ink2); background: var(--surface); box-shadow: 0 0 0 1px var(--hair); }
+.say.pt-say { color: var(--muted); }
+.mfoot { margin: 10px 0 0; font-size: 12.5px; color: var(--muted); }
+.mfoot code, .tl code { font: 11.5px var(--font-mono); color: var(--ink2); }
+.seeless { margin-top: 6px; }
+.seeless svg.i, .plink[aria-expanded="true"] svg.i { transform: rotate(180deg); }
+.plink { margin-top: 6px; padding-bottom: 0; }
+.tl { padding-top: 6px; }
+.tg + .tg { border-top: 1px solid var(--hairsoft); }
+.tgh { display: flex; align-items: center; gap: 8px; width: 100%; height: 30px; padding: 0; border: 0; background: transparent; cursor: pointer; font-size: 13px; font-weight: 500; color: var(--ink); text-align: left; }
+.tgh svg.i { width: 12px; height: 12px; color: var(--muted); transition: transform .32s var(--glide); }
+.tg.open .tgh svg.i { transform: rotate(90deg); }
+.tgh .n { margin-left: auto; font-size: 11.5px; font-weight: 400; color: var(--faint); }
+.tgb { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .4s var(--ease); }
+.tg.open .tgb { grid-template-rows: 1fr; }
+.tgb > div { overflow: hidden; min-height: 0; }
+.trow { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 12px; align-items: baseline; padding: 3px 0 3px 20px; font-size: 13px; color: var(--ink); }
+.trow code { font: 11.5px var(--font-mono); color: var(--ink2); overflow-wrap: anywhere; }
+.tg.open .tgb > div > :last-child { margin-bottom: 6px; }
+
+/* Keycaps: the Mac's own, glyph top right, word bottom left. */
+.keys { display: inline-flex; align-items: center; gap: 6px; }
+.key { position: relative; display: inline-flex; flex-direction: column; justify-content: space-between; align-items: flex-start;
+  min-width: 46px; height: 42px; padding: 5px 7px; border-radius: 8px; font: 500 10px/1 var(--font-sans); letter-spacing: 0; color: var(--ink2);
+  background: linear-gradient(180deg, var(--keytop) 0%, var(--key) 100%);
+  box-shadow: 0 0 0 1px var(--keyedge), 0 2px 0 var(--lip), 0 3px 6px -2px rgb(0 0 0 / .18), inset 0 1px 0 var(--keyhi);
+  transition: transform .12s var(--ease), box-shadow .12s var(--ease), color .2s; }
+.key .g { align-self: flex-end; font-size: 11px; }
+.key svg.i { width: 12px; height: 12px; stroke-width: 1.6; }
+.key.wide { min-width: 62px; }
+.key.down { transform: translateY(2px); box-shadow: 0 0 0 1px var(--keyedge), 0 0 0 var(--lip), 0 0 0 4px var(--ember-soft), inset 0 1px 0 var(--keyhi); color: var(--ember-ink); }
+.keys.sm .key { min-width: 34px; height: 30px; padding: 4px 6px; border-radius: 7px; font-size: 9px; }
+.keys.sm .key .g { font-size: 10px; }
+.keys.sm .key.wide { min-width: 50px; }
+.keys.sm .key svg.i { width: 10px; height: 10px; }
+.kplus { color: var(--faint); font-size: 12px; }
+
+/* Notes under the window. */
+.shared { max-width: 1240px; margin: 8px auto 60px; padding: 0 16px; font-size: 13px; line-height: 1.55; color: var(--note-ink); }
+.shared .card { background: var(--note-bg); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-radius: 14px; padding: 16px 20px; box-shadow: 0 0 0 1px var(--demo-line); }
+.shared h4 { font: 500 16px var(--font-display); margin: 0 0 4px; letter-spacing: -.02em; }
+.shared ul { margin: 4px 0 0; padding-left: 18px; }
+.shared li { margin: 3px 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+  .hero .w { color: var(--ink); }
+}
+</style>
+</head>
+<body>
+
+<div class="demo" role="toolbar" aria-label="Demo controls">
+  <span class="grp-ctl"><span class="lbl">Plan</span>
+    <span class="seg" data-ctl="plan"><button data-v="free">Free</button><button data-v="pro">Pro</button></span></span>
+  <span class="grp-ctl"><span class="lbl">Theme</span>
+    <span class="seg" data-ctl="theme"><button data-v="light">Light</button><button data-v="dark">Dark</button></span></span>
+  <span class="seg"><button class="go" id="replay">Open How it works</button></span>
+</div>
+
+<div class="stage"><div class="scaler" id="scaler">
+  <div class="win open" id="win">
+    <div class="traffic"><i></i><i></i><i></i></div>
+    <aside class="app-side" id="side"></aside>
+    <main class="app-main">
+      <h1>Good evening</h1><p>Saturday · the week so far</p>
+      <div class="app-hero"><div><b>New to talking instead of typing?</b><span>Three things, one tab each.</span></div>
+        <button class="btn" id="heroOpen">How it works</button></div>
+      <div class="app-cards">
+        <div class="app-card"><span>Words this week</span><b>2,434</b></div>
+        <div class="app-card"><span>Pace</span><b>107 wpm</b></div>
+        <div class="app-card"><span>Fixes</span><b>10</b></div>
+      </div>
+      <div class="app-wide"><i style="height:4%"></i><i style="height:4%"></i><i style="height:22%"></i><i style="height:5%"></i><i style="height:4%"></i><i style="height:4%"></i><i class="t" style="height:90%"></i></div>
+    </main>
+
+    <div class="scrim" id="scrim"></div>
+    <section class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="hw-title">
+      <header class="head">
+        <div class="h-top hb" style="--k:0"><h2 id="hw-title">How it works</h2>
+          <button class="xbtn" id="sound" aria-pressed="false" title="Sound is off until you click"></button>
+          <button class="xbtn" id="close" title="Close (esc)" aria-label="Close"><svg class="i" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+        <div class="tabs hb" style="--k:1" role="tablist" aria-label="How it works" id="tabs"></div>
+      </header>
+      <div class="body" id="body" role="tabpanel"></div>
+    </section>
+  </div>
+</div></div>
+
+<div class="shared"><div class="card">
+  <h4>v2.1: what gets built</h4>
+  <ul>
+    <li><b>Each tab is a dial.</b> The knob turns through six points (eight on Controls), every 3.8 s, with a soft tick. The wheel, a drag, a click or the arrow keys turn it, and pointing at a demo holds it.</li>
+    <li><b>One point open at a time:</b> a title of 2–4 words, one line, and a few seconds of motion. <b>See more</b> under Controls and Command mode, and <b>All terminal commands</b> under In a terminal, open the rest in place while the dial waits.</li>
+    <li><b>Sound</b> is muted until the first click, then the speaker in the header turns it off. With reduced motion, nothing turns and each demo shows its last frame.</li>
+  </ul>
+</div></div>
+
+<script>
+const S = { plan: 'free', theme: matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light', tab: 'dictation' };
+try { Object.assign(S, JSON.parse(localStorage.getItem('howto-redesign-v2') || '{}')); } catch (e) {}
+const save = () => { try { localStorage.setItem('howto-redesign-v2', JSON.stringify({ plan: S.plan, theme: S.theme, tab: S.tab })); } catch (e) {} };
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+const isFree = () => S.plan === 'free';
+const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+// ── Icons ─────────────────────────────────────────────────────────────
+const P = {
+  mic: '<rect x="9" y="2" width="6" height="12" rx="3"/><path d="M19 10v1a7 7 0 0 1-14 0v-1M12 18v4"/>',
+  zap: '<path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/>',
+  wand: '<path d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72Z"/><path d="m14 7 3 3M5 6v4M19 14v4M10 2v2M7 8H3M21 16h-4M11 3H9"/>',
+  globe: '<circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>',
+  file: '<path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><path d="M14 2v6h6"/>',
+  link: '<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>',
+  mail: '<rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/>',
+  window: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/>',
+  check: '<path d="M20 6 9 17l-5-5"/>',
+  chev: '<path d="m6 9 6 6 6-6"/>',
+  chevr: '<path d="m9 18 6-6-6-6"/>',
+  lock: '<rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
+  son: '<path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07M19.07 4.93a10 10 0 0 1 0 14.14"/>',
+  soff: '<path d="M11 5 6 9H2v6h4l5 4z"/><path d="m22 9-6 6M16 9l6 6"/>',
+  home: '<path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/>',
+  chart: '<path d="M3 3v18h18"/><path d="M7 16V11M12 16V7M17 16v-3"/>',
+  book: '<path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/>',
+  quote: '<path d="M17 6H3M21 12H8M21 18H8M3 12v6"/>',
+  tone: '<path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/>',
+  bot: '<rect x="3" y="8" width="18" height="12" rx="3"/><path d="M12 8V4M8 14h.01M16 14h.01"/>',
+  bulb: '<path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V17h6v-.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2z"/>',
+  gear: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
+};
+const ic = n => `<svg class="i" viewBox="0 0 24 24" aria-hidden="true">${P[n]}</svg>`;
+const KEYS = {
+  fn: `<span class="key" data-k="fn"><span class="g">fn</span><span>${ic('globe')}</span></span>`,
+  control: '<span class="key wide" data-k="control"><span class="g">⌃</span><span>control</span></span>',
+  return: '<span class="key wide" data-k="return"><span class="g">↩</span><span>return</span></span>',
+};
+const keys = (ks, sm = false) => `<span class="keys ${sm ? 'sm' : ''}">${ks.map(x => KEYS[x]).join('<span class="kplus">+</span>')}</span>`;
+const proTag = () => isFree() ? '<span class="pro" title="Part of Pro. Dictation, Dictionary, Phrases and Tones are on every plan.">Pro</span>' : '';
+
+// ── Demo clock: one pool, emptied whenever the point changes ──────────
+// With reduced motion every step runs at once, so a demo shows its last frame.
+let dtimers = [];
+const at = (ms, fn) => { if (REDUCED) fn(); else dtimers.push(setTimeout(fn, ms)); };
+const dstop = () => { dtimers.forEach(clearTimeout); dtimers = []; };
+const typeIn = (el, text, t0, per = 30) => {
+  if (REDUCED) { el.textContent = text; return t0; }
+  for (let n = 1; n <= text.length; n++) at(t0 + n * per, () => { el.textContent = text.slice(0, n); });
+  return t0 + text.length * per;
+};
+const mo = (a, b) => `<span class="mo"><span class="a">${a}</span><span class="b">${b}</span></span>`;
+const morph = m => { if (!m) return; const a = $('.a', m), b = $('.b', m); m.style.width = a.offsetWidth + 'px'; m.offsetWidth; m.classList.add('go'); m.style.width = b.offsetWidth + 'px'; };
+const said = text => `<mark class="said new">${esc(text)}</mark>`;
+const field = (extra = '') => `${extra}<div class="line"><span class="l1"></span><span class="caret"></span></div>`;
+
+// Dictation: one line, said → typed.
+const typedThen = (box, spoken, swapTo, { lead = '', fixAt = null, extra = '' } = {}) => {
+  box.innerHTML = field(extra);
+  const L = $('.l1', box);
+  const t = typeIn(L, spoken, 200);
+  at(t + 350, () => { L.innerHTML = lead + (fixAt ? spoken.replace(fixAt, mo(fixAt, swapTo)) : mo(spoken, swapTo)); $('.mo', L).classList.add('flag'); });
+  at(t + 800, () => morph($('.mo', L)));
+};
+const EMAIL = 'jane@saycontrol.com';
+
+// Shell.swift's table, as CommandsPane folds it.
+const SHELL = [
+  ['Files and folders', true, [
+    ['list the files', 'ls'], ['show me everything', 'ls -la'], ['make a new folder called scripts', 'mkdir scripts'],
+    ['make a new file called notes dot md', 'touch notes.md'], ['go to the src folder', 'cd src'], ['change directory to downloads', 'cd ~/Downloads'],
+    ['go up one', 'cd ..'], ['go home', 'cd ~'], ['where am I', 'pwd'], ['clear the screen', 'clear']]],
+  ['Git', false, [
+    ['add everything', 'git add .'], ['add package dot json', 'git add package.json'],
+    ['commit saying fixed the login bug', 'git commit -m "fixed the login bug"'],
+    ['commit everything saying fixed the login bug', 'git commit -a -m "fixed the login bug"'],
+    ['add everything and commit saying ship it', 'git add . && git commit -m "ship it"'],
+    ['push', 'git push'], ['push to main', 'git push origin main'], ['pull', 'git pull'], ['fetch', 'git fetch'],
+    ['status', 'git status'], ['what changed', 'git status'], ['show me the diff', 'git diff'],
+    ['show me the last commit', 'git log --oneline -1'], ['show me last five commits', 'git log --oneline -5'],
+    ['what branch am I on', 'git branch --show-current'], ['switch to the fix-login branch', 'git checkout fix-login'],
+    ['make a new branch called auth redesign', 'git checkout -b auth-redesign'], ['stash everything', 'git stash']]],
+  ['Anything else you name a tool for', false, [
+    ['pnpm run dev', 'pnpm run dev'], ['docker compose up dash d', 'docker compose up -d'],
+    ['touch package dot json', 'touch package.json'], ['tail dash f logs slash server dot log', 'tail -f logs/server.log']]],
+];
+const TERM_ALL = `<button class="plink" aria-expanded="false">All terminal commands ${ic('chev')}</button>
+  <div class="pmore"><div><div class="tl">${SHELL.map(([title, open, rows]) => `<div class="tg ${open ? 'open' : ''}">
+    <button class="tgh">${ic('chevr')}${title}<span class="n">${rows.length}</span></button>
+    <div class="tgb"><div>${rows.map(([a, b]) => `<div class="trow"><span>“${a}”</span><code>${esc(b)}</code></div>`).join('')}</div></div></div>`).join('')}
+    <p class="mfoot">Say it as written: “dash m” for <code>-m</code>, “dot” for a dot. Turn on Commands in the terminal in Settings.</p></div></div></div>`;
+const AI_NAMES = ['ChatGPT', 'Claude', 'Grok', 'Perplexity', 'Google'];
+
+// ── The points (every phrase is CommandsPane.swift's) ─────────────────
+const POINTS = {
+  dictation: [
+    { t: 'No more ums', c: 'Ums and restarts are cleaned away.', demo: box => {
+      box.innerHTML = field(); const L = $('.l1', box);
+      const t = typeIn(L, 'um, so I, I think it works', 200);
+      at(t + 350, () => { L.innerHTML = '<span class="x">um, so I, </span>I think it works<span class="add">.</span>'; });
+      at(t + 450, () => $('.x', L).classList.add('strike'));
+      at(t + 1000, () => $('.x', L).classList.add('vanish'));
+      at(t + 1350, () => $('.add', L).classList.add('on'));
+    } },
+    { t: 'Fix a word once', tag: 'Dictionary', c: 'Correct it once, and it stays right.', demo: box => typedThen(box, 'open the art browser', 'Arc', { fixAt: 'art' }) },
+    { t: 'Your saved text', tag: 'Phrases', c: 'Say a few words, get the rest.', demo: box => typedThen(box, 'my email address', EMAIL) },
+    { t: 'The right tone', tag: 'Tones', c: 'Brief in Slack, an email in Mail.', demo: box => {
+      box.innerHTML = `<div class="line"><span class="app-chip">${ic('mail')}Mail</span><span class="l1"></span><span class="caret"></span></div>`;
+      const L = $('.l1', box), t = typeIn(L, 'can you review this today', 200);
+      at(t + 350, () => { L.innerHTML = mo('can you review this today', 'Could you review this today?'); $('.mo', L).classList.add('flag'); });
+      at(t + 800, () => morph($('.mo', L)));
+    } },
+    { t: 'Emails, links, numbers', c: 'Written out, not spelled out.', demo: box => typedThen(box, 'jane at saycontrol dot com', EMAIL) },
+    { t: 'Names spelled right', c: 'Names on your screen come out right.', demo: box =>
+      typedThen(box, 'send it to the mime stream inbox', 'Mimestream', { fixAt: 'mime stream', extra: `<span class="win-chip">${ic('window')}Mimestream</span>` }) },
+  ],
+  controls: [
+    { t: 'Take a screenshot', c: 'It lands right where you said it.', demo: box => {
+      box.innerHTML = `<div class="line"><span class="l1"></span><span class="slot"></span><span class="l2"></span><span class="caret"></span></div>`;
+      const t = typeIn($('.l1', box), 'Here’s the dashboard, ', 150);
+      at(t + 100, () => { $('.slot', box).innerHTML = said('take a screenshot'); });
+      at(t + 1000, () => $('.slot mark', box).classList.add('out'));
+      at(t + 1200, () => { $('.slot', box).innerHTML = '<span class="thumb"></span>'; });
+      typeIn($('.l2', box), ' the totals look wrong.', t + 1650);
+    } },
+    { t: 'Copy the link', c: 'The address of the tab you’re on.', demo: box => {
+      box.innerHTML = `<div class="line"><span class="l1"></span><span class="slot"></span><span class="l2"></span><span class="caret"></span></div>`;
+      const t = typeIn($('.l1', box), 'The full list is at ', 150);
+      at(t + 100, () => { $('.slot', box).innerHTML = said('copy the link'); });
+      at(t + 1000, () => $('.slot mark', box).classList.add('out'));
+      at(t + 1200, () => { $('.slot', box).innerHTML = `<span class="lchip">${ic('link')}saycontrol.com/controls</span>`; });
+      typeIn($('.l2', box), '.', t + 1600);
+    } },
+    { t: 'Attach a file', c: 'The newest match joins your chat.', demo: box => {
+      box.innerHTML = `<div class="att"></div><div class="line"><span class="l1"></span><span class="slot"></span><span class="l2"></span><span class="caret"></span></div>`;
+      const t = typeIn($('.l1', box), 'Numbers for August, ', 150);
+      at(t + 100, () => { $('.slot', box).innerHTML = said('attach the payout PDF from downloads'); });
+      at(t + 1100, () => $('.slot mark', box).classList.add('out'));
+      at(t + 1300, () => { $('.slot', box).innerHTML = ''; const a = $('.att', box); a.classList.add('on'); a.innerHTML = `<span class="fchip">${ic('file')}payout-august.pdf</span>`; });
+      typeIn($('.l2', box), 'does page two read right?', t + 1700, 26);
+    } },
+    { t: 'Open an app', c: 'Or its website, if the app isn’t here.', demo: box => {
+      box.innerHTML = `<div class="line"><span class="slot"></span></div><div class="res"></div>`;
+      at(250, () => { $('.slot', box).innerHTML = said('open Claude'); });
+      at(1150, () => { const r = $('.res', box); r.classList.add('on'); r.innerHTML = '<span class="badge">C</span><span class="lab"><b>Claude</b> opens</span>'; });
+    } },
+    // "…and ask Claude" said last: what came before (the screenshot too)
+    // is composed into the message and pasted into Claude's composer.
+    { t: 'Ask an AI', c: 'Opens the site with your words already in.', ms: 5600,
+      pre: `<div class="svc">${AI_NAMES.map(n => `<span>${n}</span>`).join('')}</div>`, demo: box => {
+      box.innerHTML = `<div class="stagex"><div class="line fly"><span class="l1"></span><span class="s1"></span><span class="l2"></span><span class="s2"></span><span class="caret"></span></div>
+        <div class="bro"><div class="bro-bar"><span class="fav">C</span>Claude<span class="url">${ic('lock')}claude.ai</span></div>
+          <div class="compose"><span class="c1"></span><span class="c2"></span><span class="caret"></span></div></div></div>`;
+      const t = typeIn($('.l1', box), 'Why is this total wrong? ', 150, 22);
+      at(t + 60, () => { $('.s1', box).innerHTML = said('take a screenshot'); });
+      const t2 = typeIn($('.l2', box), ' and ', t + 650, 34);
+      at(t2 + 40, () => { $('.s2', box).innerHTML = said('ask Claude'); });
+      at(t2 + 900, () => $('.fly', box).classList.add('gone'));
+      at(t2 + 1050, () => $('.bro', box).classList.add('on'));
+      at(t2 + 1400, () => { $('.c1', box).textContent = 'Why is this total wrong?'; });
+      at(t2 + 1650, () => { $('.c2', box).innerHTML = '<span class="thumb"></span>'; });
+    } },
+    { t: 'Scratch that', c: 'Takes back what you just said.', demo: box => {
+      box.innerHTML = `<div class="line"><span class="l1"></span><span class="slot"></span><span class="caret"></span></div>`;
+      const L = $('.l1', box), t = typeIn(L, '…and I think we should ship it Friday. ', 150, 24);
+      at(t + 100, () => { $('.slot', box).innerHTML = said('scratch that'); });
+      at(t + 950, () => { $('.slot mark', box).classList.add('out'); L.innerHTML = '<span class="x">…and I think we should ship it Friday. </span>'; });
+      at(t + 1050, () => $('.x', L).classList.add('strike'));
+      // With reduced motion it stops at the strike, so there's still something to see.
+      if (!REDUCED) at(t + 1600, () => { $('.x', L).classList.add('vanish'); $('.slot', box).innerHTML = ''; });
+    } },
+    { t: 'Send it', c: 'Presses Return for you.', demo: box => {
+      box.innerHTML = `<div class="line fly"><span class="l1"></span><span class="slot"></span><span class="caret"></span></div>
+        <span class="retkey">${keys(['return'], true)}</span><div class="sentrow">${ic('check')}Message sent</div>`;
+      const t = typeIn($('.l1', box), 'On my way, ten minutes. ', 150);
+      at(t + 100, () => { $('.slot', box).innerHTML = said('send it'); });
+      at(t + 950, () => $('.retkey .key', box).classList.add('down'));
+      at(t + 1150, () => { $('.retkey .key', box).classList.remove('down'); $('.fly', box).classList.add('gone'); });
+      at(t + 1450, () => $('.sentrow', box).classList.add('on'));
+    } },
+    { t: 'In a terminal', c: 'Plain words become the command.', post: TERM_ALL, demo: box => {
+      box.innerHTML = `<div class="term"><span class="tp">~/Projects/app</span><span class="ts">%</span><span class="slot"></span><span class="tcur"></span></div>`;
+      at(250, () => { $('.slot', box).innerHTML = mo(said('list the files'), 'ls'); });
+      at(1250, () => morph($('.slot .mo', box)));
+    } },
+  ],
+  command: [
+    ['Make it shorter', 'Same point, fewer words.', 'make it shorter',
+      'I just wanted to check whether you maybe had a chance to look at the draft I sent over on Monday.',
+      'Did you get a chance to look at Monday’s draft?'],
+    ['Polish it', 'Cleaner, and still in your voice.', 'polish it',
+      'so the launch is moving to friday because qa found some stuff',
+      'The launch is moving to Friday because QA found a few issues.'],
+    ['Make it an email', 'Greeting, body and sign-off.', 'make it an email',
+      'sam the q3 numbers are in the shared folder take a look before friday',
+      'Hi Sam,<br>The Q3 numbers are in the shared folder. Could you take a look before Friday?<br>Thanks'],
+    ['Fix the grammar', 'Mistakes fixed, nothing else touched.', 'fix the grammar',
+      'Me and him was at the office when the files gets deleted.',
+      'He and I were at the office when the files got deleted.'],
+    ['Bullet points', 'A sentence becomes a list.', 'bullet points',
+      'We need the slides, the budget and a date for the review.',
+      '• The slides<br>• The budget<br>• A date for the review'],
+    ['Translate to English', 'Your text, rewritten in English.', 'translate to English',
+      '¿Podemos mover la reunión al jueves?',
+      'Can we move the meeting to Thursday?'],
+  ].map(([t, c, phrase, before, after]) => ({ t, c, demo: box => {
+    box.innerHTML = `<div class="cm-top">${keys(['fn', 'control'], true)}<span class="bub"></span></div><div class="cfield"><span class="cb">${esc(before)}</span></div>`;
+    const ks = $$('.key', box), bub = $('.bub', box), cf = $('.cfield', box);
+    at(150, () => $('.cb', box).classList.add('sel'));
+    at(600, () => ks.forEach(k => k.classList.add('down')));
+    at(700, () => { bub.innerHTML = '<mark class="said new"></mark>'; });
+    const m = () => $('mark', bub);
+    if (REDUCED) at(0, () => { m().textContent = phrase; });
+    else for (let n = 1; n <= phrase.length; n++) at(700 + n * 28, () => { m().textContent = phrase.slice(0, n); });
+    const t = 700 + phrase.length * 28;
+    at(t + 400, () => ks.forEach(k => k.classList.remove('down')));
+    at(t + 550, () => { cf.innerHTML = `<span class="rew">${after}</span>`; });
+  } })),
+};
+
+// "See more": the rest of what each tab can do, as rows or chips.
+const PHRASES = ['polish it', 'polish the prompt', 'make it shorter', 'make it longer', 'fix the grammar', 'fix the spelling', 'fix typos',
+  'make it an email', 'make it a list', 'bullet points', 'numbered list', 'make it formal', 'make it casual', 'make it polite',
+  'summarize it', 'rewrite it', 'simplify it', 'translate to English'];
+const mrows = rows => rows.map(([a, b]) => `<div class="mrow"><span class="mp">${a}</span><span class="mr">${b}</span></div>`).join('');
+const MORE = {
+  controls: () => [
+    ['Files', [
+      ['“copy the file path”', 'The path of what Finder has selected'],
+      ['“copy the PDF path from downloads”', 'That file’s path, as text'],
+      ['“upload…”, “add…”, “insert…”', 'Work the same as “attach”'],
+      ['“the second one”', 'Picks one when several files match'],
+      ['“cancel”', 'Closes that list'],
+    ]],
+    ['Open and ask', [
+      ['“open terminal in the projects folder”', 'A terminal already in that folder'],
+      ['“open terminal here”', 'In the folder Finder is showing'],
+      ['“ask Claude how to fix this”', 'Opens with your question in it'],
+      ['“…and ask ChatGPT”', 'Said last, what came before is the message'],
+    ]],
+    ['Fix and send', [
+      ['“scratch the last sentence”', 'Takes back just that sentence'],
+      ['“…and send it”', 'Said last, your words, then Return'],
+    ]],
+  ].map(([cap, rows], j) => `<div class="mg" style="--j:${j}"><span class="caps">${cap}</span>${mrows(rows)}</div>`).join(''),
+  command: () => `<div class="says" style="--j:0">${PHRASES.map(p => `<span class="say">${p}</span>`).join('')}</div>
+    <p class="mfoot" style="--j:1">Any instruction works. SayControl listens hardest for these.</p>`,
+};
+
+// ── Tabs and their one sentence ───────────────────────────────────────
+const TABS = [
+  ['dictation', 'mic', 'Dictation', 'Just talk', false, '72px'],
+  ['controls', 'zap', 'Controls', 'Say it mid-sentence', true, '104px'],
+  ['command', 'wand', 'Command mode', 'Change text you’ve written', true, '150px'],
+];
+const INTRO = {
+  dictation: () => `<div class="hero"><span class="w w1">Hold</span>${keys(['fn'])}<span class="w w2">Talk.</span><span class="w w3">Let go.</span>
+      <span class="hero-sub">Your words land at the cursor.</span></div>`,
+  controls: () => `While you dictate, say one of these and it happens right there. ${proTag()}`,
+  command: () => `Select text, hold fn + control and say what you want; ⌘Z undoes it. ${proTag()}`,
+};
+
+// ── The dial ──────────────────────────────────────────────────────────
+const A0 = -135, A1 = 135, C = 112;
+const pol = (deg, r) => { const a = deg * Math.PI / 180; return [C + r * Math.sin(a), C - r * Math.cos(a)]; };
+const angleOf = (i, n) => A0 + (A1 - A0) * i / (n - 1);
+function dialHTML(n) {
+  const [sx, sy] = pol(A0, 100), [ex, ey] = pol(A1, 100);
+  const arc = `M${sx.toFixed(2)} ${sy.toFixed(2)} A100 100 0 1 1 ${ex.toFixed(2)} ${ey.toFixed(2)}`;
+  const ticks = Array.from({ length: n }, (_, i) => {
+    const a = angleOf(i, n), [x1, y1] = pol(a, 107), [x2, y2] = pol(a, 116), [h1, h2] = pol(a, 100), [h3, h4] = pol(a, 122);
+    return `<g class="tk" data-i="${i}"><line class="hit" x1="${h1}" y1="${h2}" x2="${h3}" y2="${h4}"/><line class="mk" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/></g>`;
+  }).join('');
+  return `<div class="dial" id="dial" role="slider" tabindex="0" aria-valuemin="1" aria-valuemax="${n}" aria-valuenow="1" aria-label="Point">
+    <svg viewBox="0 0 224 224" aria-hidden="true"><path class="track" d="${arc}"/><path class="lit" id="lit" d="${arc}" pathLength="100" style="stroke-dashoffset:100"/>
+      <circle class="prog" id="prog" cx="112" cy="112" r="78" pathLength="100" transform="rotate(-90 112 112)" style="stroke-dashoffset:100"/>${ticks}</svg>
+    <div class="kbody" id="kbody"></div>
+    <div class="kface"><b id="knum">1</b><span>of ${n}</span></div></div>`;
+}
+const D = { idx: 0, n: 0, elapsed: 0, last: 0, hover: false, drag: false, panels: new Set() };
+const AUTO = 3800;
+
+function paint() {
+  const tab = TABS.find(t => t[0] === S.tab), pts = POINTS[S.tab];
+  k = 0;
+  const list = `<ol class="pts" id="pts">${pts.map((p, i) => `<li class="pt" data-i="${i}">
+      <button class="pt-h"><span class="pt-n">${i + 1}</span><span class="pt-t">${p.t}</span>${p.tag ? `<span class="pt-tag">${p.tag}</span>` : ''}</button>
+      <div class="pt-b"><div><div class="pt-in"><p class="pt-c">${p.c}</p>${p.pre || ''}<div class="dm" style="--dh:${tab[5]}"></div>${p.post || ''}</div></div></div></li>`).join('')}
+    ${MORE[S.tab] ? `<li class="more-li"><button class="seemore" aria-expanded="false">See more ${ic('chev')}</button>
+      <div class="more-b"><div><div class="more-in">${MORE[S.tab]()}<button class="seeless" style="--j:3">See less ${ic('chev')}</button></div></div></div></li>` : ''}</ol>`;
+  return `<div class="intro ${blk()}">${INTRO[S.tab]()}</div>
+    <div class="dialwrap"><div class="dialcol ${blk()}">${dialHTML(pts.length)}</div><div class="listcol ${blk()}">${list}</div></div>`;
+}
+let k = 0;
+const blk = () => `blk" style="--k:${k++}`;
+
+function setIdx(i, { user = false, sound = true, delay = 0 } = {}) {
+  const n = D.n; i = ((i % n) + n) % n;
+  const changed = i !== D.idx || !$('.pt.on');
+  if (i !== D.idx && D.panels.has('term')) {
+    $$('.pmore.open').forEach(pm => { pm.classList.remove('open'); pm.previousElementSibling.setAttribute('aria-expanded', false); });
+    D.panels.delete('term');
+  }
+  D.idx = i; D.elapsed = 0;
+  $$('.pt').forEach(p => p.classList.toggle('on', +p.dataset.i === i));
+  $$('.tk').forEach(t => { const j = +t.dataset.i; t.classList.toggle('on', j === i); t.classList.toggle('past', j < i); });
+  $('#lit').style.strokeDashoffset = 100 * (1 - i / (n - 1));
+  $('#kbody').style.transform = `rotate(${angleOf(i, n)}deg)`;
+  const num = $('#knum'); num.textContent = i + 1; num.classList.remove('flip'); num.offsetWidth; num.classList.add('flip');
+  $('#dial').setAttribute('aria-valuenow', i + 1);
+  if (changed && sound) tick();
+  dstop();
+  const box = $(`.pt[data-i="${i}"] .dm`);
+  if (delay && !REDUCED) dtimers.push(setTimeout(() => POINTS[S.tab][i].demo(box), delay)); else POINTS[S.tab][i].demo(box);
+}
+
+function setupDial() {
+  const pts = POINTS[S.tab]; D.n = pts.length; D.idx = -1; D.panels.clear();
+  const dial = $('#dial'), wrap = $('.dialwrap'), body = $('#body');
+  // See more / See less, and the terminal point's full list. While one is
+  // open the dial holds still, and See more dims it a little.
+  const syncPanels = () => $('.dialcol').classList.toggle('dim', D.panels.has('more'));
+  const ml = $('.more-li');
+  if (ml) {
+    $('.seemore', ml).onclick = () => { ml.classList.add('open'); $('.seemore', ml).setAttribute('aria-expanded', true); D.panels.add('more'); syncPanels(); reveal($('.more-in', ml)); };
+    $('.seeless', ml).onclick = () => { ml.classList.remove('open'); $('.seemore', ml).setAttribute('aria-expanded', false); D.panels.delete('more'); syncPanels(); body.scrollTo({ top: 0, behavior: REDUCED ? 'auto' : 'smooth' }); };
+  }
+  $$('.plink').forEach(b => b.onclick = () => {
+    const pm = b.nextElementSibling, open = !pm.classList.contains('open');
+    pm.classList.toggle('open', open); b.setAttribute('aria-expanded', open);
+    if (open) { D.panels.add('term'); reveal(pm); } else D.panels.delete('term');
+  });
+  $$('.tgh').forEach(h => h.onclick = () => h.parentElement.classList.toggle('open'));
+  $$('.pt-h').forEach(b => b.onclick = () => setIdx(+b.closest('.pt').dataset.i, { user: true }));
+  $$('.dm').forEach(d => {
+    d.onpointerenter = () => { D.hover = true; };
+    d.onpointerleave = () => { D.hover = false; };
+    d.onclick = () => setIdx(D.idx, { user: true, sound: false });     // replay
+  });
+  // The wheel turns it, a notch at a time.
+  let acc = 0, lastStep = 0;
+  wrap.addEventListener('wheel', e => {
+    // With a list open, the wheel scrolls it; the knob itself still turns.
+    if (D.panels.size && !e.target.closest('.dial')) return;
+    e.preventDefault();
+    acc += Math.abs(e.deltaY) > Math.abs(e.deltaX) ? e.deltaY : e.deltaX;
+    const now = performance.now();
+    if (Math.abs(acc) >= 40 && now - lastStep > 160) { setIdx(D.idx + Math.sign(acc), { user: true }); acc = 0; lastStep = now; }
+  }, { passive: false });
+  // A drag turns it to the nearest tick; a tap on a tick goes there; a tap on the knob steps on.
+  let moved = false;
+  const pick = e => {
+    const r = dial.getBoundingClientRect(), x = e.clientX - (r.left + r.width / 2), y = e.clientY - (r.top + r.height / 2);
+    const deg = Math.atan2(x, -y) * 180 / Math.PI;
+    if (deg < A0 - 25 || deg > A1 + 25) return null;
+    return Math.max(0, Math.min(D.n - 1, Math.round((deg - A0) / ((A1 - A0) / (D.n - 1)))));
+  };
+  dial.onpointerdown = e => { D.drag = true; moved = false; dial.classList.add('drag'); dial.setPointerCapture(e.pointerId); };
+  dial.onpointermove = e => {
+    if (!D.drag) return;
+    const i = pick(e); if (i !== null && i !== D.idx) { moved = true; setIdx(i, { user: true }); }
+  };
+  dial.onpointerup = e => {
+    if (!D.drag) return;
+    D.drag = false; dial.classList.remove('drag');
+    if (!moved) { const tk = e.target.closest && e.target.closest('.tk'); setIdx(tk ? +tk.dataset.i : D.idx + 1, { user: true }); }
+  };
+  dial.onpointercancel = () => { D.drag = false; dial.classList.remove('drag'); };
+  body.classList.add('notrans');
+  setIdx(0, { sound: false, delay: 420 });
+  placeDial();
+  requestAnimationFrame(() => requestAnimationFrame(() => body.classList.remove('notrans')));
+}
+// Centre the list in the space it has, and the knob against the list, once:
+// opening a list later only grows the page downward, nothing jumps.
+function placeDial() {
+  const body = $('#body'), wrap = $('.dialwrap'), col = $('.dialcol'), list = $('#pts'), intro = $('.intro');
+  if (!wrap || D.panels.size) return;
+  wrap.style.paddingTop = '0px';
+  const cs = getComputedStyle(body);
+  const avail = body.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+  const used = intro.offsetHeight + parseFloat(getComputedStyle(intro).marginBottom) + wrap.offsetHeight;
+  wrap.style.paddingTop = Math.max(0, (avail - used) / 2) + 'px';
+  col.style.marginTop = Math.max(0, (list.offsetHeight - $('#dial').offsetHeight) / 2) + 'px';
+}
+// Bring a list that just opened into view, once it has finished opening.
+let SCALE = 1;
+const reveal = el => setTimeout(() => {
+  const b = $('#body'), r = el.getBoundingClientRect(), br = b.getBoundingClientRect();
+  const below = (r.bottom - br.bottom) / SCALE, above = (r.top - br.top) / SCALE;
+  if (below > 0) b.scrollBy({ top: Math.min(below + 16, above - 12), behavior: REDUCED ? 'auto' : 'smooth' });
+}, REDUCED ? 0 : 470);
+
+// Auto-advance: a clock that only runs while nobody's watching a demo.
+function loop(now) {
+  const dt = D.last ? Math.min(now - D.last, 100) : 0; D.last = now;
+  const open = $('#win').classList.contains('open'), dial = $('#dial');
+  const paused = D.hover || D.drag || D.panels.size > 0 || !open;
+  if (dial && !REDUCED) {
+    const p = POINTS[S.tab][D.idx], dur = (p && p.ms) || AUTO;
+    if (!paused) { D.elapsed += dt; if (D.elapsed >= dur) setIdx(D.idx + 1); }
+    dial.classList.toggle('paused', paused);
+    $('#prog').style.strokeDashoffset = 100 * (1 - Math.min(1, D.elapsed / dur));
+  }
+  requestAnimationFrame(loop);
+}
+
+// ── Sound: a short filtered click, muted until the first click ────────
+const SND = { ctx: null, on: false, chosen: false };
+function tick() {
+  if (!SND.on || !SND.ctx) return;
+  const c = SND.ctx, t = c.currentTime;
+  if (c.state === 'suspended') c.resume();
+  const len = Math.floor(c.sampleRate * .022), buf = c.createBuffer(1, len, c.sampleRate), d = buf.getChannelData(0);
+  for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 5);
+  const src = c.createBufferSource(); src.buffer = buf;
+  const bp = c.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 2800; bp.Q.value = 2.2;
+  const g = c.createGain(); g.gain.value = .16;
+  src.connect(bp).connect(g).connect(c.destination); src.start(t);
+  const o = c.createOscillator(), og = c.createGain();
+  o.frequency.setValueAtTime(1500, t); o.frequency.exponentialRampToValueAtTime(700, t + .02);
+  og.gain.setValueAtTime(.025, t); og.gain.exponentialRampToValueAtTime(.0001, t + .03);
+  o.connect(og).connect(c.destination); o.start(t); o.stop(t + .035);
+}
+function syncSound() {
+  const b = $('#sound');
+  b.innerHTML = ic(SND.on ? 'son' : 'soff');
+  b.setAttribute('aria-pressed', SND.on);
+  b.title = SND.on ? 'Sound on' : SND.ctx ? 'Sound off' : 'Sound is off until you click';
+  b.setAttribute('aria-label', b.title);
+}
+document.addEventListener('pointerdown', e => {
+  if (SND.ctx) return;
+  try { SND.ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch (err) { return; }
+  // The speaker itself decides; any other first click turns sound on.
+  if (!e.target.closest('#sound') && !SND.chosen) SND.on = true;
+  syncSound();
+}, true);
+$('#sound').onclick = () => { SND.chosen = true; SND.on = !SND.on; syncSound(); if (SND.on) tick(); };
+
+// ── Sheet: tabs, pages, open and close ────────────────────────────────
+function drawTabs() {
+  $('#tabs').innerHTML = '<span class="tpick" id="tpick"></span>' + TABS.map(([id, icon, t, sub, pro]) =>
+    `<button class="tab ${S.tab === id ? 'on' : ''}" role="tab" id="t-${id}" data-tab="${id}" aria-selected="${S.tab === id}" tabindex="${S.tab === id ? 0 : -1}">
+      <span class="ti">${ic(icon)}</span><span class="tt"><b>${t}</b><small>${sub}</small></span>${pro ? proTag() : ''}</button>`).join('');
+  $$('.tab').forEach(b => b.onclick = () => go(b.dataset.tab));
+  placePick(false);
+}
+function placePick(animate = true) {
+  const p = $('#tpick'), on = $('.tab.on');
+  if (!p || !on) return;
+  if (!animate) p.style.transition = 'none';
+  p.style.left = on.offsetLeft + 'px'; p.style.width = on.offsetWidth + 'px';
+  if (!animate) { p.offsetWidth; p.style.transition = ''; }
+}
+function draw(fade, delay = 0) {
+  const body = $('#body');
+  dstop();
+  const put = () => {
+    body.style.setProperty('--d', delay + 'ms');
+    body.innerHTML = paint();
+    body.scrollTop = 0; $('.head').classList.remove('lifted');
+    body.setAttribute('aria-labelledby', 't-' + S.tab);
+    body.classList.remove('out');
+    setupDial();
+  };
+  if (fade) { body.classList.add('out'); setTimeout(put, 110); } else put();
+}
+function go(tab) {
+  if (tab === S.tab) return;
+  S.tab = tab; save();
+  $$('.tab').forEach(b => { const on = b.dataset.tab === tab; b.classList.toggle('on', on); b.setAttribute('aria-selected', on); b.tabIndex = on ? 0 : -1; });
+  placePick(true);
+  draw(true);
+}
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') return setOpen(false);
+  if (!$('#win').classList.contains('open') || !$('#dial')) return;
+  const onTab = document.activeElement && document.activeElement.classList.contains('tab');
+  if (onTab && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
+    e.preventDefault();
+    const i = TABS.findIndex(t => t[0] === S.tab), next = TABS[(i + (e.key === 'ArrowRight' ? 1 : -1) + TABS.length) % TABS.length][0];
+    go(next); $(`#t-${next}`).focus(); return;
+  }
+  if (e.key === 'ArrowDown' || e.key === 'ArrowRight') { e.preventDefault(); setIdx(D.idx + 1, { user: true }); }
+  if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') { e.preventDefault(); setIdx(D.idx - 1, { user: true }); }
+});
+
+function drawSide() {
+  const open = $('#win').classList.contains('open');
+  const nav = (icon, t, on = false, id = '') => `<div class="app-nav ${on ? 'on' : ''} ${id ? 'btn-like' : ''}" ${id ? `id="${id}"` : ''}>${ic(icon)}${t}</div>`;
+  $('#side').innerHTML = `<div class="wordmark"><b></b>SayControl</div>
+    ${nav('home', 'Overview', !open)}${nav('chart', 'Insights')}
+    <div class="side-caps">Voice</div>${nav('book', 'Dictionary')}${nav('quote', 'Phrases')}${nav('tone', 'Tones')}
+    <div class="side-caps">Coding</div>${nav('bot', 'Agents')}
+    <div class="side-foot">${nav('bulb', 'How it works', open, 'sideHow')}${nav('gear', 'Settings')}
+      <div class="acct"><span class="avatar">S</span><div><b>Sorower</b><span>${isFree() ? 'Free' : 'Pro'}</span></div></div></div>`;
+  $('#sideHow').onclick = () => setOpen(true);
+}
+const win = $('#win'), sheet = $('#sheet');
+function setOpen(open) {
+  win.classList.toggle('open', open);
+  drawSide();
+  if (open) {
+    sheet.classList.remove('enter'); sheet.offsetWidth; sheet.classList.add('enter');
+    drawTabs();
+    draw(false, 140);
+  } else dstop();
+}
+$('#replay').onclick = () => {
+  if (win.classList.contains('open')) { win.classList.remove('open'); dstop(); setTimeout(() => setOpen(true), 240); }
+  else setOpen(true);
+};
+$('#heroOpen').onclick = () => setOpen(true);
+$('#close').onclick = () => setOpen(false);
+$('#scrim').onclick = () => setOpen(false);
+
+// ── Demo controls ─────────────────────────────────────────────────────
+function syncCtl() {
+  $$('.seg[data-ctl]').forEach(seg => $$('button', seg).forEach(b => b.setAttribute('aria-pressed', S[seg.dataset.ctl] === b.dataset.v)));
+  document.documentElement.dataset.theme = S.theme;
+}
+$$('.seg[data-ctl]').forEach(seg => $$('button', seg).forEach(b => b.onclick = () => {
+  S[seg.dataset.ctl] = b.dataset.v; save(); syncCtl();
+  if (seg.dataset.ctl === 'plan') { drawSide(); drawTabs(); const intro = $('.intro'); if (intro) intro.innerHTML = INTRO[S.tab](); }
+}));
+$('#body').addEventListener('scroll', e => $('.head').classList.toggle('lifted', e.target.scrollTop > 2));
+function fit() {
+  const s = Math.min(1, (document.documentElement.clientWidth - 32) / 1240), sc = $('#scaler');
+  SCALE = s;
+  sc.style.transform = `scale(${s})`;
+  sc.style.marginBottom = `${-820 * (1 - s)}px`;
+  sc.style.marginLeft = sc.style.marginRight = `${-1240 * (1 - s) / 2}px`;
+}
+addEventListener('resize', fit);
+fit(); syncCtl(); syncSound(); setOpen(true);
+requestAnimationFrame(loop);
+if (document.fonts) document.fonts.ready.then(() => { placePick(false); placeDial(); });
+</script>
+</body>
+</html>

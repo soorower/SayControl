@@ -1,0 +1,871 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Models pane redesign</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600&display=swap">
+<style>
+/* Settings › Models for the open-source app: where each job runs, kept
+   apart. Transcription runs on SayControl Cloud, on this Mac or on your own
+   key; polish runs on the cloud or your own key (a local polish model comes
+   later). The agent voice is cloud-only and is not on this page.
+   Same sheet, rail, rows and colours as design/settings-redesign.html (the
+   build target for SettingsPane.swift): 980 × 690 sheet, 224 rail.
+   Local models are LOCAL_CATALOG (Sources/LocalEngine.swift) with its sizes
+   and languages; live = LocalFamily.streams. Transcription model ids are
+   Config.swift's; chat models are examples of what a key's model list
+   returns. Nothing on this page sends anything anywhere. */
+:root {
+  --paper: #faf9f7; --rail: #f1efeb; --rail-line: #e5e2dc; --surface: #fff;
+  --hair: #e8e6e1; --hairsoft: #f0eeea; --well: #f2f0ec; --key: #f6f4f0; --lip: #dddad3;
+  --ink: #1c1b19; --ink2: #44423e; --muted: #6c6963; --faint: #9a968f;
+  --ember: #e5501f; --ember-ink: #c2410c; --ember-soft: rgb(229 80 31 / .10);
+  --moss: #1a7a50; --moss-soft: rgb(26 122 80 / .10);
+  --amber: #9a6412; --amber-soft: rgb(183 121 31 / .13);
+  --danger: #c6362b; --danger-soft: rgb(198 54 43 / .07); --danger-ring: rgb(198 54 43 / .26);
+  --blue: #2f6fdb; --blue-soft: rgb(47 111 219 / .11);
+  --violet: #6d4ed8; --violet-soft: rgb(109 78 216 / .11);
+  --rose: #c23a5e; --rose-soft: rgb(194 58 94 / .10);
+  --slate: #55606e; --slate-soft: rgb(85 96 110 / .10);
+  --pick: #e7e3da; --hover: #ece9e3;
+  --ring: rgb(0 0 0 / .10);
+  --desk: linear-gradient(160deg, #c3d1e8 0%, #e6dcd6 55%, #d9b9a5 100%);
+  --shadow: 0 0 0 1px var(--ring), 0 2px 6px rgb(20 24 34 / .06), 0 30px 70px -20px rgb(20 24 34 / .38);
+  --ease: cubic-bezier(.2,.8,.2,1);
+  --glide: cubic-bezier(.3,1.18,.45,1);
+  --font-display: 'Bricolage Grotesque', -apple-system, system-ui, sans-serif;
+  --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, monospace;
+  color-scheme: light;
+}
+:root[data-theme="dark"] {
+  --paper: #111113; --rail: #1a1a1d; --rail-line: #2b2b30; --surface: #1b1b1e;
+  --hair: #2b2b30; --hairsoft: #232327; --well: #0c0c0e; --key: #2e2e33; --lip: #0a0a0b;
+  --ink: #f3f3f1; --ink2: #c8c8cd; --muted: #95959b; --faint: #6a6a70;
+  --ember: #ff6a3d; --ember-ink: #ff8a63; --ember-soft: rgb(255 106 61 / .14);
+  --moss: #3cc48a; --moss-soft: rgb(60 196 138 / .13);
+  --amber: #f0b44c; --amber-soft: rgb(240 180 76 / .13);
+  --danger: #ff6b5e; --danger-soft: rgb(255 107 94 / .09); --danger-ring: rgb(255 107 94 / .32);
+  --blue: #7aa8ff; --blue-soft: rgb(122 168 255 / .16);
+  --violet: #b09cff; --violet-soft: rgb(176 156 255 / .16);
+  --rose: #ff8fae; --rose-soft: rgb(255 143 174 / .15);
+  --slate: #b4bdc9; --slate-soft: rgb(180 189 201 / .14);
+  --pick: rgb(255 255 255 / .09); --hover: rgb(255 255 255 / .05);
+  --ring: rgb(255 255 255 / .08);
+  --desk: linear-gradient(160deg, #1b2233 0%, #25232a 55%, #2e221d 100%);
+  --shadow: 0 0 0 1px var(--ring), 0 30px 80px -20px rgb(0 0 0 / .7);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { min-height: 100vh; background: var(--desk); font-family: var(--font-sans); color: var(--ink); -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+button, input { font: inherit; color: inherit; }
+svg.i { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+:focus-visible { outline: 2px solid var(--ember); outline-offset: 2px; }
+[hidden] { display: none !important; }
+
+/* ── The demo bar: not part of the app ─────────────────────────────── */
+.demo { position: sticky; top: 0; z-index: 50; display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; justify-content: center;
+  padding: 12px 16px; background: rgb(255 255 255 / .55); backdrop-filter: blur(16px) saturate(1.4); -webkit-backdrop-filter: blur(16px) saturate(1.4); border-bottom: 1px solid rgb(0 0 0 / .06); }
+:root[data-theme="dark"] .demo { background: rgb(20 20 24 / .6); border-color: rgb(255 255 255 / .06); }
+.demo .lbl { font: 600 10.5px var(--font-sans); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-right: 2px; }
+.seg { display: inline-flex; align-items: center; gap: 2px; padding: 3px; border-radius: 999px; background: rgb(0 0 0 / .06); }
+:root[data-theme="dark"] .seg { background: rgb(255 255 255 / .07); }
+.seg button { border: 0; background: transparent; padding: 5px 11px; border-radius: 999px; font-size: 12px; font-weight: 500; cursor: pointer; color: var(--ink2); transition: background .2s var(--ease), color .2s var(--ease); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+.grp-ctl { display: inline-flex; align-items: center; gap: 6px; }
+
+/* ── The stage: a scaled copy of the app window ────────────────────── */
+.stage { display: flex; justify-content: center; padding: 22px 16px 10px; }
+.scaler { width: 1240px; height: 820px; flex: none; transform-origin: top center; }
+.win { position: relative; width: 1240px; height: 820px; border-radius: 14px; overflow: hidden; background: var(--paper); box-shadow: 0 0 0 .5px rgb(0 0 0 / .25), 0 24px 70px rgb(0 0 0 / .32); display: grid; grid-template-columns: 236px 1fr; }
+.app-side { margin: 10px 0 10px 10px; border-radius: 12px; background: var(--rail); box-shadow: 0 0 0 1px var(--rail-line); padding: 46px 10px 12px; display: flex; flex-direction: column; gap: 1px; }
+.traffic { position: absolute; top: 22px; left: 24px; display: flex; gap: 8px; z-index: 3; }
+.traffic i { width: 12px; height: 12px; border-radius: 50%; background: #ff5f57; }
+.traffic i:nth-child(2) { background: #febc2e; } .traffic i:nth-child(3) { background: #28c840; }
+.wordmark { display: flex; align-items: center; gap: 7px; font: 600 17px var(--font-display); letter-spacing: -.035em; padding: 0 10px 14px; }
+.wordmark b { width: 20px; height: 20px; border-radius: 6px; background: var(--ink); display: grid; place-items: center; }
+.wordmark b::after { content: ""; width: 0; height: 0; border-left: 6px solid var(--ember); border-top: 4px solid transparent; border-bottom: 4px solid transparent; margin-left: 2px; }
+.app-nav { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 8px; font-size: 13.5px; color: var(--ink2); }
+.app-nav.on { background: var(--pick); color: var(--ink); font-weight: 500; }
+.app-main { padding: 54px 44px; overflow: hidden; }
+.app-main h1 { font: 500 30px var(--font-display); letter-spacing: -.035em; margin: 0 0 6px; }
+.app-main p { margin: 0 0 26px; color: var(--muted); font-size: 14px; }
+.app-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.app-card { height: 128px; border-radius: 14px; background: var(--surface); box-shadow: 0 0 0 1px var(--hair); padding: 18px; }
+.app-card b { display: block; font: 500 30px var(--font-display); letter-spacing: -.03em; }
+.app-card span { font-size: 12.5px; color: var(--muted); }
+.scrim { position: absolute; inset: 0; z-index: 10; background: rgb(14 14 18 / .28); backdrop-filter: blur(6px) saturate(1.1); -webkit-backdrop-filter: blur(6px) saturate(1.1); }
+:root[data-theme="dark"] .scrim { background: rgb(0 0 0 / .5); }
+
+.sheet { --w: 980px; --h: 690px; position: absolute; z-index: 11; left: 50%; top: 50%; width: var(--w); height: var(--h); margin-left: calc(var(--w) / -2); margin-top: calc(var(--h) / -2);
+  border-radius: 18px; background: var(--paper); box-shadow: var(--shadow); display: grid; grid-template-columns: 224px 1fr; grid-template-rows: minmax(0, 1fr); overflow: hidden;
+  animation: sheetIn .48s var(--glide) both; }
+@keyframes sheetIn { from { opacity: 0; transform: translateY(14px) scale(.965); } }
+.rail { position: relative; margin: 8px 0 8px 8px; border-radius: 12px; background: var(--rail); box-shadow: 0 0 0 1px var(--rail-line); padding: 20px 8px 12px; display: flex; flex-direction: column; }
+.rail h2 { font: 500 19px var(--font-display); letter-spacing: -.03em; margin: 0 12px 16px; }
+.nav { position: relative; display: flex; flex-direction: column; gap: 1px; }
+.nav .caps { margin: 14px 12px 5px; }
+.nrow { position: relative; display: flex; align-items: center; gap: 10px; height: 34px; padding: 0 10px; border-radius: 8px; font-size: 13.5px; color: var(--ink2); }
+.nrow svg.i { width: 17px; height: 17px; color: var(--muted); }
+.nrow.on { background: var(--pick); color: var(--ink); font-weight: 500; }
+.nrow.on svg.i { color: var(--ink); }
+.nrow .dot { margin-left: auto; width: 7px; height: 7px; border-radius: 50%; background: var(--amber); box-shadow: 0 0 0 3px var(--amber-soft); }
+.health { margin-top: auto; padding: 10px 12px; border-radius: 10px; display: flex; flex-direction: column; gap: 6px; }
+.health .st { display: flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 500; }
+.health .st i { width: 8px; height: 8px; border-radius: 50%; background: var(--moss); box-shadow: 0 0 0 3px var(--moss-soft); }
+.health .st i.warn { background: var(--amber); box-shadow: 0 0 0 3px var(--amber-soft); }
+.health .ver { font-size: 11.5px; color: var(--muted); padding-left: 16px; }
+
+.body { position: relative; display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+.head { display: flex; align-items: center; gap: 12px; padding: 22px 26px 12px 30px; }
+.head h3 { font: 500 22px var(--font-display); letter-spacing: -.035em; margin: 0; }
+.xbtn { margin-left: auto; width: 30px; height: 30px; border-radius: 9px; border: 0; background: transparent; color: var(--muted); display: grid; place-items: center; }
+.scroll { flex: 1; min-height: 0; overflow-y: auto; padding: 4px 30px 34px; scrollbar-width: thin; scroll-behavior: smooth; }
+
+.blk { animation: rise .38s var(--ease) both; animation-delay: calc(var(--k, 0) * 40ms); }
+@keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+.swap { animation: swap .32s var(--ease) both; }
+@keyframes swap { from { opacity: 0; transform: translateY(6px); } }
+
+/* ── Shared app parts (settings-redesign.html) ─────────────────────── */
+.caps { font: 600 10.5px var(--font-sans); letter-spacing: .09em; text-transform: uppercase; color: var(--faint); }
+.box { background: var(--surface); border-radius: 14px; box-shadow: 0 0 0 1px var(--hair), 0 1px 2px rgb(20 24 34 / .03); overflow: hidden; }
+.foot { margin: 9px 4px 0; font-size: 12px; color: var(--muted); line-height: 1.45; }
+.row { display: flex; align-items: center; gap: 13px; padding: 13px 16px; min-height: 58px; }
+.row + .row, .sub + .row, .row + .sub { box-shadow: inset 0 1px 0 var(--hairsoft); }
+.row .txt { flex: 1; min-width: 0; }
+.row .t { font-size: 13.5px; font-weight: 500; letter-spacing: -.005em; display: flex; align-items: center; gap: 8px; }
+.row .d { font-size: 12.5px; color: var(--muted); margin-top: 2px; line-height: 1.4; }
+.row .ctl { display: flex; gap: 8px; align-items: center; flex: none; }
+.tile { width: 32px; height: 32px; border-radius: 9px; display: grid; place-items: center; flex: none; transition: background .25s, color .25s; }
+.tile svg.i { width: 16px; height: 16px; }
+.h-ember { color: var(--ember); background: var(--ember-soft); } .h-blue { color: var(--blue); background: var(--blue-soft); }
+.h-moss { color: var(--moss); background: var(--moss-soft); } .h-rose { color: var(--rose); background: var(--rose-soft); }
+.h-slate { color: var(--slate); background: var(--slate-soft); } .h-violet { color: var(--violet); background: var(--violet-soft); }
+.h-amber { color: var(--amber); background: var(--amber-soft); } .h-ink { color: var(--paper); background: var(--ink); }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 32px; padding: 0 14px; border-radius: 9px; border: 0; font-size: 13px; font-weight: 500; cursor: pointer; white-space: nowrap;
+  background: var(--surface); color: var(--ink); box-shadow: 0 0 0 1px var(--hair), 0 1px 0 var(--lip); transition: transform .14s var(--ease), background .15s, box-shadow .15s, opacity .15s; }
+.btn:hover { background: var(--key); }
+.btn:active { transform: scale(.97); }
+.btn.primary { background: var(--ink); color: var(--paper); box-shadow: 0 1px 2px rgb(0 0 0 / .18); }
+.btn.primary:hover { opacity: .9; }
+.btn.quiet { background: transparent; box-shadow: none; color: var(--muted); padding: 0 10px; }
+.btn.quiet:hover { background: var(--hover); color: var(--ink); }
+.btn.icon { width: 32px; padding: 0; }
+.btn.danger-q { background: transparent; box-shadow: none; color: var(--danger); padding: 0 10px; }
+.btn.danger-q:hover { background: var(--danger-soft); }
+.btn[disabled] { cursor: default; opacity: .7; transform: none; }
+.btn svg.i { width: 14px; height: 14px; }
+.chip { display: inline-flex; align-items: center; gap: 6px; height: 22px; padding: 0 9px; border-radius: 999px; font-size: 11.5px; font-weight: 500; white-space: nowrap; background: var(--well); color: var(--ink2); box-shadow: inset 0 0 0 1px var(--hair); }
+.chip.ok { background: var(--moss-soft); color: var(--moss); box-shadow: none; }
+.chip.warn { background: var(--amber-soft); color: var(--amber); box-shadow: none; }
+.chip.live { background: var(--ember-soft); color: var(--ember-ink); box-shadow: none; }
+.chip.ok::before, .chip.warn::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.chip svg.i { width: 11px; height: 11px; stroke-width: 2.2; }
+.sw { width: 36px; height: 22px; border-radius: 999px; background: var(--hair); position: relative; border: 0; cursor: pointer; transition: background .25s var(--ease); flex: none; }
+.sw::after { content: ""; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgb(0 0 0 / .25); transition: transform .32s var(--glide); }
+.sw.on { background: var(--ember); }
+.sw.on::after { transform: translateX(14px); }
+.pills { display: inline-flex; padding: 3px; border-radius: 10px; background: var(--well); box-shadow: inset 0 0 0 1px var(--hair); position: relative; }
+.pills button { position: relative; z-index: 1; border: 0; background: transparent; height: 24px; padding: 0 10px; border-radius: 7px; font-size: 12px; color: var(--muted); cursor: pointer; transition: color .2s; white-space: nowrap; }
+.pills button.on { color: var(--ink); font-weight: 500; }
+.pills .pk { position: absolute; z-index: 0; top: 3px; height: 24px; border-radius: 7px; background: var(--surface); box-shadow: 0 0 0 1px var(--hair), 0 1px 2px rgb(0 0 0 / .08); transition: left .3s var(--glide), width .3s var(--glide); }
+.bar { height: 6px; border-radius: 99px; background: var(--well); box-shadow: inset 0 0 0 1px var(--hair); overflow: hidden; }
+.bar i { display: block; height: 100%; border-radius: 99px; background: var(--moss); }
+.bar.ember i { background: var(--ember); }
+.mono { font-family: var(--font-mono); font-size: 12.5px; letter-spacing: -.01em; }
+.spin { width: 13px; height: 13px; border-radius: 50%; border: 2px solid currentColor; border-right-color: transparent; animation: spin .7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Models: the route at the top ──────────────────────────────────── */
+.route { position: relative; border-radius: 16px; background: var(--surface); box-shadow: 0 0 0 1px var(--hair); padding: 16px 16px 14px; overflow: hidden; isolation: isolate; }
+.route::before { content: ""; position: absolute; inset: 0; z-index: -1; background: radial-gradient(60% 120% at 100% 0%, var(--blue-soft), transparent 70%), radial-gradient(40% 90% at 0% 0%, var(--violet-soft), transparent 70%); opacity: .8; }
+.flow { display: flex; align-items: center; }
+.node { display: flex; align-items: center; gap: 9px; padding: 8px 11px 8px 8px; border-radius: 12px; border: 0; text-align: left; background: var(--surface); box-shadow: 0 0 0 1px var(--hair), 0 1px 2px rgb(20 24 34 / .04); min-width: 0; cursor: pointer; transition: box-shadow .2s, transform .2s var(--ease); }
+.node:hover { transform: translateY(-1px); box-shadow: 0 0 0 1px var(--hair), 0 6px 16px -8px rgb(20 24 34 / .25); }
+.node .tile { width: 28px; height: 28px; border-radius: 8px; }
+.node .tile svg.i { width: 14px; height: 14px; }
+.node .nt { min-width: 0; line-height: 1.25; }
+.node .nk { font: 600 10px var(--font-sans); letter-spacing: .08em; text-transform: uppercase; color: var(--faint); }
+.node .nv { font-size: 12.5px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 168px; }
+.node .nw { font-size: 11.5px; color: var(--muted); white-space: nowrap; }
+.node.end { background: transparent; box-shadow: none; cursor: default; padding-right: 4px; }
+.node.end:hover { transform: none; }
+.node.warn { box-shadow: 0 0 0 1.5px var(--amber); }
+.node.warn .nw { color: var(--amber); font-weight: 500; }
+.node.off { opacity: .6; }
+.wire { position: relative; flex: 1; min-width: 14px; height: 2px; margin: 0 4px; background: repeating-linear-gradient(90deg, var(--hair) 0 5px, transparent 5px 9px); }
+.wire i { position: absolute; top: -2px; left: 0; width: 6px; height: 6px; border-radius: 50%; background: var(--ember); box-shadow: 0 0 0 3px var(--ember-soft); animation: travel 2.6s cubic-bezier(.5,0,.5,1) infinite; }
+.wire:nth-of-type(2) i { animation-delay: .5s; } .wire:nth-of-type(3) i { animation-delay: 1s; }
+.wire.idle i { display: none; }
+@keyframes travel { 0% { left: 0; opacity: 0; } 15% { opacity: 1; } 85% { opacity: 1; } 100% { left: calc(100% - 6px); opacity: 0; } }
+.priv { display: flex; gap: 8px; align-items: flex-start; margin-top: 13px; padding-top: 12px; border-top: 1px solid var(--hairsoft); font-size: 12.5px; color: var(--ink2); line-height: 1.45; }
+.priv svg.i { width: 15px; height: 15px; margin-top: 1px; color: var(--moss); }
+.priv b { font-weight: 600; }
+
+/* ── Models: each job ──────────────────────────────────────────────── */
+.job { margin-top: 28px; scroll-margin-top: 8px; }
+.job-h { display: flex; align-items: center; gap: 12px; margin: 0 2px 12px; }
+.job-h { gap: 10px; }
+.job-h .tile { width: 32px; height: 32px; border-radius: 9px; margin-right: 2px; }
+.job-h .tile svg.i { width: 17px; height: 17px; }
+.job-h h4 { margin: 0; font: 500 19px var(--font-display); letter-spacing: -.03em; line-height: 1.1; }
+/* What a section does, on hover or focus instead of a line under the title. */
+.info { position: relative; display: inline-grid; place-items: center; width: 22px; height: 22px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--faint); cursor: help; transition: color .15s, background .15s; }
+.info:hover, .info:focus-visible { color: var(--ink2); background: var(--hover); outline: 0; }
+.info svg.i { width: 15px; height: 15px; }
+.info .tip { position: absolute; z-index: 5; left: calc(100% + 9px); top: 50%; width: max-content; max-width: 280px; padding: 8px 11px; border-radius: 9px;
+  background: var(--ink); color: var(--paper); font-size: 12px; font-weight: 400; line-height: 1.45; text-align: left; letter-spacing: 0;
+  box-shadow: 0 10px 26px -10px rgb(0 0 0 / .45); opacity: 0; pointer-events: none; transform: translate(-4px, -50%); transition: opacity .15s ease-out, transform .25s var(--ease); }
+.info .tip::before { content: ""; position: absolute; left: -4px; top: 50%; width: 8px; height: 8px; border-radius: 1.5px; background: inherit; transform: translateY(-50%) rotate(45deg); }
+.info:hover .tip, .info:focus-visible .tip { opacity: 1; transform: translate(0, -50%); transition-delay: .12s; }
+.job-h .right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+.job.is-off .choose, .job.is-off .panel { opacity: .45; pointer-events: none; filter: saturate(.6); transition: opacity .25s; }
+.offnote { margin: -2px 0 12px; display: flex; gap: 10px; align-items: center; padding: 11px 14px; border-radius: 12px; background: var(--well); box-shadow: inset 0 0 0 1px var(--hair); font-size: 12.5px; color: var(--ink2); }
+.offnote svg.i { color: var(--muted); }
+
+.choose { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.choose.two { grid-template-columns: repeat(2, 1fr); }
+.opt { position: relative; display: flex; flex-direction: column; gap: 10px; padding: 13px 14px 12px; border: 0; border-radius: 14px; text-align: left; cursor: pointer; background: var(--surface);
+  box-shadow: 0 0 0 1px var(--hair), 0 1px 2px rgb(20 24 34 / .03); transition: box-shadow .22s var(--ease), transform .22s var(--ease); }
+.opt:hover { transform: translateY(-1px); box-shadow: 0 0 0 1px var(--hair), 0 8px 22px -12px rgb(20 24 34 / .28); }
+.opt[aria-checked="true"] { box-shadow: 0 0 0 1.5px var(--ink), 0 10px 26px -16px rgb(20 24 34 / .32); transform: none; }
+.opt .o-top { display: flex; justify-content: space-between; align-items: flex-start; }
+.opt .ck { width: 18px; height: 18px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px var(--lip); display: grid; place-items: center; transition: background .2s, box-shadow .2s; }
+.opt .ck svg.i { width: 11px; height: 11px; stroke-width: 3; opacity: 0; transform: scale(.5); transition: opacity .2s, transform .3s var(--glide); }
+.opt[aria-checked="true"] .ck { background: var(--ink); color: var(--paper); box-shadow: none; }
+.opt[aria-checked="true"] .ck svg.i { opacity: 1; transform: none; }
+.opt .o-t { font-size: 14px; font-weight: 600; letter-spacing: -.01em; }
+.opt .o-d { font-size: 12.5px; color: var(--muted); line-height: 1.4; margin-top: 2px; }
+.opt .o-m { display: flex; align-items: center; gap: 6px; padding-top: 9px; border-top: 1px solid var(--hairsoft); font-size: 11.5px; color: var(--faint); }
+.opt .o-m svg.i { width: 12px; height: 12px; }
+
+.panel { margin-top: 10px; }
+.sub { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px 8px; background: var(--surface); }
+.sub .caps b { color: var(--ember-ink); font-weight: 600; }
+.box.open { overflow: visible; }
+.box.open > :first-child { border-radius: 14px 14px 0 0; }
+.box.open > :last-child { border-radius: 0 0 14px 14px; }
+.sub.lvrow { padding: 10px 16px; }
+.sub .lv { display: flex; align-items: center; gap: 4px; }
+.row .t .info { width: 20px; height: 20px; margin-left: -4px; }
+.row .t .info svg.i { width: 13px; height: 13px; }
+.meter-row { padding: 14px 16px; }
+.meter-row .top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; font-size: 12.5px; color: var(--muted); }
+.meter-row .top b { font: 500 20px var(--font-display); letter-spacing: -.03em; color: var(--ink); margin-right: 4px; }
+
+/* local models */
+.lm .tile { font: 600 11px var(--font-sans); }
+.lm .t .chip { height: 19px; padding: 0 7px; font-size: 10.5px; }
+.prog { display: flex; align-items: center; gap: 8px; width: 150px; font-size: 11.5px; color: var(--muted); }
+.prog .bar { flex: 1; }
+.prog .pc { width: 30px; text-align: right; font-variant-numeric: tabular-nums; }
+
+/* providers */
+.provs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.provs.c3 { grid-template-columns: repeat(3, 1fr); }
+.prov { position: relative; display: flex; align-items: center; gap: 9px; padding: 9px 10px; border: 0; border-radius: 12px; background: var(--surface); text-align: left; cursor: pointer;
+  box-shadow: 0 0 0 1px var(--hair), 0 1px 2px rgb(20 24 34 / .03); transition: box-shadow .2s var(--ease), transform .2s var(--ease); min-width: 0; }
+.prov:hover { transform: translateY(-1px); }
+.prov[aria-checked="true"] { box-shadow: 0 0 0 1.5px var(--ink); transform: none; }
+.prov .mt { width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; font: 600 12px var(--font-display); letter-spacing: -.03em; flex: none; }
+.prov .pn { font-size: 13px; font-weight: 600; letter-spacing: -.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.prov .ps { font-size: 11px; color: var(--faint); white-space: nowrap; }
+.prov .ps.ok { color: var(--moss); font-weight: 500; }
+.prov .pt { min-width: 0; line-height: 1.3; }
+.keyrow { display: flex; align-items: center; gap: 8px; padding: 14px 16px; }
+.field { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; height: 32px; padding: 0 10px; border-radius: 9px; background: var(--well); box-shadow: inset 0 0 0 1px var(--hair); transition: box-shadow .2s; }
+.field:focus-within { box-shadow: inset 0 0 0 1.5px var(--ember), 0 0 0 3px var(--ember-soft); }
+.field.bad { box-shadow: inset 0 0 0 1.5px var(--danger), 0 0 0 3px var(--danger-soft); animation: nudge .3s; }
+@keyframes nudge { 25% { transform: translateX(-3px); } 75% { transform: translateX(3px); } }
+.field svg.i { width: 14px; height: 14px; color: var(--faint); }
+.field input { flex: 1; min-width: 0; border: 0; outline: 0; background: none; font-family: var(--font-mono); font-size: 12.5px; }
+.field input::placeholder { color: var(--faint); }
+.keyhint { display: flex; justify-content: space-between; gap: 12px; padding: 0 16px 13px; margin-top: -4px; font-size: 12px; color: var(--muted); }
+.keyhint a { color: var(--ember-ink); font-weight: 500; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; }
+.keyhint a svg.i { width: 12px; height: 12px; }
+.keyhint svg.i.lk { width: 12px; height: 12px; vertical-align: -2px; color: var(--moss); }
+.mrow { cursor: pointer; transition: background .15s; min-height: 50px; padding-top: 10px; padding-bottom: 10px; }
+.mrow:hover { background: var(--hover); }
+.radio { width: 16px; height: 16px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px var(--lip); display: grid; place-items: center; flex: none; transition: box-shadow .2s; }
+.mrow.on .radio { box-shadow: inset 0 0 0 1.5px var(--ink); }
+.mrow.on .radio::after { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--ink); }
+.mrow .mono { font-size: 13px; color: var(--ink); }
+.mrow .dsc { font-size: 12px; color: var(--muted); }
+.search { padding: 10px 16px; }
+.search .field { height: 30px; }
+.search .field input { font-family: var(--font-sans); font-size: 12.5px; }
+.empty-row { padding: 14px 16px; font-size: 12.5px; color: var(--muted); }
+
+/* the polish test */
+.try { padding: 14px 16px; }
+.try .io { display: grid; grid-template-columns: 1fr 22px 1fr; gap: 8px; align-items: stretch; margin-top: 10px; }
+.try .io > div { padding: 10px 12px; border-radius: 10px; font-size: 13px; line-height: 1.45; background: var(--well); box-shadow: inset 0 0 0 1px var(--hair); }
+.try .io .cap { display: block; font: 600 10px var(--font-sans); letter-spacing: .08em; text-transform: uppercase; color: var(--faint); margin-bottom: 4px; }
+.try .io del { color: var(--faint); text-decoration-color: var(--danger-ring); }
+.try .io .out { background: var(--moss-soft); box-shadow: none; }
+.try .io .out mark { background: none; color: var(--moss); font-weight: 600; }
+.try .io .out.wait { background: var(--well); box-shadow: inset 0 0 0 1px var(--hair); color: var(--faint); }
+.try .arrow { display: grid; place-items: center; color: var(--faint); }
+.try .top { display: flex; align-items: center; gap: 10px; }
+.try .top .txt { flex: 1; }
+
+/* saved keys */
+.keys-h { display: flex; align-items: center; justify-content: space-between; margin: 30px 2px 8px; }
+.uses { display: flex; gap: 6px; flex-wrap: wrap; }
+
+/* Notes under the window. */
+.shared { max-width: 1240px; margin: 8px auto 60px; padding: 0 16px; font-size: 13px; line-height: 1.55; color: #2c2a26; }
+:root[data-theme="dark"] .shared { color: #d6d3cc; }
+.shared h4 { font: 500 16px var(--font-display); margin: 18px 0 4px; letter-spacing: -.02em; }
+.shared ul { margin: 4px 0 0; padding-left: 18px; columns: 2; column-gap: 32px; }
+.shared li { margin: 3px 0; break-inside: avoid; }
+@media (max-width: 900px) { .shared ul { columns: 1; } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+</style>
+</head>
+<body>
+
+<div class="demo" role="toolbar" aria-label="Demo controls">
+  <span class="grp-ctl"><span class="lbl">Account</span>
+    <span class="seg" data-ctl="acct"><button data-v="out">Signed out</button><button data-v="free">Free</button><button data-v="pro">Pro</button></span></span>
+  <span class="grp-ctl"><span class="lbl">Start from</span>
+    <span class="seg" data-ctl="preset"><button data-v="mix">Mac + Claude key</button><button data-v="cloud">All cloud</button><button data-v="fresh">Nothing set up</button></span></span>
+  <span class="grp-ctl"><span class="lbl">This Mac</span>
+    <span class="seg" data-ctl="mac"><button data-v="fast">M3 Pro, 36 GB</button><button data-v="basic">M1, 8 GB</button></span></span>
+  <span class="grp-ctl"><span class="lbl">Theme</span>
+    <span class="seg" data-ctl="theme"><button data-v="light">Light</button><button data-v="dark">Dark</button></span></span>
+</div>
+
+<div class="stage"><div class="scaler" id="scaler">
+  <div class="win">
+    <div class="traffic"><i></i><i></i><i></i></div>
+    <aside class="app-side">
+      <div class="wordmark"><b></b>SayControl</div>
+      <div class="app-nav on">Overview</div><div class="app-nav">Insights</div><div class="app-nav">Dictionary</div>
+      <div class="app-nav">Phrases</div><div class="app-nav">Tones</div><div class="app-nav">Agents</div>
+      <div style="margin-top:auto" class="app-nav">How it works</div><div class="app-nav">Settings</div>
+    </aside>
+    <main class="app-main">
+      <h1>Good evening</h1><p>Tuesday · the week so far</p>
+      <div class="app-cards">
+        <div class="app-card"><span>Words this week</span><b>2,434</b></div>
+        <div class="app-card"><span>Pace</span><b>107 wpm</b></div>
+        <div class="app-card"><span>Fixes</span><b>10</b></div>
+      </div>
+    </main>
+    <div class="scrim"></div>
+    <section class="sheet" aria-label="Settings">
+      <nav class="rail">
+        <h2>Settings</h2>
+        <div class="nav" id="nav"></div>
+        <div class="health" id="health"></div>
+      </nav>
+      <div class="body">
+        <div class="head"><h3>Models</h3>
+          <button class="xbtn" title="Close Settings (esc)"><svg class="i" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+        <div class="scroll" id="scroll"></div>
+      </div>
+    </section>
+  </div>
+</div></div>
+
+<div class="shared">
+  <h4>What this page does</h4>
+  <ul>
+    <li><b>Two jobs, kept apart.</b> Transcription (your voice to text) and Polish (tidying the text, and command mode) each have their own section, source and model.</li>
+    <li><b>Transcription</b> runs on SayControl Cloud, on this Mac, or on your own key. <b>Polish</b> runs on the cloud or your own key; a model on this Mac comes later.</li>
+    <li><b>The route</b> at the top: Talk → Transcription → Polish → Pasted, and one line on where your audio and your text go. Anything not set up is outlined. Click a step to jump to it.</li>
+    <li><b>Less text:</b> what each section does sits behind the ⓘ next to its title and shows on hover.</li>
+    <li><b>This Mac:</b> a Live switch (on by default). On, the models that keep up live on this Mac come first; the rest, and Whisper always, write when you let go. Which ones keep up is measured on the Mac itself: switch “This Mac” in the bar to see an M1 with 8 GB, where only Parakeet stays live. Each family has its sizes; download, use or delete right in the row.</li>
+    <li><b>API keys:</b> pick a provider, paste a key, and the models that key can use appear. A key saved once works for both jobs: an OpenAI key added for transcription is already there under Polish.</li>
+    <li><b>Polish has a Try it</b> with the model you picked, so you see what it does to a messy sentence and how fast it answers before you dictate with it.</li>
+    <li><b>No agent voice here.</b> It is a SayControl Cloud feature and stays in Agents, signed in.</li>
+    <li><b>Same parts as Settings today</b>: the sheet, rail, rows, pills and switches from settings-redesign.html, so the Swift build reuses them.</li>
+  </ul>
+</div>
+
+<script>
+/* ── icons ─────────────────────────────────────────────────────────── */
+const P = {
+  gear: '<path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/>',
+  monitor: '<rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/>',
+  user: '<circle cx="12" cy="12" r="10"/><circle cx="12" cy="10" r="3"/><path d="M7 20.66A6 6 0 0 1 17 20.66"/>',
+  card: '<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/>',
+  hand: '<path d="M18 11V6a2 2 0 0 0-4 0v5M14 10V4a2 2 0 0 0-4 0v6M10 10.5V6a2 2 0 0 0-4 0v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/>',
+  lock: '<rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
+  check: '<path d="M20 6 9 17l-5-5"/>',
+  x: '<path d="M18 6 6 18M6 6l12 12"/>',
+  cloud: '<path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/>',
+  laptop: '<path d="M20 16V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9m16 0H4m16 0 1.28 2.55a1 1 0 0 1-.9 1.45H3.62a1 1 0 0 1-.9-1.45L4 16"/>',
+  key: '<path d="m15.5 7.5 3 3L22 7l-3-3M2 22l9.6-9.6"/><circle cx="7.5" cy="15.5" r="5.5"/>',
+  mic: '<rect x="9" y="2" width="6" height="12" rx="3"/><path d="M19 10v1a7 7 0 0 1-14 0v-1M12 18v4"/>',
+  wave: '<path d="M2 10v3M6 6v11M10 3v18M14 8v7M18 5v13M22 10v3"/>',
+  sparkle: '<path d="M9.94 14.06 4 21M12 3l1.9 5.6L19.5 10l-5.6 1.9L12 17.5l-1.9-5.6L4.5 10l5.6-1.4z"/>',
+  paste: '<rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/>',
+  shield: '<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/>',
+  alert: '<circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/>',
+  ext: '<path d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>',
+  trash: '<path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>',
+  download: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/>',
+  zap: '<path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/>',
+  wifioff: '<path d="M12 20h.01"/><path d="M8.5 16.429a5 5 0 0 1 7 0"/><path d="M5 12.859a10 10 0 0 1 5.17-2.69"/><path d="M19 12.859a10 10 0 0 0-2.007-1.523"/><path d="M2 8.82a15 15 0 0 1 4.177-2.643"/><path d="M22 8.82a15 15 0 0 0-11.288-3.764"/><path d="m2 2 20 20"/>',
+  bill: '<path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8M12 17.5v-11"/>',
+  search: '<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
+  right: '<path d="M5 12h14M13 6l6 6-6 6"/>',
+  play: '<path d="M6 3 20 12 6 21z"/>',
+  info: '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/>',
+  zapoff: '<path d="M10.513 4.856 13.12 2.17a.5.5 0 0 1 .86.46l-1.377 4.317"/><path d="M15.656 10H20a1 1 0 0 1 .78 1.63l-1.72 1.773"/><path d="M16.273 16.273 10.88 21.83a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14H4a1 1 0 0 1-.78-1.63l4.507-4.643"/><path d="m2 2 20 20"/>',
+  power: '<path d="M12 2v10"/><path d="M18.4 6.6a9 9 0 1 1-12.77.04"/>',
+};
+const ic = (n, cls = '') => `<svg class="i ${cls}" viewBox="0 0 24 24" aria-hidden="true">${P[n]}</svg>`;
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+/* ── what the app has ──────────────────────────────────────────────── */
+// LOCAL_CATALOG, grouped into families with their sizes. `live`: the
+// family can run live at all. Whisper can't (a fixed 30 s window that
+// rewrites itself); Voxtral and Nemotron can once their own streaming modes
+// are wired up. Which ones keep up live is measured on each Mac: MACS.
+const FAMILIES = [
+  { id: 'cohere', name: 'Cohere Transcribe', note: 'The most accurate', lang: '14 languages', live: true, hue: 'ember',
+    sizes: [['cohere-transcribe', 'Standard', '1.5 GB'], ['cohere-transcribe-full', 'Full', '2.4 GB']] },
+  { id: 'qwen3', name: 'Qwen3-ASR', note: 'Reads your dictionary for names', lang: 'English', live: true, hue: 'violet',
+    sizes: [['qwen3-asr-english', 'English', '2.5 GB']] },
+  { id: 'parakeet', name: 'Parakeet v3', note: 'Light and quick', lang: '25 languages', live: true, hue: 'moss',
+    sizes: [['parakeet-v3-small', 'Small', '356 MB'], ['parakeet-v3', 'Standard', '669 MB'], ['parakeet-v3-full', 'Full', '1.3 GB']] },
+  { id: 'whisper', name: 'Whisper', note: 'The most languages', lang: '99 languages', live: false, hue: 'blue',
+    sizes: [['whisper-small', 'Small', '488 MB'], ['whisper-turbo', 'Turbo', '574 MB'], ['whisper-large', 'Large', '1.6 GB']] },
+  { id: 'nemotron', name: 'Nemotron 3.5', note: 'Many languages, small download', lang: '34 languages', live: true, hue: 'slate',
+    sizes: [['nemotron-3.5', 'Standard', '686 MB'], ['nemotron-3.5-full', 'Full', '1.3 GB']] },
+  { id: 'voxtral', name: 'Voxtral Realtime', note: 'The biggest, most careful', lang: '13 languages', live: true, hue: 'amber',
+    sizes: [['voxtral-realtime', 'Standard', '2.5 GB'], ['voxtral-realtime-full', 'Full', '4.7 GB']] },
+];
+// Two Macs to show the difference. The real app times one pass of each
+// model on a short clip when it is downloaded, and drops a model to
+// "when you let go" if it falls behind in use.
+const MACS = {
+  fast:  { label: 'Apple M3 Pro, 36 GB', live: ['cohere', 'qwen3', 'parakeet', 'nemotron', 'voxtral'] },
+  basic: { label: 'Apple M1, 8 GB', live: ['parakeet'] },
+};
+const liveHere = f => S.live && MACS[S.mac].live.includes(f.id);
+const VARIANT = {};
+FAMILIES.forEach(f => f.sizes.forEach(([id, label, size]) => { VARIANT[id] = { fam: f, label, size, name: f.sizes.length > 1 ? `${f.name} ${label === 'Standard' ? '' : label}`.trim() : f.name }; }));
+const MB = s => s.endsWith('GB') ? parseFloat(s) * 1000 : parseFloat(s);
+
+// Providers, by job. One key per provider, shared by both jobs.
+const PROV = {
+  openai:     { name: 'OpenAI',     mono: 'OA', hue: 'ink',    hint: 'sk-…',            url: 'https://platform.openai.com/api-keys' },
+  anthropic:  { name: 'Claude',     mono: 'Cl', hue: 'amber',  hint: 'sk-ant-…',        url: 'https://console.anthropic.com/settings/keys', who: 'Anthropic' },
+  openrouter: { name: 'OpenRouter', mono: 'OR', hue: 'slate',  hint: 'sk-or-v1-…',      url: 'https://openrouter.ai/settings/keys' },
+  elevenlabs: { name: 'ElevenLabs', mono: 'XI', hue: 'violet', hint: 'sk_…',            url: 'https://elevenlabs.io/app/settings/api-keys' },
+  assemblyai: { name: 'AssemblyAI', mono: 'AA', hue: 'blue',   hint: '32-character key', url: 'https://www.assemblyai.com/app/api-keys' },
+  soniox:     { name: 'Soniox',     mono: 'So', hue: 'moss',   hint: 'your Soniox key', url: 'https://console.soniox.com/' },
+  xai:        { name: 'xAI',        mono: 'x',  hue: 'ink',    hint: 'xai-…',           url: 'https://console.x.ai/' },
+  google:     { name: 'Google',     mono: 'G',  hue: 'rose',   hint: 'AIza…',           url: 'https://aistudio.google.com/apikey' },
+  cerebras:   { name: 'Cerebras',   mono: 'Ce', hue: 'ember',  hint: 'csk-…',           url: 'https://cloud.cerebras.ai/' },
+  groq:       { name: 'Groq',       mono: 'Gq', hue: 'rose',   hint: 'gsk_…',           url: 'https://console.groq.com/keys' },
+};
+// Transcription ids are Config.swift's (live = the app's live models).
+const TR_MODELS = {
+  openai:     [['gpt-4o-transcribe', true], ['gpt-4o-mini-transcribe', true], ['whisper-1', false]],
+  elevenlabs: [['scribe_v2_realtime', true], ['scribe_v2_realtime_turbo', true], ['scribe_v2', false]],
+  assemblyai: [['universal-3-5-pro', true]],
+  soniox:     [['stt-rt-v5', true]],
+  xai:        [['grok-voice-transcribe-2.0', true], ['grok-voice-transcribe-1.0', true]],
+  google:     [['gemini-3.5-transcribe-live', true]],
+  openrouter: [['openai/gpt-4o-mini-transcribe', false], ['mistralai/voxtral-small-24b-2507-stt', false], ['qwen/qwen3-asr-flash', false]],
+};
+// Chat models: what a key's model list would return, fastest first.
+const PO_MODELS = {
+  anthropic:  [['claude-haiku-5-5', 'Fast'], ['claude-sonnet-5-5', 'Smarter, slower']],
+  openai:     [['gpt-5-nano', 'Fastest'], ['gpt-5-mini', 'Fast'], ['gpt-4.1-mini', '']],
+  openrouter: [['openai/gpt-oss-120b', 'Fast'], ['meta-llama/llama-3.3-70b-instruct', 'Fast'], ['qwen/qwen3-32b', 'Fast'], ['google/gemini-2.5-flash', ''], ['openai/gpt-5-mini', ''], ['mistralai/mistral-small-3.2-24b-instruct', ''], ['deepseek/deepseek-chat-v3.1', ''], ['moonshotai/kimi-k2', '']],
+  cerebras:   [['gpt-oss-120b', 'Fastest'], ['llama-3.3-70b', 'Fast'], ['qwen-3-32b', 'Fast']],
+  groq:       [['openai/gpt-oss-120b', 'Fast'], ['llama-3.3-70b-versatile', 'Fast'], ['qwen/qwen3-32b', '']],
+  google:     [['gemini-2.5-flash-lite', 'Fastest'], ['gemini-2.5-flash', 'Fast']],
+};
+const TR_PROVS = ['openai', 'elevenlabs', 'assemblyai', 'soniox', 'xai', 'google', 'openrouter'];
+const PO_PROVS = ['anthropic', 'openai', 'openrouter', 'cerebras', 'groq', 'google'];
+
+/* ── state ─────────────────────────────────────────────────────────── */
+const PRESETS = {
+  mix: () => ({
+    tr: { src: 'local', use: 'parakeet-v3', size: { parakeet: 'parakeet-v3' }, prov: 'elevenlabs', model: null },
+    po: { on: true, src: 'key', prov: 'anthropic', model: { p: 'anthropic', m: 'claude-haiku-5-5' } },
+    got: { 'parakeet-v3': true }, keys: { anthropic: 'sk-ant-…7c2e' },
+  }),
+  cloud: () => ({
+    tr: { src: 'cloud', use: null, size: {}, prov: 'openai', model: null },
+    po: { on: true, src: 'cloud', prov: 'anthropic', model: null },
+    got: {}, keys: {},
+  }),
+  fresh: () => ({
+    tr: { src: 'local', use: null, size: {}, prov: 'openai', model: null },
+    po: { on: true, src: 'key', prov: 'anthropic', model: null },
+    got: {}, keys: {},
+  }),
+};
+let S = { acct: 'free', theme: 'light', preset: 'mix', mac: 'fast', live: true, busy: {}, checking: null, test: null, orq: '', ...PRESETS.mix() };
+const signedIn = () => S.acct !== 'out';
+
+/* where each job stands: ok, or what is missing */
+function trState() {
+  const t = S.tr;
+  if (t.src === 'cloud') return signedIn() ? { ok: true, v: 'SayControl Cloud', w: 'Cloud' } : { ok: false, v: 'SayControl Cloud', w: 'Sign in first', fix: 'Sign in' };
+  if (t.src === 'local') {
+    const busy = Object.keys(S.busy)[0];
+    if (t.use && S.got[t.use]) return { ok: true, v: VARIANT[t.use].name, w: 'On this Mac' };
+    if (busy) return { ok: false, v: VARIANT[busy].name, w: `Downloading ${S.busy[busy]}%`, busy: true };
+    return { ok: false, v: 'No model yet', w: 'Download one' };
+  }
+  const m = t.model;
+  if (m && S.keys[m.p]) return { ok: true, v: m.m, w: `${PROV[m.p].name} key` };
+  return { ok: false, v: 'No model yet', w: 'Add a key' };
+}
+function poState() {
+  const p = S.po;
+  if (!p.on) return { ok: true, off: true, v: 'Off', w: 'Pastes what it heard' };
+  if (p.src === 'cloud') return signedIn() ? { ok: true, v: 'SayControl Cloud', w: 'Cloud' } : { ok: false, v: 'SayControl Cloud', w: 'Sign in first' };
+  const m = p.model;
+  if (m && S.keys[m.p]) return { ok: true, v: m.m, w: `${PROV[m.p].name} key` };
+  return { ok: false, v: 'No model yet', w: 'Add a key' };
+}
+function privacyLine() {
+  const t = S.tr, p = S.po;
+  const tw = t.src === 'local' ? 'local' : t.src === 'cloud' ? 'SayControl Cloud' : (t.model && S.keys[t.model.p] ? (PROV[t.model.p].who || PROV[t.model.p].name) : null);
+  const pw = !p.on ? null : p.src === 'cloud' ? 'SayControl Cloud' : (p.model && S.keys[p.model.p] ? (PROV[p.model.p].who || PROV[p.model.p].name) : null);
+  const audio = tw === 'local' ? '<b>Your audio stays on this Mac.</b>' : tw === 'SayControl Cloud' ? '<b>Your audio goes to SayControl Cloud</b>, which doesn’t keep it.' : tw ? `<b>Your audio goes to ${esc(tw)}</b>, on your key.` : 'Transcription isn’t set up yet.';
+  let text;
+  if (!p.on) text = tw === 'local' ? ' Nothing is polished, so <b>nothing leaves this Mac</b>.' : ' Nothing is polished.';
+  else if (!pw) text = ' Polish isn’t set up yet.';
+  else if (tw === 'local') text = ` Only the text goes to ${esc(pw)}, for polish.`;
+  else if (pw === tw) text = ' The text is polished there too.';
+  else text = ` The text then goes to ${esc(pw)} for polish.`;
+  return audio + text;
+}
+
+/* ── rail ──────────────────────────────────────────────────────────── */
+function drawRail() {
+  const tr = trState(), po = poState();
+  const warn = !tr.ok || !po.ok;
+  const SECTIONS = [
+    [null, [['gear', 'General'], ['wave', 'Models', true], ['monitor', 'System']]],
+    ['You', [['user', 'Account'], ['card', 'Plan']]],
+    ['Trust', [['hand', 'Privacy'], ['lock', 'Permissions']]],
+  ];
+  document.getElementById('nav').innerHTML = SECTIONS.map(([label, items]) =>
+    (label ? `<div class="caps">${label}</div>` : '') + items.map(([icon, t, on]) =>
+      `<div class="nrow ${on ? 'on' : ''}">${ic(icon)}<span>${t}</span>${on && warn ? '<span class="dot" title="Something here needs setting up"></span>' : ''}</div>`).join('')).join('');
+  document.getElementById('health').innerHTML = warn
+    ? `<div class="st"><i class="warn"></i>${!tr.ok ? 'Transcription isn’t set up' : 'Polish isn’t set up'}</div><div class="ver">SayControl 0.2.0</div>`
+    : `<div class="st"><i></i>Ready to dictate</div><div class="ver">SayControl 0.2.0</div>`;
+}
+
+/* ── the page ──────────────────────────────────────────────────────── */
+let first = true, k = 0, swapped = null;
+const blk = () => first ? `blk" style="--k:${k++}` : '';
+const info = (id, text, icon = 'info', label = 'What is this?') => `<button class="info" aria-describedby="${id}" aria-label="${label}">${ic(icon)}<span class="tip" role="tooltip" id="${id}">${text}</span></button>`;
+const chip = st => st.off ? '<span class="chip">Off</span>' : st.busy ? `<span class="chip warn">${esc(st.w)}</span>` : st.ok ? '<span class="chip ok">Ready</span>' : `<span class="chip warn">${esc(st.w)}</span>`;
+const opt = (job, id, icon, hue, t, d, meta, metaIcon) => {
+  const on = S[job].src === id;
+  return `<button class="opt" role="radio" aria-checked="${on}" data-src="${job}:${id}">
+    <span class="o-top"><span class="tile ${on ? 'h-ink' : 'h-' + hue}">${ic(icon)}</span><span class="ck">${ic('check')}</span></span>
+    <span><span class="o-t">${t}</span><span class="o-d" style="display:block">${d}</span></span>
+    <span class="o-m">${ic(metaIcon)}${meta}</span></button>`;
+};
+
+function route() {
+  const tr = trState(), po = poState();
+  const node = (cls, icon, hue, key, v, w, target) => `<button class="node ${cls}" ${target ? `data-jump="${target}"` : 'tabindex="-1"'}>
+    <span class="tile h-${hue}">${ic(icon)}</span><span class="nt">${key ? `<span class="nk">${key}</span>` : ''}<span class="nv" style="display:block" title="${esc(v)}">${esc(v)}</span>${w ? `<span class="nw">${esc(w)}</span>` : ''}</span></button>`;
+  return `<section class="route ${blk()}">
+    <div class="flow">
+      ${node('end', 'mic', 'rose', '', 'Talk', '')}
+      <span class="wire ${tr.ok ? '' : 'idle'}"><i></i></span>
+      ${node(tr.ok ? '' : 'warn', S.tr.src === 'cloud' ? 'cloud' : S.tr.src === 'local' ? 'laptop' : 'key', S.tr.src === 'cloud' ? 'blue' : S.tr.src === 'local' ? 'moss' : 'amber', 'Transcription', tr.v, tr.w, 'job-tr')}
+      <span class="wire ${tr.ok && po.ok && !po.off ? '' : 'idle'}"><i></i></span>
+      ${node(po.off ? 'off' : po.ok ? '' : 'warn', 'sparkle', 'violet', 'Polish', po.v, po.w, 'job-po')}
+      <span class="wire ${tr.ok && po.ok ? '' : 'idle'}"><i></i></span>
+      ${node('end', 'paste', 'slate', '', 'Pasted', '')}
+    </div>
+    <p class="priv">${ic('shield')}<span>${privacyLine()}</span></p>
+  </section>`;
+}
+
+/* transcription */
+function trPanel() {
+  const t = S.tr;
+  if (t.src === 'cloud') {
+    if (!signedIn()) return `<div class="box"><div class="row"><div class="tile h-blue">${ic('cloud')}</div><div class="txt"><div class="t">Sign in to use SayControl Cloud</div><div class="d">Free gives you 2,000 words a week. No card.</div></div><div class="ctl"><button class="btn primary" data-act="signin">Sign in</button></div></div></div>`;
+    const pro = S.acct === 'pro';
+    return `<div class="box">
+      <div class="row"><div class="tile h-blue">${ic('cloud')}</div><div class="txt"><div class="t">SayControl Cloud <span class="chip live">${ic('zap')}Live</span></div><div class="d">The most accurate live models we’ve measured. We pick them and keep them current.</div></div></div>
+      ${pro ? `<div class="row"><div class="tile h-moss">${ic('check')}</div><div class="txt"><div class="t">Unlimited on Pro</div><div class="d">No word count. Renews 3 Nov.</div></div><div class="ctl"><button class="btn quiet">Manage plan</button></div></div>`
+        : `<div class="meter-row" style="box-shadow:inset 0 1px 0 var(--hairsoft)"><div class="top"><span><b>1,240</b>of 2,000 words this week</span><span>Starts again Monday · <a style="color:var(--ember-ink);font-weight:500;cursor:pointer">Go unlimited</a></span></div><div class="bar"><i style="width:62%"></i></div></div>`}
+    </div>`;
+  }
+  if (t.src === 'local') {
+    const fam = f => {
+      const sel = t.size[f.id] || (f.sizes.find(s => S.got[s[0]]) || f.sizes.find(s => s[1] === 'Standard' || s[1] === 'Turbo') || f.sizes[0])[0];
+      const v = VARIANT[sel];
+      const pills = f.sizes.length > 1 ? `<div class="pills" data-fam="${f.id}">${f.sizes.map(([id, label]) => `<button class="${id === sel ? 'on' : ''}" data-size="${id}" title="${esc(VARIANT[id].size)}">${label}</button>`).join('')}<span class="pk"></span></div>` : '';
+      let act;
+      if (S.busy[sel] != null) act = `<span class="prog"><span class="bar ember"><i id="pb-${sel}" style="width:${S.busy[sel]}%"></i></span><span class="pc" id="pc-${sel}">${S.busy[sel]}%</span></span>`;
+      else if (t.use === sel && S.got[sel]) act = '<span class="chip ok" style="min-width:76px;justify-content:center">In use</span>';
+      else if (S.got[sel]) act = `<button class="btn icon quiet" data-del="${sel}" title="Delete from this Mac">${ic('trash')}</button><button class="btn" data-use="${sel}">Use</button>`;
+      else act = `<button class="btn" data-dl="${sel}">${ic('download')}${v.size}</button>`;
+      const slow = S.live && f.live && !liveHere(f)
+        ? info(`tip-slow-${f.id}`, 'Too heavy to run live on this Mac, so it writes when you let go.', 'zapoff', 'Why not live?') : '';
+      return `<div class="row lm"><div class="tile h-${f.hue}">${liveHere(f) ? ic('zap') : ic('wave')}</div>
+        <div class="txt"><div class="t">${f.name}${slow}</div><div class="d">${f.note} · ${f.lang}</div></div>
+        <div class="ctl">${pills}<span style="display:inline-flex;gap:6px;justify-content:flex-end;min-width:96px">${act}</span></div></div>`;
+    };
+    const used = Object.keys(S.got).reduce((n, id) => n + MB(VARIANT[id].size), 0);
+    const usedTxt = used >= 1000 ? `${(used / 1000).toFixed(1)} GB` : `${Math.round(used)} MB`;
+    const live = FAMILIES.filter(liveHere), rest = FAMILIES.filter(f => !liveHere(f));
+    return `<div class="box open">
+      <div class="sub lvrow"><span class="lv"><span class="caps">${S.live ? '<b>Live</b>' : 'Live'}</span>${info('tip-live', `Words appear while you talk. Which models keep up is measured on this Mac (${MACS[S.mac].label}); the rest write when you let go.`)}</span>
+        <button class="sw ${S.live ? 'on' : ''}" data-act="live" aria-pressed="${S.live}" aria-label="Live transcription"></button></div>
+      ${live.map(fam).join('')}
+      ${rest.length ? `<div class="sub"><span class="caps">Writes when you let go</span></div>${rest.map(fam).join('')}` : ''}
+    </div>
+    <p class="foot">${Object.keys(S.got).length ? `${usedTxt} downloaded. ` : ''}Models run on this Mac and work with no internet. Your audio never leaves it.</p>`;
+  }
+  return keysPanel('tr', TR_PROVS, TR_MODELS);
+}
+
+/* a provider grid + key + models, for either job */
+function keysPanel(job, provs, models) {
+  const j = S[job];
+  const p = j.prov, P0 = PROV[p];
+  const tiles = provs.map(id => {
+    const has = !!S.keys[id];
+    const sub = has ? `<span class="ps ok">Key saved</span>` : `<span class="ps">${models[id].length} model${models[id].length > 1 ? 's' : ''}</span>`;
+    return `<button class="prov" role="radio" aria-checked="${id === p}" data-prov="${job}:${id}"><span class="mt h-${PROV[id].hue}">${PROV[id].mono}</span><span class="pt"><span class="pn" style="display:block">${PROV[id].name}</span>${sub}</span></button>`;
+  }).join('');
+  let body;
+  if (!S.keys[p]) {
+    const busy = S.checking === p;
+    body = `<div class="keyrow"><label class="field" id="f-${job}">${ic('key')}<input id="k-${job}" type="password" placeholder="Paste your ${P0.name} key   ${P0.hint}" autocomplete="off" spellcheck="false" ${busy ? 'disabled' : ''}></label>
+        <button class="btn primary" data-connect="${job}" ${busy ? 'disabled' : ''}>${busy ? '<span class="spin"></span>Checking' : 'Connect'}</button></div>
+      <div class="keyhint"><span>${ic('lock', 'lk')} Saved on this Mac and sent only to ${esc(P0.who || P0.name)}.</span><a href="${P0.url}" target="_blank" rel="noopener">Get a key${ic('ext')}</a></div>`;
+  } else {
+    const shared = job === 'po' && TR_PROVS.includes(p) && S.tr.src === 'key' && S.tr.model && S.tr.model.p === p
+      || job === 'tr' && PO_PROVS.includes(p) && S.po.src === 'key' && S.po.model && S.po.model.p === p;
+    const list = models[p];
+    const cur = j.model;
+    const rows = list.map(([m, tag]) => {
+      const on = cur && cur.p === p && cur.m === m;
+      const tg = job === 'tr' ? (tag ? `<span class="chip live">${ic('zap')}Live</span>` : '<span class="dsc">Writes when you let go</span>') : (tag ? `<span class="dsc">${tag}</span>` : '');
+      return `<div class="row mrow ${on ? 'on' : ''}" role="radio" aria-checked="${!!on}" tabindex="0" data-model="${job}:${esc(m)}" data-q="${esc(m.toLowerCase())}"><span class="radio"></span><div class="txt"><span class="mono">${esc(m)}</span></div><div class="ctl">${tg}${on ? '<span class="chip ok">In use</span>' : ''}</div></div>`;
+    }).join('');
+    const search = list.length > 5 ? `<div class="search" style="box-shadow:inset 0 1px 0 var(--hairsoft)"><label class="field">${ic('search')}<input id="q-${job}" placeholder="Search ${P0.name}’s models" value="${esc(S.orq)}" autocomplete="off"></label></div>` : '';
+    body = `<div class="row"><span class="mt h-${P0.hue}" style="width:32px;height:32px;border-radius:9px;display:grid;place-items:center;font:600 13px var(--font-display);flex:none">${P0.mono}</span>
+        <div class="txt"><div class="t">${P0.name} <span class="chip ok">Connected</span></div><div class="d"><span class="mono" style="font-size:12px">${esc(S.keys[p])}</span>${shared ? ' · also used for ' + (job === 'po' ? 'transcription' : 'polish') : ''}</div></div>
+        <div class="ctl"><button class="btn quiet" data-rmkey="${p}">Remove</button></div></div>
+      ${search}<div class="sub" style="box-shadow:inset 0 1px 0 var(--hairsoft)"><span class="caps">${list.length} model${list.length > 1 ? 's' : ''} on this key</span></div>${rows}`;
+  }
+  return `<div class="provs ${provs.length % 3 === 0 ? 'c3' : ''}">${tiles}</div><div class="box" style="margin-top:10px">${body}</div>`;
+}
+
+/* polish */
+function poPanel() {
+  const p = S.po;
+  let body;
+  if (p.src === 'cloud') {
+    body = signedIn()
+      ? `<div class="box"><div class="row"><div class="tile h-blue">${ic('cloud')}</div><div class="txt"><div class="t">SayControl Cloud</div><div class="d">A fast model tuned for dictation. Part of your plan, nothing to pick.</div></div></div>${tryRow()}</div>`
+      : `<div class="box"><div class="row"><div class="tile h-blue">${ic('cloud')}</div><div class="txt"><div class="t">Sign in to polish on SayControl Cloud</div><div class="d">Included with Free and Pro.</div></div><div class="ctl"><button class="btn primary" data-act="signin">Sign in</button></div></div></div>`;
+  } else {
+    body = keysPanel('po', PO_PROVS, PO_MODELS);
+    if (S.keys[p.prov] && p.model && S.keys[p.model.p]) body += `<div class="box" style="margin-top:10px">${tryRow()}</div>`;
+  }
+  return body;
+}
+function tryRow() {
+  const st = { v: S.po.src === 'cloud' ? 'SayControl Cloud' : (S.po.model ? S.po.model.m : 'your model') };
+  const out = S.test === 'run' ? '<div class="out wait"><span class="cap">Pasted</span><span class="spin" style="display:inline-block;vertical-align:-2px"></span> Polishing…</div>'
+    : S.test ? '<div class="out"><span class="cap">Pasted</span>I think we should ship it on <mark>Friday</mark>, after the review.</div>'
+    : '<div class="out wait"><span class="cap">Pasted</span>Press Try it to see what this model does.</div>';
+  return `<div class="try" style="box-shadow:inset 0 1px 0 var(--hairsoft)">
+    <div class="top"><div class="txt"><div class="t" style="font-size:13.5px;font-weight:500">Try it</div><div class="d" style="font-size:12.5px;color:var(--muted)">A messy sentence, through ${esc(st.v)}.</div></div>
+      ${S.test && S.test !== 'run' ? `<span class="chip ok">Answered in ${S.test} s</span>` : ''}
+      <button class="btn" data-act="try" ${S.test === 'run' ? 'disabled' : ''}>${ic('play')}Try it</button></div>
+    <div class="io"><div><span class="cap">Heard</span><del>um so</del> I think we should <del>uh</del> ship it on friday <del>no wait</del> after the review</div><span class="arrow">${ic('right')}</span>${out}</div>
+  </div>`;
+}
+
+function savedKeys() {
+  const ids = Object.keys(S.keys);
+  const usedBy = id => [S.tr.src === 'key' && S.tr.model && S.tr.model.p === id ? 'Transcription' : null, S.po.on && S.po.src === 'key' && S.po.model && S.po.model.p === id ? 'Polish' : null].filter(Boolean);
+  const rows = ids.length ? ids.map(id => {
+    const u = usedBy(id);
+    return `<div class="row"><span class="mt h-${PROV[id].hue}" style="width:32px;height:32px;border-radius:9px;display:grid;place-items:center;font:600 13px var(--font-display);flex:none">${PROV[id].mono}</span>
+      <div class="txt"><div class="t">${PROV[id].name}</div><div class="d"><span class="mono" style="font-size:12px">${esc(S.keys[id])}</span></div></div>
+      <div class="ctl"><span class="uses">${u.length ? u.map(x => `<span class="chip">${x}</span>`).join('') : '<span class="chip" style="color:var(--faint)">Not in use</span>'}</span><button class="btn quiet" data-rmkey="${id}">Remove</button></div></div>`;
+  }).join('') : `<div class="empty-row">No keys yet. Keys you add above show up here, ready for either job.</div>`;
+  return `<section class="${blk()}"><div class="keys-h"><span class="caps">Saved keys</span></div><div class="box">${rows}</div>
+    <p class="foot">Each key is saved on this Mac and only ever sent to its own provider. Your provider bills you for what you use.</p></section>`;
+}
+
+function render() {
+  k = 0;
+  const scroll = document.getElementById('scroll');
+  const top = scroll.scrollTop;
+  const tr = trState(), po = poState();
+  scroll.innerHTML = `
+    ${route()}
+    <section class="job ${blk()}" id="job-tr">
+      <div class="job-h"><div class="tile h-rose">${ic('wave')}</div><h4>Transcription</h4>${info('tip-tr', 'Turns your voice into text. Live models put the words on screen while you talk.')}<div class="right">${chip(tr)}</div></div>
+      <div class="choose" role="radiogroup" aria-label="Transcription runs on">
+        ${opt('tr', 'cloud', 'cloud', 'blue', 'SayControl Cloud', 'Best accuracy. Nothing to set up.', signedIn() ? (S.acct === 'pro' ? 'Unlimited on Pro' : '2,000 words a week free') : 'Needs an account', 'bill')}
+        ${opt('tr', 'local', 'laptop', 'moss', 'This Mac', 'Private, and works offline.', 'Free, no account', 'wifioff')}
+        ${opt('tr', 'key', 'key', 'amber', 'API key', 'Your provider, any model it has.', 'Your provider bills you', 'bill')}
+      </div>
+      <div class="panel ${swapped === 'tr' ? 'swap' : ''}">${trPanel()}</div>
+    </section>
+    <section class="job ${S.po.on ? '' : 'is-off'} ${blk()}" id="job-po">
+      <div class="job-h"><div class="tile h-violet">${ic('sparkle')}</div><h4>Polish</h4>${info('tip-po', 'Tidies the text before it pastes: drops the ums and false starts, fixes punctuation, and runs command mode.')}
+        <div class="right">${S.po.on ? chip(po) : ''}<button class="sw ${S.po.on ? 'on' : ''}" data-act="potoggle" aria-pressed="${S.po.on}" title="Polish the transcript"></button></div></div>
+      ${S.po.on ? '' : `<div class="offnote">${ic('power')}<span>Polish is off: SayControl pastes exactly what it heard. Command mode still uses the model below.</span></div>`}
+      <div class="choose two" role="radiogroup" aria-label="Polish runs on">
+        ${opt('po', 'cloud', 'cloud', 'blue', 'SayControl Cloud', 'Fast and tuned for dictation.', signedIn() ? 'Included in your plan' : 'Needs an account', 'bill')}
+        ${opt('po', 'key', 'key', 'amber', 'API key', 'Any chat model from your provider.', 'Your provider bills you', 'bill')}
+      </div>
+      <div class="panel ${swapped === 'po' ? 'swap' : ''}">${poPanel()}</div>
+    </section>
+    ${savedKeys()}`;
+  scroll.scrollTop = top;
+  first = false; swapped = null;
+  drawRail(); placePills(); wire();
+}
+
+function placePills() {
+  document.querySelectorAll('#scroll .pills').forEach(p => {
+    const on = p.querySelector('button.on'), pk = p.querySelector('.pk');
+    if (on && pk) { pk.style.left = on.offsetLeft + 'px'; pk.style.width = on.offsetWidth + 'px'; }
+  });
+}
+
+/* ── interactions ──────────────────────────────────────────────────── */
+function mask(v) {
+  v = v.trim();
+  const m = v.match(/^([a-z]+[-_](?:[a-z]+[-_])?(?:v1-)?)/i);
+  return `${m ? m[1] : ''}…${v.slice(-4)}`;
+}
+function connect(job) {
+  const inp = document.getElementById(`k-${job}`), field = document.getElementById(`f-${job}`);
+  if (!inp.value.trim()) { field.classList.remove('bad'); void field.offsetWidth; field.classList.add('bad'); inp.focus(); return; }
+  const p = S[job].prov, val = inp.value;
+  S.checking = p; render();
+  setTimeout(() => {   // a mock: the key goes nowhere
+    S.checking = null;
+    S.keys[p] = mask(val);
+    // the first usable model becomes the job's, unless one is already set
+    for (const [jb, models] of [['tr', TR_MODELS], ['po', PO_MODELS]]) {
+      const cur = S[jb].model;
+      if ((jb === job || S[jb].src === 'key') && (!cur || !S.keys[cur.p]) && models[p] && S[jb].prov === p) S[jb].model = { p, m: models[p][0][0] };
+    }
+    render();
+  }, 850);
+}
+function download(id) {
+  S.busy[id] = 0; render();
+  const t0 = performance.now(), dur = 900 + MB(VARIANT[id].size) * 1.1;
+  (function step(t) {
+    const kk = Math.min(1, (t - t0) / dur);
+    S.busy[id] = Math.round(kk * 100);
+    const b = document.getElementById(`pb-${id}`), c = document.getElementById(`pc-${id}`);
+    if (b) b.style.width = S.busy[id] + '%';
+    if (c) c.textContent = S.busy[id] + '%';
+    if (kk < 1) requestAnimationFrame(step);
+    else {
+      delete S.busy[id]; S.got[id] = true;
+      const fam = VARIANT[id].fam.id;
+      if (!S.tr.use || !S.got[S.tr.use]) S.tr.use = id;
+      S.tr.size[fam] = id;
+      render();
+    }
+  })(t0);
+  // the route and rail follow the download every few frames
+  const iv = setInterval(() => { if (S.busy[id] == null) return clearInterval(iv); drawRail(); const n = document.querySelector('.node.warn .nw'); if (n && S.tr.src === 'local') n.textContent = `Downloading ${S.busy[id]}%`; }, 250);
+}
+
+function wire() {
+  const root = document.getElementById('scroll');
+  root.querySelectorAll('[data-src]').forEach(b => b.onclick = () => {
+    const [job, src] = b.dataset.src.split(':');
+    if (S[job].src === src) return;
+    S[job].src = src; swapped = job; S.test = null; render();
+  });
+  root.querySelectorAll('[data-prov]').forEach(b => b.onclick = () => {
+    const [job, p] = b.dataset.prov.split(':');
+    S[job].prov = p; S.orq = '';
+    // a saved key that has a model for this job: use it straight away
+    const models = job === 'tr' ? TR_MODELS : PO_MODELS;
+    const cur = S[job].model;
+    if (S.keys[p] && (!cur || !S.keys[cur.p])) S[job].model = { p, m: models[p][0][0] };
+    S.test = null; render();
+    const inp = document.getElementById(`k-${job}`); if (inp) inp.focus();
+  });
+  root.querySelectorAll('[data-connect]').forEach(b => b.onclick = () => connect(b.dataset.connect));
+  root.querySelectorAll('input[id^="k-"]').forEach(i => i.onkeydown = e => { if (e.key === 'Enter') connect(i.id.slice(2)); });
+  root.querySelectorAll('[data-model]').forEach(r => {
+    const pick = () => { const [job, ...m] = r.dataset.model.split(':'); S[job].model = { p: S[job].prov, m: m.join(':') }; S.test = null; render(); };
+    r.onclick = pick; r.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(); } };
+  });
+  root.querySelectorAll('input[id^="q-"]').forEach(i => i.oninput = () => {
+    S.orq = i.value; const q = i.value.toLowerCase();
+    i.closest('.box').querySelectorAll('[data-q]').forEach(r => { r.hidden = !r.dataset.q.includes(q); });
+  });
+  root.querySelectorAll('[data-rmkey]').forEach(b => b.onclick = () => {
+    const p = b.dataset.rmkey; delete S.keys[p];
+    for (const j of ['tr', 'po']) if (S[j].model && S[j].model.p === p) S[j].model = null;
+    S.test = null; render();
+  });
+  root.querySelectorAll('[data-size]').forEach(b => b.onclick = () => { S.tr.size[b.closest('.pills').dataset.fam] = b.dataset.size; render(); });
+  root.querySelectorAll('[data-dl]').forEach(b => b.onclick = () => download(b.dataset.dl));
+  root.querySelectorAll('[data-use]').forEach(b => b.onclick = () => { S.tr.use = b.dataset.use; render(); });
+  root.querySelectorAll('[data-del]').forEach(b => b.onclick = () => { delete S.got[b.dataset.del]; render(); });
+  root.querySelectorAll('[data-jump]').forEach(b => b.onclick = () => document.getElementById(b.dataset.jump).scrollIntoView({ block: 'start' }));
+  root.querySelectorAll('[data-act]').forEach(b => b.onclick = () => {
+    const a = b.dataset.act;
+    if (a === 'signin') { S.acct = 'free'; syncDemo(); render(); }
+    if (a === 'live') { S.live = !S.live; render(); }
+    if (a === 'potoggle') { S.po.on = !S.po.on; S.test = null; render(); }
+    if (a === 'try') {
+      S.test = 'run'; render();
+      const slow = S.po.src === 'key' && /sonnet|4\.1|kimi|deepseek|mistral/.test(S.po.model ? S.po.model.m : '');
+      setTimeout(() => { S.test = slow ? '1.3' : '0.4'; render(); }, slow ? 1300 : 600);
+    }
+  });
+}
+
+/* ── demo bar ──────────────────────────────────────────────────────── */
+function syncDemo() {
+  document.querySelectorAll('[data-ctl]').forEach(g => g.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === S[g.dataset.ctl]))));
+  if (S.theme === 'dark') document.documentElement.dataset.theme = 'dark'; else document.documentElement.dataset.theme = 'light';
+}
+document.querySelectorAll('[data-ctl]').forEach(g => g.querySelectorAll('button').forEach(b => b.onclick = () => {
+  const c = g.dataset.ctl;
+  S[c] = b.dataset.v;
+  if (c === 'preset') { Object.assign(S, PRESETS[S.preset]()); S.busy = {}; S.test = null; S.orq = ''; first = true; }
+  syncDemo(); render();
+}));
+try { const t = localStorage.getItem('models-theme'); if (t) S.theme = t; } catch {}
+document.querySelector('[data-ctl="theme"]').addEventListener('click', () => { try { localStorage.setItem('models-theme', S.theme); } catch {} });
+
+function fit() {
+  const s = Math.min(1, (innerWidth - 32) / 1240);
+  const el = document.getElementById('scaler');
+  el.style.transform = `scale(${s})`;
+  el.style.marginBottom = `${-820 * (1 - s)}px`;
+}
+addEventListener('resize', fit);
+syncDemo(); fit(); render();
+</script>
+</body>
+</html>

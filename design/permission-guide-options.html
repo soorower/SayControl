@@ -1,0 +1,670 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Permission guide options</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600&display=swap">
+<style>
+/* The drag-me helper Set Up shows over System Settings: three ways to put
+   it where the list is, and today's for comparison. (2026-10-05.)
+
+   Today's is a card in the screen's top-right corner with three sentences
+   and an icon that shakes side to side. It reads as a notification, it sits
+   away from the list it is about, and a shake says "look at me", not "move
+   me there". Each option below sits against the System Settings window and
+   draws the path the icon takes. The icon in every option really drags:
+   drop it on the list. The SayControl surfaces use Theme.swift's colours;
+   the System Settings window is a stand-in for Apple's. */
+:root {
+  --paper: #faf9f7; --surface: #fff; --hair: #e8e6e1; --well: #f2f0ec;
+  --ink: #1c1b19; --ink2: #44423e; --muted: #6c6963; --faint: #9a968f;
+  --ember: #e5501f; --ember-ink: #c2410c; --ember-soft: rgb(229 80 31 / .10); --ember-ring: rgb(229 80 31 / .45);
+  --moss: #1a7a50; --moss-soft: rgb(26 122 80 / .12);
+  --card-shadow: 0 0 0 1px var(--hair), 0 14px 36px rgb(20 24 34 / .16), 0 3px 8px rgb(20 24 34 / .08);
+  --desk: linear-gradient(160deg, #c3d1e8 0%, #e6dcd6 55%, #d9b9a5 100%);
+  /* Apple's window, approximated */
+  --ss-bg: #f3f3f3; --ss-side: rgb(0 0 0 / .035); --ss-group: #fff; --ss-line: rgb(0 0 0 / .08);
+  --ss-ink: #1d1d1f; --ss-muted: #6e6e73; --ss-sel: rgb(0 0 0 / .07); --ss-blue: #0a7aff; --ss-blue-soft: rgb(10 122 255 / .12);
+  --ss-switch-off: #d9d9dc; --ss-btn: rgb(0 0 0 / .05);
+  --menubar: rgb(255 255 255 / .42); --menubar-ink: #1d1d1f;
+  --ease: cubic-bezier(.2,.8,.2,1);
+  --glide: cubic-bezier(.3,1.18,.45,1);
+  --font-display: 'Bricolage Grotesque', -apple-system, system-ui, sans-serif;
+  --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --paper: #111113; --surface: #1b1b1e; --hair: #2b2b30; --well: #0c0c0e;
+  --ink: #f3f3f1; --ink2: #c8c8cd; --muted: #95959b; --faint: #6a6a70;
+  --ember: #ff6a3d; --ember-ink: #ff8a63; --ember-soft: rgb(255 106 61 / .14); --ember-ring: rgb(255 106 61 / .5);
+  --moss: #3cc48a; --moss-soft: rgb(60 196 138 / .14);
+  --card-shadow: 0 0 0 1px #34343a, 0 16px 40px rgb(0 0 0 / .55), 0 3px 8px rgb(0 0 0 / .3);
+  --desk: linear-gradient(160deg, #1b2233 0%, #25232a 55%, #2e221d 100%);
+  --ss-bg: #232325; --ss-side: rgb(255 255 255 / .04); --ss-group: #2c2c2f; --ss-line: rgb(255 255 255 / .08);
+  --ss-ink: #f2f2f4; --ss-muted: #9a9aa0; --ss-sel: rgb(255 255 255 / .09); --ss-blue: #3b93ff; --ss-blue-soft: rgb(59 147 255 / .18);
+  --ss-switch-off: #4a4a4f; --ss-btn: rgb(255 255 255 / .07);
+  --menubar: rgb(20 20 24 / .45); --menubar-ink: #f2f2f4;
+  color-scheme: dark;
+}}
+:root[data-theme="dark"] {
+  --paper: #111113; --surface: #1b1b1e; --hair: #2b2b30; --well: #0c0c0e;
+  --ink: #f3f3f1; --ink2: #c8c8cd; --muted: #95959b; --faint: #6a6a70;
+  --ember: #ff6a3d; --ember-ink: #ff8a63; --ember-soft: rgb(255 106 61 / .14); --ember-ring: rgb(255 106 61 / .5);
+  --moss: #3cc48a; --moss-soft: rgb(60 196 138 / .14);
+  --card-shadow: 0 0 0 1px #34343a, 0 16px 40px rgb(0 0 0 / .55), 0 3px 8px rgb(0 0 0 / .3);
+  --desk: linear-gradient(160deg, #1b2233 0%, #25232a 55%, #2e221d 100%);
+  --ss-bg: #232325; --ss-side: rgb(255 255 255 / .04); --ss-group: #2c2c2f; --ss-line: rgb(255 255 255 / .08);
+  --ss-ink: #f2f2f4; --ss-muted: #9a9aa0; --ss-sel: rgb(255 255 255 / .09); --ss-blue: #3b93ff; --ss-blue-soft: rgb(59 147 255 / .18);
+  --ss-switch-off: #4a4a4f; --ss-btn: rgb(255 255 255 / .07);
+  --menubar: rgb(20 20 24 / .45); --menubar-ink: #f2f2f4;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { min-height: 100vh; background: var(--paper); font-family: var(--font-sans); color: var(--ink);
+  -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+button { font: inherit; color: inherit; }
+
+/* ── The demo bar: not part of the app ─────────────────────────────── */
+.demo { position: sticky; top: 0; z-index: 50; display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; justify-content: center;
+  padding: 12px 16px; background: rgb(255 255 255 / .7); backdrop-filter: blur(16px) saturate(1.4); -webkit-backdrop-filter: blur(16px) saturate(1.4);
+  border-bottom: 1px solid rgb(0 0 0 / .06); }
+:root[data-theme="dark"] .demo { background: rgb(20 20 24 / .7); border-color: rgb(255 255 255 / .06); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .demo { background: rgb(20 20 24 / .7); border-color: rgb(255 255 255 / .06); } }
+.demo .lbl { font: 600 10.5px var(--font-sans); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-right: 2px; }
+.seg { display: inline-flex; align-items: center; gap: 2px; padding: 3px; border-radius: 999px; background: rgb(0 0 0 / .06); }
+:root[data-theme="dark"] .seg { background: rgb(255 255 255 / .07); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .seg { background: rgb(255 255 255 / .07); } }
+.seg button { border: 0; background: transparent; padding: 5px 11px; border-radius: 999px; font-size: 12px; font-weight: 500; cursor: pointer; color: var(--ink2);
+  transition: background .2s var(--ease), color .2s var(--ease); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+.seg.big button { font-size: 13px; padding: 7px 14px; }
+.seg.big button b { font-weight: 700; margin-right: 5px; }
+.grp-ctl { display: inline-flex; align-items: center; gap: 6px; }
+.replay { border: 0; cursor: pointer; padding: 7px 13px; border-radius: 999px; font-size: 12px; font-weight: 500; background: var(--ember-soft); color: var(--ember-ink); }
+
+/* ── The stage: a desk with System Settings on it ──────────────────── */
+.stage { display: flex; justify-content: center; padding: 18px 16px 6px; overflow: hidden; }
+.scaler { width: 1180px; height: 760px; flex: none; transform-origin: top center; }
+.desk { position: relative; width: 1180px; height: 760px; border-radius: 14px; overflow: hidden; background: var(--desk);
+  box-shadow: 0 0 0 .5px rgb(0 0 0 / .2), 0 20px 60px rgb(0 0 0 / .22); user-select: none; -webkit-user-select: none; }
+.menubar { position: absolute; inset: 0 0 auto 0; height: 26px; display: flex; align-items: center; gap: 18px; padding: 0 16px;
+  background: var(--menubar); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); color: var(--menubar-ink); font-size: 13px; z-index: 1; }
+.menubar b { font-weight: 600; }
+.menubar .clock { margin-left: auto; font-size: 12.5px; }
+
+/* Apple's window, a stand-in */
+.ss { position: absolute; left: 150px; top: 64px; width: 700px; height: 520px; border-radius: 16px; background: var(--ss-bg); color: var(--ss-ink);
+  box-shadow: 0 0 0 .5px rgb(0 0 0 / .28), 0 22px 60px rgb(0 0 0 / .28), 0 4px 12px rgb(0 0 0 / .1); display: grid; grid-template-columns: 214px 1fr; z-index: 5; overflow: hidden; }
+.ss-side { margin: 8px 0 8px 8px; border-radius: 11px; background: var(--ss-side); padding: 40px 8px 8px; position: relative; }
+.ss-traffic { position: absolute; top: 14px; left: 14px; display: flex; gap: 8px; }
+.ss-traffic i { width: 12px; height: 12px; border-radius: 50%; background: #ff5f57; }
+.ss-traffic i:nth-child(2) { background: #febc2e; } .ss-traffic i:nth-child(3) { background: #28c840; }
+.ss-search { height: 28px; border-radius: 8px; background: var(--ss-btn); color: var(--ss-muted); font-size: 12.5px; display: flex; align-items: center; gap: 6px; padding: 0 9px; margin-bottom: 10px; }
+.ss-item { display: flex; align-items: center; gap: 8px; height: 28px; padding: 0 8px; border-radius: 7px; font-size: 12.8px; }
+.ss-item i { width: 20px; height: 20px; border-radius: 5px; flex: none; display: grid; place-items: center; color: #fff; font-style: normal; font-size: 11px; }
+.ss-item.on { background: var(--ss-sel); font-weight: 500; }
+.ss-gap { height: 10px; }
+.ss-main { display: flex; flex-direction: column; min-width: 0; }
+.ss-bar { height: 52px; display: flex; align-items: center; gap: 12px; padding: 0 18px; flex: none; }
+.ss-nav { display: inline-flex; border-radius: 999px; background: var(--ss-btn); }
+.ss-nav span { width: 28px; height: 26px; display: grid; place-items: center; color: var(--ss-muted); font-size: 15px; }
+.ss-nav span + span { opacity: .45; }
+.ss-title { font-size: 14.5px; font-weight: 600; }
+.ss-body { padding: 4px 20px 20px; }
+.ss-group { position: relative; border-radius: 12px; background: var(--ss-group); box-shadow: 0 0 0 .5px var(--ss-line);
+  transition: box-shadow .18s var(--ease); }
+.ss-group.drop-hover { box-shadow: 0 0 0 3px var(--ss-blue), 0 0 0 7px var(--ss-blue-soft); }
+.ss-desc { padding: 13px 14px 11px; font-size: 12.5px; color: var(--ss-muted); border-bottom: 1px solid var(--ss-line); }
+.ss-row { display: flex; align-items: center; gap: 10px; height: 44px; padding: 0 14px; border-bottom: 1px solid var(--ss-line); font-size: 13px; cursor: default; }
+.ss-row.sel { background: var(--ss-blue); color: #fff; }
+.ss-row .ap { width: 26px; height: 26px; border-radius: 7px; flex: none; display: grid; place-items: center; color: #fff; font: 600 11px ui-monospace, Menlo, monospace; }
+.ss-row .ap img { width: 30px; height: 30px; margin: -2px; }
+.ss-row .nm { flex: 1; }
+.ss-row.new { animation: rowIn .5s var(--glide); }
+@keyframes rowIn { from { opacity: 0; transform: translateY(-6px); background: var(--ss-blue-soft); } to { opacity: 1; transform: none; } }
+.sw { width: 38px; height: 22px; border-radius: 999px; background: var(--ss-switch-off); position: relative; flex: none; cursor: pointer; transition: background .2s var(--ease); }
+.sw::after { content: ""; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgb(0 0 0 / .25);
+  transition: transform .22s var(--glide); }
+.sw.on { background: var(--ss-blue); }
+.sw.on::after { transform: translateX(16px); }
+.ss-row.sel .sw.on { background: #fff; } .ss-row.sel .sw.on::after { background: var(--ss-blue); }
+.ss-foot { display: flex; height: 34px; align-items: center; padding: 0 8px; gap: 2px; }
+.ss-foot button { width: 26px; height: 24px; border: 0; border-radius: 6px; background: transparent; color: var(--ss-ink); font-size: 16px; line-height: 1; cursor: pointer; }
+.ss-foot button:hover { background: var(--ss-btn); }
+.ss-foot button.ring { box-shadow: 0 0 0 2px var(--ember); animation: ringPulse 1.4s ease-in-out infinite; }
+.ss-row.ring { box-shadow: inset 0 0 0 2px var(--ember); }
+@keyframes ringPulse { 50% { box-shadow: 0 0 0 4px var(--ember-ring); } }
+.ss-tip { position: absolute; left: 70px; bottom: 6px; font-size: 11.5px; color: var(--ss-muted); opacity: 0; transition: opacity .2s; pointer-events: none; }
+.ss-tip.show { opacity: 1; }
+
+/* ── SayControl's helper surfaces ──────────────────────────────────── */
+.helper { position: absolute; color: var(--ink); opacity: 0; pointer-events: none; transition: opacity .35s var(--ease), transform .45s var(--glide); }
+.helper.show { opacity: 1; pointer-events: auto; }
+.src { cursor: grab; touch-action: none; }
+.src:active { cursor: grabbing; }
+.well { position: relative; flex: none; display: grid; place-items: center; border-radius: 16px; border: 1.5px dashed var(--ember-ring); background: var(--ember-soft);
+  transition: transform .2s var(--ease), border-color .2s, opacity .2s; }
+.well img { display: block; filter: drop-shadow(0 3px 6px rgb(0 0 0 / .18)); transition: transform .25s var(--glide), opacity .2s; }
+.well:hover img { transform: translateY(-2px) scale(1.04); }
+.well.lifted img { opacity: .35; transform: scale(.94); }
+.x { position: absolute; top: 8px; right: 8px; width: 22px; height: 22px; border: 0; border-radius: 50%; background: transparent; color: var(--faint);
+  display: grid; place-items: center; cursor: pointer; font-size: 15px; line-height: 1; }
+.x:hover { background: var(--well); color: var(--ink2); }
+.ttl { font: 600 15px var(--font-display); letter-spacing: -.015em; display: flex; align-items: center; gap: 7px; }
+.ttl .arr { color: var(--ember); font-family: var(--font-sans); font-weight: 600; }
+.sub { font-size: 12.5px; color: var(--muted); margin-top: 3px; line-height: 1.4; }
+.lnk { border: 0; background: none; padding: 0; margin-top: 7px; font-size: 12px; color: var(--ember-ink); cursor: pointer; text-align: left; }
+.lnk:hover { text-decoration: underline; }
+.fix { font-size: 12px; color: var(--ink2); margin-top: 6px; line-height: 1.45; display: none; }
+.fix.show { display: block; animation: fadeUp .3s var(--ease); }
+.fix kbd { font: 600 12px var(--font-sans); padding: 0 5px; border-radius: 4px; background: var(--well); box-shadow: 0 0 0 1px var(--hair); }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(3px); } to { opacity: 1; transform: none; } }
+.ok { display: none; align-items: center; gap: 10px; font: 600 15px var(--font-display); }
+.ok i { width: 28px; height: 28px; border-radius: 50%; background: var(--moss); display: grid; place-items: center; color: #fff; font-style: normal; font-size: 15px; flex: none; }
+.ok span { display: block; font: 400 12.5px var(--font-sans); color: var(--muted); margin-top: 1px; }
+.helper.done .ask, .helper.done .well { display: none; }
+.helper.done .ok { display: flex; animation: fadeUp .35s var(--ease); }
+
+/* A — the tray: tucked under the window's bottom edge, under the list */
+.tray { z-index: 4; border-radius: 0 0 16px 16px; background: var(--surface); box-shadow: var(--card-shadow); padding: 30px 40px 16px 16px;
+  display: flex; align-items: center; gap: 16px; transform: translateY(-26px); }
+.tray.show { transform: none; }
+.tray.away { transform: translateY(-110%); opacity: 0; }
+.tray .well { width: 78px; height: 78px; }
+.tray .x { top: 24px; }
+.tray .well img { width: 58px; height: 58px; }
+
+/* B — a drop zone drawn over the list, and the icon in a pill under the window */
+.zone { z-index: 6; border-radius: 15px; border: 2px dashed var(--ember); background: var(--ember-soft); pointer-events: none !important;
+  display: flex; align-items: flex-end; justify-content: center; padding-bottom: 10px; }
+.zone.show { animation: breathe 2.4s ease-in-out infinite; }
+@keyframes breathe { 50% { background: rgb(229 80 31 / .04); border-color: var(--ember-ring); } }
+.zone .chip { background: var(--ember); color: #fff; font-size: 12.5px; font-weight: 600; padding: 5px 11px; border-radius: 999px; box-shadow: 0 4px 12px rgb(229 80 31 / .35); }
+.zone.done { border-color: var(--moss); background: var(--moss-soft); animation: none; }
+.zone.done .chip { background: var(--moss); box-shadow: none; }
+.pill { z-index: 6; display: flex; align-items: center; gap: 12px; padding: 8px 16px 8px 8px; border-radius: 999px; background: var(--surface); box-shadow: var(--card-shadow);
+  transform: translateY(10px); }
+.pill.show { transform: none; }
+.pill .well { width: 52px; height: 52px; border-radius: 999px; }
+.pill .well img { width: 40px; height: 40px; }
+.pill .ttl { font-size: 14px; }
+.chev { position: absolute; z-index: 6; width: 18px; height: 60px; pointer-events: none; opacity: 0; transition: opacity .3s; }
+.chev.show { opacity: 1; }
+.chev i { position: absolute; left: 2px; width: 12px; height: 12px; border-left: 2.5px solid var(--ember); border-top: 2.5px solid var(--ember); transform: rotate(45deg);
+  animation: chevUp 1.5s ease-in-out infinite; opacity: 0; }
+.chev i:nth-child(2) { animation-delay: .25s; } .chev i:nth-child(3) { animation-delay: .5s; }
+@keyframes chevUp { 0% { top: 48px; opacity: 0; } 30% { opacity: 1; } 100% { top: 0; opacity: 0; } }
+
+/* C — a card against the window's right edge */
+.side { z-index: 6; width: 232px; border-radius: 16px; background: var(--surface); box-shadow: var(--card-shadow); padding: 16px 16px 14px;
+  transform: translateX(-10px); }
+.side.show { transform: none; }
+.side .steps { margin-top: 12px; display: grid; gap: 12px; }
+.side .step { display: flex; gap: 10px; align-items: flex-start; font-size: 13px; color: var(--ink2); line-height: 1.35; }
+.side .n { width: 20px; height: 20px; border-radius: 50%; background: var(--ink); color: var(--paper); font-size: 11px; font-weight: 600; display: grid; place-items: center; flex: none; margin-top: -1px; }
+.side .well { width: 100%; height: 96px; margin-top: 4px; }
+.side .well img { width: 64px; height: 64px; }
+.side .well .lft { position: absolute; left: 12px; top: 50%; margin-top: -9px; color: var(--ember); font-size: 16px; font-weight: 700; animation: nudgeL 1.6s ease-in-out infinite; }
+@keyframes nudgeL { 50% { transform: translateX(-6px); } }
+
+/* Today — the corner card that shakes */
+.today { z-index: 6; top: 40px; right: 22px; width: 360px; border-radius: 13px; background: var(--surface); box-shadow: var(--card-shadow); padding: 14px 40px 14px 14px;
+  display: flex; gap: 12px; align-items: center; }
+.today img { width: 56px; height: 56px; flex: none; }
+.today img.shake { animation: shake .55s ease-in-out; }
+@keyframes shake { 10% { transform: translateX(-7px); } 20% { transform: translateX(7px); } 30% { transform: translateX(-6px); } 40% { transform: translateX(6px); }
+  50% { transform: translateX(-4px); } 60% { transform: translateX(4px); } 70% { transform: translateX(-2px); } 80% { transform: translateX(2px); } }
+.today p { margin: 0; font-size: 12.5px; color: var(--ink2); line-height: 1.4; }
+
+/* The path the icon takes: drawn by the helper's click-through overlay */
+.trail { position: absolute; inset: 0; width: 1180px; height: 760px; z-index: 8; pointer-events: none; overflow: visible; }
+.trail path { fill: none; stroke: var(--ember); stroke-width: 2.4; stroke-linecap: round; stroke-dasharray: 2 7; }
+.trail .head { fill: var(--ember); }
+.ghost { position: absolute; z-index: 9; width: 56px; height: 56px; margin: -28px 0 0 -28px; pointer-events: none; opacity: 0;
+  filter: drop-shadow(0 10px 16px rgb(0 0 0 / .28)); }
+.hand { position: absolute; z-index: 10; width: 26px; height: 28px; margin: 6px 0 0 4px; pointer-events: none; opacity: 0; transform-origin: 30% 20%; }
+.ripple { position: absolute; z-index: 7; width: 20px; height: 20px; margin: -10px 0 0 -10px; border-radius: 50%; border: 2px solid var(--ember); pointer-events: none; opacity: 0; }
+.dragimg { position: fixed; z-index: 100; width: 60px; height: 60px; margin: -30px 0 0 -30px; pointer-events: none; display: none;
+  filter: drop-shadow(0 12px 18px rgb(0 0 0 / .3)); }
+
+/* ── Notes ─────────────────────────────────────────────────────────── */
+.notes { max-width: 1180px; margin: 12px auto 60px; padding: 0 16px; display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
+.note { border-radius: 14px; background: var(--surface); box-shadow: 0 0 0 1px var(--hair); padding: 16px 18px; font-size: 13px; line-height: 1.5; color: var(--ink2); }
+.note h3 { margin: 0 0 6px; font: 600 16px var(--font-display); letter-spacing: -.02em; color: var(--ink); display: flex; align-items: center; gap: 8px; }
+.note h3 em { font-style: normal; font: 600 10.5px var(--font-sans); letter-spacing: .06em; text-transform: uppercase; color: var(--ember-ink); background: var(--ember-soft); padding: 3px 7px; border-radius: 999px; }
+.note p { margin: 0 0 8px; }
+.note .cost { color: var(--muted); font-size: 12.5px; }
+.note.wide { grid-column: 1 / -1; }
+.note ul { margin: 4px 0 0; padding-left: 18px; }
+.note li { margin: 3px 0; }
+@media (prefers-reduced-motion: reduce) { .chev i, .zone.show, .side .well .lft { animation: none; opacity: 1; } }
+</style>
+</head>
+<body>
+
+<div class="demo">
+  <span class="grp-ctl"><span class="lbl">Option</span>
+    <span class="seg big" id="opt">
+      <button data-v="a" aria-pressed="true"><b>A</b>Tray under the window</button>
+      <button data-v="b"><b>B</b>Drop zone on the list</button>
+      <button data-v="c"><b>C</b>Card beside it</button>
+      <button data-v="today">Today</button>
+    </span></span>
+  <span class="grp-ctl"><span class="lbl">List</span>
+    <span class="seg" id="pane">
+      <button data-v="ax" aria-pressed="true">Accessibility</button>
+      <button data-v="input">Input Monitoring</button>
+      <button data-v="shot">Screen Recording</button>
+    </span></span>
+  <span class="grp-ctl"><span class="lbl">SayControl in it</span>
+    <span class="seg" id="listed">
+      <button data-v="no" aria-pressed="true">Not there</button>
+      <button data-v="off">There, off</button>
+      <button data-v="stale">On, not working</button>
+    </span></span>
+  <span class="grp-ctl"><span class="lbl">Look</span>
+    <span class="seg" id="theme">
+      <button data-v="auto" aria-pressed="true">Auto</button>
+      <button data-v="light">Light</button>
+      <button data-v="dark">Dark</button>
+    </span></span>
+  <button class="replay" id="replay">Replay</button>
+</div>
+
+<div class="stage" id="stage"><div class="scaler" id="scaler"><div class="desk" id="desk">
+  <div class="menubar"><span>&#xF8FF;</span><b>System Settings</b><span>Edit</span><span>View</span><span>Window</span><span>Help</span><span class="clock">Mon 5 Oct&nbsp;&nbsp;13:10</span></div>
+
+  <div class="ss" id="ss">
+    <div class="ss-side">
+      <div class="ss-traffic"><i></i><i></i><i></i></div>
+      <div class="ss-search">⌕ Search</div>
+      <div class="ss-item"><i style="background:#0a84ff">◠</i>Wi‑Fi</div>
+      <div class="ss-item"><i style="background:#0a84ff">ᛒ</i>Bluetooth</div>
+      <div class="ss-item"><i style="background:#0a84ff">◎</i>Network</div>
+      <div class="ss-gap"></div>
+      <div class="ss-item"><i style="background:#8e8e93">⚙</i>General</div>
+      <div class="ss-item"><i style="background:#1c1c1e">◐</i>Appearance</div>
+      <div class="ss-item"><i style="background:#0a84ff">♿</i>Accessibility</div>
+      <div class="ss-item"><i style="background:#8e8e93">▤</i>Control Centre</div>
+      <div class="ss-item"><i style="background:#1c1c1e">▭</i>Desktop &amp; Dock</div>
+      <div class="ss-item"><i style="background:#0a84ff">☼</i>Displays</div>
+      <div class="ss-gap"></div>
+      <div class="ss-item"><i style="background:#ff3b30">⚑</i>Notifications</div>
+      <div class="ss-item"><i style="background:#5e5ce6">☾</i>Focus</div>
+      <div class="ss-item on"><i style="background:#0a84ff">✋</i>Privacy &amp; Security</div>
+      <div class="ss-item"><i style="background:#8e8e93">⌨</i>Keyboard</div>
+    </div>
+    <div class="ss-main">
+      <div class="ss-bar"><span class="ss-nav"><span>‹</span><span>›</span></span><span class="ss-title" id="ssTitle">Accessibility</span></div>
+      <div class="ss-body">
+        <div class="ss-group" id="group">
+          <div class="ss-desc" id="ssDesc">Allow the applications below to control your computer.</div>
+          <div id="rows"></div>
+          <div class="ss-foot"><button id="plus" title="Add">+</button><button id="minus" title="Remove">−</button><span class="ss-tip" id="tip">Opens a file picker. Dragging is quicker.</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- A -->
+  <div class="helper tray" id="hA">
+    <div class="well src" data-src><img alt="SayControl" class="ic"></div>
+    <div class="ask">
+      <div class="ttl"><span class="arr">↑</span>Drag SayControl into the list</div>
+      <div class="sub">macOS asks for your password, then it’s on.</div>
+      <button class="lnk" data-fixlink>Already in the list?</button>
+      <div class="fix" data-fix>Select it, click <kbd>−</kbd>, then drag it in again.</div>
+    </div>
+    <div class="ok"><i>✓</i><div>SayControl is on<span>Taking you back…</span></div></div>
+    <button class="x" title="Close">×</button>
+  </div>
+
+  <!-- B -->
+  <div class="helper zone" id="zB"><span class="chip" id="zChip">Drop SayControl here</span></div>
+  <div class="chev" id="chevB"><i></i><i></i><i></i></div>
+  <div class="helper pill" id="hB">
+    <div class="well src" data-src><img alt="SayControl" class="ic"></div>
+    <div class="ask"><div class="ttl">Drag me into the list<span class="arr">↑</span></div></div>
+    <div class="ok"><i>✓</i><div>SayControl is on</div></div>
+  </div>
+
+  <!-- C -->
+  <div class="helper side" id="hC">
+    <div class="ask">
+      <div class="ttl">Add SayControl</div>
+      <div class="steps">
+        <div class="step"><span class="n">1</span><div style="flex:1">Drag it into the list
+          <div class="well src" data-src><span class="lft">←</span><img alt="SayControl" class="ic"></div></div></div>
+        <div class="step"><span class="n">2</span><div>Enter your password</div></div>
+      </div>
+      <button class="lnk" data-fixlink>Already in the list?</button>
+      <div class="fix" data-fix>Select it, click <kbd>−</kbd>, then drag it in again.</div>
+    </div>
+    <div class="ok"><i>✓</i><div>SayControl is on<span>Taking you back…</span></div></div>
+    <button class="x" title="Close">×</button>
+  </div>
+
+  <!-- Today -->
+  <div class="helper today" id="hT">
+    <img alt="SayControl" class="ic src" data-src>
+    <p id="todayText"></p>
+    <button class="x" title="Close">×</button>
+  </div>
+
+  <svg class="trail" id="trail"><path id="trailPath" d=""/><path class="head" id="trailHead" d=""/></svg>
+  <div class="ripple" id="ripple"></div>
+  <img class="ghost ic" id="ghost" alt="">
+  <svg class="hand" id="hand" viewBox="0 0 26 28"><path d="M8.5 13V4.2a1.7 1.7 0 0 1 3.4 0V11m0-1.2V2.7a1.7 1.7 0 0 1 3.4 0V11m0-6.6a1.7 1.7 0 0 1 3.4 0V12m0-5.2a1.7 1.7 0 0 1 3.4 0v8.5c0 5.3-3.4 9.2-8.4 9.2-3.4 0-5.3-1.5-7.3-4.4L2.3 15.6c-.9-1.5.9-3 2.2-1.9l4 3.4" fill="#fff" stroke="#111" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round"/></svg>
+</div></div></div>
+<img class="dragimg ic" id="dragimg" alt="">
+
+<div class="notes">
+  <div class="note"><h3>A · Tray under the window <em>Recommended</em></h3>
+    <p>Slides out from under the System Settings window, right below the list, and stays glued to it when the window moves. One line says what to do; the arrow, and an icon that glides up into the list, show where.</p>
+    <p class="cost">Cost: low. We only need the window’s frame, which macOS gives without any permission. Nothing sits on the list itself, so it never hides a switch or misses the spot.</p></div>
+  <div class="note"><h3>B · Drop zone on the list</h3>
+    <p>Draws a dashed “drop here” box over the list, with the icon in a pill under the window and chevrons climbing between them. The most literal of the three.</p>
+    <p class="cost">Cost: risky. Without Accessibility (the very thing we are asking for) SayControl can’t see where Apple put the list, so the box is placed by guess. A different macOS version, text size or window size moves it off the list, and it covers the rows while it is up.</p></div>
+  <div class="note"><h3>C · Card beside it</h3>
+    <p>A card against the window’s right edge: two numbered steps, the icon with an arrow pointing left, into the list.</p>
+    <p class="cost">Cost: medium. It needs room beside the window; against the screen’s edge it has to flip to the other side, and on a small screen there is room on neither, so it would fall back to A anyway.</p></div>
+  <div class="note"><h3>Today</h3>
+    <p>A card in the screen’s top-right corner, three sentences, an icon that shakes side to side. It reads as a notification, it is far from the list, and the shake points nowhere.</p></div>
+  <div class="note wide"><h3>Whichever you pick</h3>
+    <ul>
+      <li>It follows the System Settings window when you move it, hides when you switch to another app, and comes back with System Settings.</li>
+      <li>The moment the switch takes, it shows a tick, goes away, and brings SayControl back to the front.</li>
+      <li>The same helper for Accessibility, Input Monitoring and Screen Recording, from the first run and from Settings → Permissions, on every Set Up click.</li>
+      <li>The glide loops every few seconds and stops while you hover or drag the icon. With Reduce Motion on, the path is drawn once and stays still.</li>
+      <li>“Already in the list?” stays one small line until clicked: a switch that reads on but doesn’t work is rare, and only removing it and dragging it back in mends it.</li>
+    </ul></div>
+</div>
+
+<script>
+const ICON = 'data:image/png;base64,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';
+document.querySelectorAll('img.ic').forEach(i => i.src = ICON);
+
+const $ = s => document.querySelector(s);
+const desk = $('#desk'), scaler = $('#scaler'), stage = $('#stage');
+let scale = 1;
+function fit() {
+  scale = Math.min(1, (window.innerWidth - 32) / 1180);
+  scaler.style.transform = `scale(${scale})`;
+  stage.style.height = (760 * scale + 24) + 'px';
+}
+function rel(el) {
+  const d = desk.getBoundingClientRect(), r = el.getBoundingClientRect();
+  return { x: (r.left - d.left) / scale, y: (r.top - d.top) / scale, w: r.width / scale, h: r.height / scale };
+}
+const center = r => ({ x: r.x + r.w / 2, y: r.y + r.h / 2 });
+
+const state = { opt: 'a', pane: 'ax', listed: 'no', done: false, selected: false, fixOpen: false };
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+const PANES = {
+  ax:    { title: 'Accessibility', desc: 'Allow the applications below to control your computer.' },
+  input: { title: 'Input Monitoring', desc: 'Allow the applications below to monitor input from your keyboard, even while you use other apps.' },
+  shot:  { title: 'Screen & System Audio Recording', desc: 'Allow the applications below to record the contents of your screen and audio.' },
+};
+const OTHERS = [
+  { n: 'Terminal', c: '#1c1c1e', g: '>_', on: true },
+  { n: 'Script Editor', c: '#8e8e93', g: '✎', on: true },
+  { n: 'Automator', c: '#6e6e73', g: '⚙', on: false },
+];
+
+// ── System Settings stand-in ──────────────────────────────────────
+function renderRows(fresh) {
+  const rows = $('#rows');
+  rows.innerHTML = '';
+  const list = OTHERS.map(a => ({ ...a }));
+  if (state.listed !== 'no') list.push({ n: 'SayControl', me: true, on: state.listed === 'stale' || state.done });
+  for (const a of list) {
+    const r = document.createElement('div');
+    r.className = 'ss-row' + (a.me && state.selected ? ' sel' : '') + (a.me && fresh ? ' new' : '')
+      + (a.me && state.fixOpen && !state.done ? ' ring' : '');
+    r.innerHTML = `<span class="ap" style="background:${a.me ? 'transparent' : a.c}">${a.me ? `<img src="${ICON}" alt="">` : a.g}</span>`
+      + `<span class="nm">${a.n}</span><span class="sw${a.on ? ' on' : ''}"></span>`;
+    if (a.me) {
+      r.addEventListener('click', e => {
+        if (e.target.classList.contains('sw')) return;
+        state.selected = !state.selected; renderRows();
+      });
+      r.querySelector('.sw').addEventListener('click', () => {
+        if (state.listed === 'off' && !state.done) succeed();
+      });
+    }
+    rows.appendChild(r);
+  }
+  $('#minus').classList.toggle('ring', state.fixOpen && !state.done && state.listed !== 'no');
+}
+$('#minus').addEventListener('click', () => {
+  if (!state.selected || state.listed === 'no' || state.done) return;
+  state.listed = 'no'; state.selected = false; state.fixOpen = false;
+  press('#listed', 'no'); renderRows(); syncFix(); place(); restartLoop();
+});
+$('#plus').addEventListener('click', () => {
+  const t = $('#tip'); t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 1800);
+});
+
+// ── Where each helper sits ────────────────────────────────────────
+const helpers = { a: $('#hA'), b: $('#hB'), c: $('#hC'), today: $('#hT') };
+function place() {
+  const ss = rel($('#ss')), main = rel(document.querySelector('.ss-main')), group = rel($('#group'));
+  const a = helpers.a;
+  a.style.left = (main.x + 16) + 'px'; a.style.width = (main.w - 32) + 'px'; a.style.top = (ss.y + ss.h - 16) + 'px';
+  const z = $('#zB');
+  z.style.left = (group.x - 6) + 'px'; z.style.top = (group.y - 6) + 'px';
+  z.style.width = (group.w + 12) + 'px'; z.style.height = (group.h + 12) + 'px';
+  const b = helpers.b;
+  b.style.left = (main.x + main.w / 2) + 'px'; b.style.top = (ss.y + ss.h + 18) + 'px';
+  b.style.marginLeft = (-b.offsetWidth / 2) + 'px';
+  const ch = $('#chevB');
+  ch.style.left = (main.x + main.w / 2 - 9) + 'px'; ch.style.top = (group.y + group.h + 14) + 'px';
+  ch.style.height = Math.max(30, ss.y + ss.h + 14 - (group.y + group.h + 14)) + 'px';
+  const c = helpers.c;
+  c.style.left = (ss.x + ss.w + 16) + 'px'; c.style.top = (group.y - 4) + 'px';
+}
+
+function show() {
+  for (const [k, el] of Object.entries(helpers)) {
+    el.classList.toggle('show', k === state.opt);
+    el.classList.toggle('done', state.done);
+    el.classList.remove('away');
+  }
+  const z = $('#zB');
+  z.classList.toggle('show', state.opt === 'b' && !state.done);
+  z.style.opacity = state.opt === 'b' ? '' : '0';
+  z.classList.toggle('done', state.done);
+  $('#zChip').textContent = state.done ? '✓  SayControl is on' : 'Drop SayControl here';
+  $('#chevB').classList.toggle('show', state.opt === 'b' && !state.done);
+  const p = PANES[state.pane];
+  $('#todayText').textContent = `Find SayControl in the ${p.title === 'Screen & System Audio Recording' ? 'Screen Recording' : p.title} list and switch it on. Not there? Drag this icon in. On but not working? Remove it with −, then drag it back in.`;
+}
+
+function syncFix() {
+  document.querySelectorAll('[data-fix]').forEach(f => f.classList.toggle('show', state.fixOpen));
+  document.querySelectorAll('[data-fixlink]').forEach(l => l.textContent = state.fixOpen ? 'Hide' : 'Already in the list?');
+}
+document.querySelectorAll('[data-fixlink]').forEach(l => l.addEventListener('click', () => {
+  state.fixOpen = !state.fixOpen; syncFix(); renderRows();
+}));
+document.querySelectorAll('.helper .x').forEach(x => x.addEventListener('click', () => {
+  x.closest('.helper').classList.remove('show'); stopLoop(); clearTrail();
+}));
+
+// ── The glide: the icon travels from the helper into the list ─────
+const ghost = $('#ghost'), hand = $('#hand'), ripple = $('#ripple'), tPath = $('#trailPath'), tHead = $('#trailHead');
+function geometry() {
+  const srcEl = helpers[state.opt].querySelector('[data-src]');
+  const s = center(rel(srcEl.tagName === 'IMG' ? srcEl : srcEl.querySelector('img')));
+  const rows = rel($('#rows'));
+  const e = { x: rows.x + rows.w * 0.5, y: rows.y + rows.h - 10 };
+  let c;
+  if (state.opt === 'c') c = { x: (s.x + e.x) / 2 + 40, y: Math.min(s.y, e.y) - 70 };
+  else c = { x: s.x + (e.x - s.x) * 0.1, y: e.y + (s.y - e.y) * 0.35 };
+  return { s, c, e };
+}
+const bez = (g, t) => ({
+  x: (1 - t) * (1 - t) * g.s.x + 2 * (1 - t) * t * g.c.x + t * t * g.e.x,
+  y: (1 - t) * (1 - t) * g.s.y + 2 * (1 - t) * t * g.c.y + t * t * g.e.y,
+});
+const ease = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+const clamp01 = v => Math.max(0, Math.min(1, v));
+function pathTo(g, upto) {
+  const n = 40, pts = [];
+  for (let i = 0; i <= n; i++) pts.push(bez(g, upto * i / n));
+  return 'M' + pts.map(p => p.x.toFixed(1) + ' ' + p.y.toFixed(1)).join(' L');
+}
+function arrowHead(g, t) {
+  const p = bez(g, t), q = bez(g, Math.max(0, t - .02));
+  const a = Math.atan2(p.y - q.y, p.x - q.x), L = 11, W = 6;
+  const pt = (d, o) => ({ x: p.x - Math.cos(a) * d + Math.cos(a + Math.PI / 2) * o, y: p.y - Math.sin(a) * d + Math.sin(a + Math.PI / 2) * o });
+  const l = pt(L, W), r = pt(L, -W);
+  return `M${p.x} ${p.y} L${l.x} ${l.y} L${r.x} ${r.y} Z`;
+}
+function clearTrail() {
+  tPath.setAttribute('d', ''); tHead.setAttribute('d', '');
+  ghost.style.opacity = 0; hand.style.opacity = 0; ripple.style.opacity = 0;
+  document.querySelectorAll('.well').forEach(w => w.classList.remove('lifted'));
+}
+
+const PERIOD = 3800;
+let raf = 0, t0 = 0, paused = false, shakeTimer = 0;
+function frame(now) {
+  raf = requestAnimationFrame(frame);
+  if (paused || state.done) return;
+  const t = (now - t0) % PERIOD, g = geometry();
+  const well = helpers[state.opt].querySelector('.well');
+  // 0–400 the hand arrives, 400–600 it presses, 600–1900 the glide,
+  // 1900–2250 the drop, then everything settles and rests.
+  const handIn = clamp01(t / 400), press = clamp01((t - 400) / 200);
+  const glide = ease(clamp01((t - 600) / 1300)), drop = clamp01((t - 1900) / 350), out = clamp01((t - 2250) / 500);
+  const p = bez(g, glide);
+  const lifted = t > 450 && t < 2300;
+  if (well) well.classList.toggle('lifted', lifted);
+  ghost.style.left = p.x + 'px'; ghost.style.top = p.y + 'px';
+  ghost.style.opacity = t < 450 ? 0 : (1 - drop) * .92;
+  ghost.style.transform = `scale(${(1 - drop * .45) * (1 + .06 * Math.sin(glide * Math.PI))}) rotate(${-6 * Math.sin(glide * Math.PI)}deg)`;
+  hand.style.left = p.x + 'px'; hand.style.top = p.y + 'px';
+  hand.style.opacity = handIn * (1 - drop);
+  hand.style.transform = `scale(${1 - .12 * press * (1 - drop)})`;
+  if (t >= 600) {
+    tPath.setAttribute('d', pathTo(g, glide));
+    tHead.setAttribute('d', glide > .05 ? arrowHead(g, glide) : '');
+    tPath.parentNode.style.opacity = 1 - out;
+  } else { tPath.setAttribute('d', ''); tHead.setAttribute('d', ''); }
+  ripple.style.left = g.e.x + 'px'; ripple.style.top = g.e.y + 'px';
+  ripple.style.opacity = drop > 0 && drop < 1 ? (1 - drop) : 0;
+  ripple.style.transform = `scale(${1 + drop * 2.6})`;
+}
+function staticPath() {
+  const g = geometry();
+  tPath.setAttribute('d', pathTo(g, 1)); tHead.setAttribute('d', arrowHead(g, 1));
+  tPath.parentNode.style.opacity = 1;
+}
+function stopLoop() { cancelAnimationFrame(raf); raf = 0; clearInterval(shakeTimer); }
+function restartLoop() {
+  stopLoop(); clearTrail();
+  if (state.done) return;
+  if (state.opt === 'today') {
+    const img = $('#hT img');
+    const shake = () => { img.classList.remove('shake'); void img.offsetWidth; img.classList.add('shake'); };
+    setTimeout(shake, 1500); shakeTimer = setInterval(shake, 6000);
+    return;
+  }
+  if (reduced) { staticPath(); return; }
+  t0 = performance.now() + 500;
+  raf = requestAnimationFrame(frame);
+}
+// The loop holds still while the pointer is on the helper.
+Object.values(helpers).forEach(h => {
+  h.addEventListener('pointerenter', () => { paused = true; clearTrail(); });
+  h.addEventListener('pointerleave', () => { paused = false; t0 = performance.now() + 300; });
+});
+
+// ── A real drag: drop the icon on the list ─────────────────────────
+const dragimg = $('#dragimg');
+let dragging = null;
+function overList(x, y) {
+  const r = $('#group').getBoundingClientRect();
+  return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
+}
+document.querySelectorAll('[data-src]').forEach(src => src.addEventListener('pointerdown', e => {
+  if (state.done) return;
+  e.preventDefault();
+  dragging = { src };
+  paused = true; clearTrail();
+  dragimg.style.width = dragimg.style.height = (60 * scale) + 'px';
+  dragimg.style.margin = (-30 * scale) + 'px 0 0 ' + (-30 * scale) + 'px';
+  dragimg.style.left = e.clientX + 'px'; dragimg.style.top = e.clientY + 'px';
+  dragimg.style.display = 'block'; dragimg.style.transition = 'none';
+  (src.closest('.well') || src).classList.add('lifted');
+}));
+window.addEventListener('pointermove', e => {
+  if (!dragging) return;
+  dragimg.style.left = e.clientX + 'px'; dragimg.style.top = e.clientY + 'px';
+  $('#group').classList.toggle('drop-hover', overList(e.clientX, e.clientY));
+});
+window.addEventListener('pointerup', e => {
+  if (!dragging) return;
+  const hit = overList(e.clientX, e.clientY);
+  $('#group').classList.remove('drop-hover');
+  (dragging.src.closest('.well') || dragging.src).classList.remove('lifted');
+  if (hit) {
+    dragimg.style.display = 'none';
+    succeed(true);
+  } else {
+    // Back to where it came from.
+    const r = dragging.src.getBoundingClientRect();
+    dragimg.style.transition = 'left .35s var(--ease), top .35s var(--ease), opacity .35s';
+    dragimg.style.left = (r.left + r.width / 2) + 'px'; dragimg.style.top = (r.top + r.height / 2) + 'px';
+    setTimeout(() => { dragimg.style.display = 'none'; dragimg.style.transition = 'none'; }, 360);
+    paused = false; t0 = performance.now() + 400;
+  }
+  dragging = null;
+});
+
+function succeed(dropped) {
+  const wasListed = state.listed !== 'no';
+  state.done = true; state.selected = false; state.fixOpen = false;
+  if (!wasListed) state.listed = 'off';
+  stopLoop(); clearTrail(); syncFix();
+  renderRows(dropped && !wasListed);
+  show();
+  // A tick, then out of the way: SayControl comes back to the front.
+  setTimeout(() => {
+    if (!state.done) return;
+    const h = helpers[state.opt];
+    if (state.opt === 'a') h.classList.add('away'); else h.classList.remove('show');
+    $('#zB').style.opacity = '0';
+  }, 1700);
+}
+
+// ── Demo bar ──────────────────────────────────────────────────────
+function press(id, v) { document.querySelectorAll(`${id} button`).forEach(b => b.setAttribute('aria-pressed', b.dataset.v === v)); }
+function bind(id, fn) {
+  document.querySelectorAll(`${id} button`).forEach(b => b.addEventListener('click', () => { press(id, b.dataset.v); fn(b.dataset.v); }));
+}
+function reset() {
+  state.done = false; state.selected = false; state.fixOpen = false;
+  const p = PANES[state.pane];
+  $('#ssTitle').textContent = p.title; $('#ssDesc').textContent = p.desc;
+  renderRows(); syncFix(); show(); place(); restartLoop();
+}
+bind('#opt', v => { state.opt = v; reset(); });
+bind('#pane', v => { state.pane = v; reset(); });
+bind('#listed', v => { state.listed = v; reset(); });
+bind('#theme', v => { if (v === 'auto') document.documentElement.removeAttribute('data-theme'); else document.documentElement.dataset.theme = v; });
+$('#replay').addEventListener('click', () => {
+  const v = document.querySelector('#listed button[aria-pressed="true"]').dataset.v;
+  state.listed = v; reset();
+});
+window.addEventListener('resize', () => { fit(); place(); });
+
+fit(); reset();
+</script>
+</body>
+</html>

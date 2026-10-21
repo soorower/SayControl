@@ -1,0 +1,1154 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Welcome window</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600&display=swap">
+<style>
+/* The first-run window, redesigned: the site's hero on one side, one sign-in
+   on the other. Colours, the mark, the pill and the headline's phrases are
+   lifted from SayCtrl-Web (styles.css, waveform.tsx, dictation-pill.tsx,
+   hero-headline.tsx), so the app and the site open the same way. */
+:root {
+  --paper: #fafaf8; --ink: #17150f; --ink2: #3b3830; --muted: #6c6963;
+  --hair: rgb(23 21 15 / .1); --ember: #d4491c;
+  --glow-1: rgb(122 168 255 / .5); --glow-2: rgb(168 198 255 / .4); --glow-3: rgb(226 236 255 / .8);
+  --accent: #2c5fd4; --tile: rgb(255 255 255 / .35); --tile-fill: rgb(255 255 255 / .5);
+  --desk: #eef2fb; --field: #fff;
+  --font-display: 'Bricolage Grotesque', -apple-system, system-ui, sans-serif;
+  --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --paper: #121110; --ink: #f1efea; --ink2: #cfcbc3; --muted: #95959b;
+  --hair: rgb(255 255 255 / .1); --ember: #f2693c;
+  --glow-1: rgb(96 138 240 / .3); --glow-2: rgb(64 100 200 / .18); --glow-3: rgb(22 38 88 / .32);
+  --accent: #8ab0ff; --tile: rgb(255 255 255 / .035); --tile-fill: rgb(255 255 255 / .04);
+  --desk: #0d1220; --field: rgb(255 255 255 / .05);
+}}
+:root[data-theme="dark"] {
+  --paper: #121110; --ink: #f1efea; --ink2: #cfcbc3; --muted: #95959b;
+  --hair: rgb(255 255 255 / .1); --ember: #f2693c;
+  --glow-1: rgb(96 138 240 / .3); --glow-2: rgb(64 100 200 / .18); --glow-3: rgb(22 38 88 / .32);
+  --accent: #8ab0ff; --tile: rgb(255 255 255 / .035); --tile-fill: rgb(255 255 255 / .04);
+  --desk: #0d1220; --field: rgb(255 255 255 / .05);
+}
+* { box-sizing: border-box; }
+body { margin: 0; min-height: 100vh; background: linear-gradient(160deg, #c3d1e8 0%, #e6dcd6 55%, #d9b9a5 100%); font-family: var(--font-sans);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; padding: 24px 16px; }
+:root[data-theme="dark"] body { background: linear-gradient(160deg, #1b2233 0%, #25232a 55%, #2e221d 100%); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) body { background: linear-gradient(160deg, #1b2233 0%, #25232a 55%, #2e221d 100%); } }
+
+/* Controls for the demo, not part of the window. */
+.controls { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+.controls button { font: 500 12px var(--font-sans); padding: 6px 12px; border-radius: 999px; border: 0;
+  background: rgb(255 255 255 / .55); color: #17150f; cursor: pointer; }
+.controls button[aria-pressed="true"] { background: #17150f; color: #fff; }
+
+/* The window. */
+.win { width: min(880px, 100%); height: 600px; border-radius: 12px; overflow: hidden; position: relative;
+  background: var(--paper); color: var(--ink);
+  box-shadow: 0 0 0 .5px rgb(0 0 0 / .25), 0 24px 70px rgb(0 0 0 / .35); display: grid; }
+.traffic { position: absolute; top: 14px; left: 14px; display: flex; gap: 8px; z-index: 5; }
+.traffic i { width: 12px; height: 12px; border-radius: 50%; background: #ff5f57; }
+.traffic i:nth-child(2) { background: #febc2e; } .traffic i:nth-child(3) { background: #28c840; }
+
+.win[data-layout="left"]   { grid-template-columns: 360px 1fr; grid-template-areas: "form sky"; }
+.win[data-layout="right"]  { grid-template-columns: 1fr 360px; grid-template-areas: "sky form"; }
+.win[data-layout="center"] { grid-template-columns: 1fr; grid-template-areas: "sky"; }
+
+/* The sky: the site's hero backdrop. */
+.sky { grid-area: sky; position: relative; overflow: hidden; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; text-align: center; padding: 40px 28px; }
+.win[data-layout="left"] .sky, .win[data-layout="right"] .sky { margin: 10px; border-radius: 10px; }
+.win[data-layout="center"] .sky { justify-content: flex-start; padding-top: 70px; }
+.glow { position: absolute; inset: 0; background:
+  radial-gradient(60% 50% at 50% 0%, var(--glow-1) 0%, transparent 72%),
+  radial-gradient(45% 40% at 10% 0%, var(--glow-2) 0%, transparent 72%),
+  radial-gradient(45% 40% at 90% 0%, var(--glow-2) 0%, transparent 72%),
+  linear-gradient(180deg, var(--glow-3) 0%, transparent 80%), var(--desk); }
+.win[data-layout="center"] .glow { background:
+  radial-gradient(60% 50% at 50% 0%, var(--glow-1) 0%, transparent 72%),
+  radial-gradient(45% 40% at 10% 0%, var(--glow-2) 0%, transparent 72%),
+  radial-gradient(45% 40% at 90% 0%, var(--glow-2) 0%, transparent 72%),
+  linear-gradient(180deg, var(--glow-3) 0%, transparent 70%); }
+.grid { position: absolute; top: 0; left: 50%; transform: translateX(-50%); display: grid;
+  grid-template-columns: repeat(9, 88px); grid-template-rows: repeat(7, 88px);
+  -webkit-mask-image: radial-gradient(60% 75% at 50% 0%, #000 25%, transparent 85%);
+          mask-image: radial-gradient(60% 75% at 50% 0%, #000 25%, transparent 85%); }
+.grid span { border-right: 1px solid var(--tile); border-bottom: 1px solid var(--tile); }
+.grid span.f { background: var(--tile-fill); }
+.sky > *:not(.glow):not(.grid) { position: relative; }
+
+.mark { width: 64px; height: 64px; margin-bottom: 18px; }
+.mark .bar { stroke: var(--ink); }
+.mark polygon { fill: var(--ember); stroke: var(--ember); }
+.mark.live .bar { animation: breathe .9s ease-in-out infinite alternate; transform-origin: 50% 50%; }
+.mark.live .bar:nth-child(2) { animation-delay: .11s; } .mark.live .bar:nth-child(3) { animation-delay: .22s; }
+@keyframes breathe { from { transform: scaleY(.55); } to { transform: scaleY(1); } }
+
+/* The headline, as the site's hero-headline.tsx runs it. */
+.balloon-slot { height: 44px; display: flex; align-items: flex-end; justify-content: center; margin-bottom: 10px; }
+.pill { display: inline-flex; align-items: center; gap: 10px; padding: 9px 14px; border-radius: 999px;
+  background: rgb(28 26 22 / .94); box-shadow: 0 0 0 1px rgb(255 255 255 / .09), 0 2px 6px rgb(0 0 0 / .3), 0 18px 50px -12px rgb(0 0 0 / .55);
+  color: #ece8df; font: 500 12.5px var(--font-sans); white-space: nowrap;
+  transform-origin: 50% 100%; animation: pop .45s cubic-bezier(.3,1.6,.5,1) both; }
+.pill.out { animation: float-off .9s ease-out both; }
+.pill .bars { display: flex; align-items: center; gap: 3px; height: 16px; }
+.pill .bars b { width: 2.5px; border-radius: 2px; background: #ece8df; animation: wf .85s ease-in-out infinite alternate; }
+@keyframes wf { from { transform: scaleY(.42); } to { transform: scaleY(1); } }
+@keyframes pop { from { opacity: 0; transform: translateY(16px) scale(.5); } to { opacity: 1; transform: none; } }
+@keyframes float-off { to { opacity: 0; transform: translateY(-40px) scale(.94); } }
+
+h1 { font-family: var(--font-display); font-weight: 500; letter-spacing: -.045em; line-height: 1.02;
+  font-size: 44px; margin: 0; color: var(--ink); }
+.win[data-layout="center"] h1 { font-size: 52px; }
+h1 .phrase { display: block; height: 1.08em; position: relative; color: var(--ember); }
+h1 .phrase span { display: inline-block; margin: 0 .12em; animation: rise .5s cubic-bezier(.2,.9,.3,1.1) both; }
+h1 .phrase.out span { animation: leave .28s ease-in both; }
+@keyframes rise { from { opacity: 0; transform: translateY(.4em); filter: blur(10px); } to { opacity: 1; transform: none; filter: none; } }
+@keyframes leave { to { opacity: 0; transform: translateY(-.35em); filter: blur(8px); } }
+.sub { margin: 16px auto 0; max-width: 360px; color: var(--ink2); font-size: 14px; line-height: 1.55; }
+
+/* The sign-in column. */
+.form { grid-area: form; position: relative; display: flex; flex-direction: column; justify-content: center; padding: 96px 40px; }
+.mid { display: flex; flex-direction: column; gap: 12px; }
+.win[data-layout="center"] .form { position: absolute; left: 50%; bottom: 44px; transform: translateX(-50%);
+  width: 300px; padding: 0; }
+.win[data-layout="center"] .form .brand, .win[data-layout="center"] .form .lede,
+.win[data-layout="center"] .sky .sub { display: none; }
+.brand { position: absolute; top: 44px; left: 40px; display: flex; align-items: center; gap: 6px; font: 600 17px var(--font-display); letter-spacing: -.035em; }
+.brand svg { width: 26px; height: 26px; margin-left: -4px; }
+.brand .ctl { color: var(--ember); }
+.lede h2 { font: 500 26px/1.1 var(--font-display); letter-spacing: -.04em; margin: 0 0 8px; }
+.lede p { margin: 0 0 14px; color: var(--muted); font-size: 13px; line-height: 1.5; }
+.btn { height: 40px; border-radius: 9px; border: 0; font: 500 13.5px var(--font-sans); cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 9px; width: 100%; transition: transform .1s, background .15s; }
+.btn:active { transform: scale(.98); }
+.btn.google { background: var(--ink); color: var(--paper); }
+.btn.google svg { width: 16px; height: 16px; background: #fff; border-radius: 50%; padding: 2px; }
+.btn.quiet { background: transparent; color: var(--ink); box-shadow: inset 0 0 0 .5px var(--hair), inset 0 0 0 1px var(--hair); }
+.or { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 11.5px; }
+.or::before, .or::after { content: ""; flex: 1; border-top: .5px solid var(--hair); }
+.email { display: flex; gap: 6px; }
+.email input { flex: 1; min-width: 0; height: 40px; border-radius: 9px; border: 0; padding: 0 12px;
+  background: var(--field); color: var(--ink); font: 13.5px var(--font-sans);
+  box-shadow: inset 0 0 0 1px var(--hair); outline: none; }
+.email input:focus { box-shadow: inset 0 0 0 1.5px var(--accent); }
+.email .btn { width: 44px; flex: none; }
+.err { color: var(--ember); font-size: 12px; min-height: 16px; margin-top: -6px; }
+.fine { position: absolute; left: 40px; right: 40px; bottom: 24px; margin: 0; color: var(--muted); font-size: 11px; line-height: 1.5; }
+.win[data-layout="center"] .fine { position: static; margin-top: 16px; text-align: center; }
+/* Two marks on one screen is one too many: the split keeps the wordmark on the left. */
+.win[data-layout="left"] .sky .mark, .win[data-layout="right"] .sky .mark { display: none; }
+.fine a { color: inherit; }
+
+/* Signed in. */
+.who { display: none; align-items: center; gap: 12px; padding: 12px; border-radius: 10px; box-shadow: inset 0 0 0 1px var(--hair); }
+.who .av { width: 36px; height: 36px; border-radius: 50%; background: var(--ember); color: #fff;
+  display: grid; place-items: center; font: 600 15px var(--font-display); }
+.who b { display: block; font-weight: 600; font-size: 13.5px; } .who small { color: var(--muted); font-size: 12px; }
+.win.signed .who { display: flex; }
+.win.signed .signin { display: none; }
+.next { display: none; }
+.win.signed .next { display: flex; background: var(--ember); color: #fff; }
+
+/* The first launch: the pill the user will see every time they talk hears
+   "Welcome to SayControl", then opens into the window. */
+.desk { position: relative; width: 100%; min-height: 720px; display: grid; place-items: center; }
+.desk .win { visibility: hidden; }
+.desk.live .win { visibility: visible; }
+.shell { position: absolute; inset: 0; z-index: 20; background: rgb(28 26 22); pointer-events: none; opacity: 0; }
+.ipill { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 30;
+  display: none; align-items: center; gap: 10px; height: 40px; padding: 0 16px; border-radius: 999px; overflow: hidden;
+  background: rgb(28 26 22 / .94); color: #ece8df; font: 500 14px var(--font-sans); white-space: nowrap;
+  box-shadow: 0 0 0 1px rgb(255 255 255 / .09), 0 2px 6px rgb(0 0 0 / .3), 0 18px 50px -12px rgb(0 0 0 / .55); }
+.ipill .bars { display: flex; align-items: center; gap: 3px; height: 16px; flex: none; }
+.ipill .bars b { width: 2.5px; border-radius: 2px; background: #ece8df; animation: wf .85s ease-in-out infinite alternate; }
+.ipill.still .bars b { animation: none; transform: scaleY(.3); transition: transform .3s; }
+.ipill .words span { display: inline-block; }
+.ipill .words span + span { margin-left: .28em; }
+.play { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 40;
+  display: flex; flex-direction: column; align-items: center; gap: 10px; border: 0; background: none; cursor: pointer;
+  font: 500 13px var(--font-sans); color: #17150f; }
+.play i { width: 64px; height: 64px; border-radius: 50%; background: #17150f; color: #fff; display: grid; place-items: center;
+  font-style: normal; font-size: 22px; padding-left: 4px; box-shadow: 0 10px 30px rgb(0 0 0 / .25); transition: transform .15s; }
+.play:hover i { transform: scale(1.06); }
+.play small { font-size: 11.5px; opacity: .65; }
+:root[data-theme="dark"] .play { color: #ece8df; } :root[data-theme="dark"] .play i { background: #ece8df; color: #17150f; }
+
+/* ── Open early: once the two required switches are on. */
+.skip-corner { position: absolute; right: 24px; bottom: 20px; z-index: 6; display: none; border: 0; background: none; padding: 4px 2px;
+  font: 500 12.5px var(--font-sans); color: var(--muted); cursor: pointer; }
+.skip-corner:hover { color: var(--ink); }
+.win.can-skip .skip-corner { display: block; }
+.access.can-open .row[data-state="done"] { padding-top: 2px; padding-bottom: 2px; }
+.line b, .line small { white-space: nowrap; }
+
+/* ── The app: the setup window grows into it. The brand stays at the top,
+   the account stays at the foot; the checklist becomes the sidebar and the
+   sky becomes the page. */
+:root { --side: #f1efeb; --kbd: #fff; --warn: #a15c00; --serif: "New York", "Iowan Old Style", Georgia, serif; }
+:root[data-theme="dark"] { --side: #1a1918; --kbd: rgb(255 255 255 / .08); --warn: #f0a44a; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --side: #1a1918; --kbd: rgb(255 255 255 / .08); --warn: #f0a44a; } }
+.win.morph, .win.morph .form, .win.morph .sky, .win.morph .brand, .win.morph .acct {
+  transition: width .75s cubic-bezier(.65,0,.2,1), height .75s cubic-bezier(.65,0,.2,1), grid-template-columns .75s cubic-bezier(.65,0,.2,1),
+              margin .75s cubic-bezier(.65,0,.2,1), border-radius .75s, background-color .6s, box-shadow .6s,
+              top .75s cubic-bezier(.65,0,.2,1), left .75s cubic-bezier(.65,0,.2,1), right .75s cubic-bezier(.65,0,.2,1), bottom .75s cubic-bezier(.65,0,.2,1), padding .75s; }
+.win[data-mode="app"] { width: min(1040px, calc(100% - 32px)); height: 660px; grid-template-columns: 236px 1fr; }
+.win[data-mode="app"] .form { background-color: var(--side); margin: 38px 0 10px 10px; border-radius: 14px; box-shadow: 0 0 0 .5px var(--hair); padding: 0; }
+.win[data-mode="app"] .sky { margin: 0; border-radius: 0; }
+.win[data-mode="app"] .brand { top: 16px; left: 16px; }
+.win[data-mode="app"] .acct { left: 12px; right: 12px; bottom: 10px; padding-top: 10px; }
+.win[data-mode="app"] .access, .win[data-mode="app"] .ill { display: none; }
+.appSide, .appMain { display: none; }
+.win[data-mode="app"] .appSide { display: flex; }
+.win[data-mode="app"] .appMain { display: flex; }
+.appSide { position: absolute; top: 58px; left: 10px; right: 10px; bottom: 64px; flex-direction: column; gap: 12px; }
+.ready { background: var(--card); border-radius: 10px; box-shadow: 0 0 0 .5px var(--hair); padding: 9px 11px; font-size: 12px; color: var(--ink2); display: grid; gap: 5px; }
+.ready .st1 { display: flex; align-items: center; gap: 7px; font-weight: 600; color: var(--ink); }
+.ready .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--moss); }
+.ready .dot.ping { animation: ping 1.2s ease-out 2; }
+@keyframes ping { 0% { box-shadow: 0 0 0 0 rgb(47 158 98 / .6); } 100% { box-shadow: 0 0 0 9px rgb(47 158 98 / 0); } }
+.ready .kv { display: flex; align-items: center; gap: 5px; } .ready .kv span:last-child { margin-left: auto; }
+kbd { font: 500 11px var(--font-sans); padding: 2px 6px; border-radius: 5px; background: var(--kbd); box-shadow: 0 0 0 .5px var(--hair), 0 1px 0 var(--hair); color: var(--ink); }
+.nudge { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-top: 3px; padding-top: 7px; border-top: .5px solid var(--hair); color: var(--warn); font-size: 11.5px; }
+.nudge button { border: 0; background: none; color: var(--warn); font: 600 11.5px var(--font-sans); cursor: pointer; padding: 0; }
+.nav { position: relative; display: flex; flex-direction: column; gap: 1px; }
+.nav .hl { position: absolute; left: 0; right: 0; top: 0; height: 32px; border-radius: 8px; background: var(--row-bg); box-shadow: inset 0 0 0 .5px var(--hair); }
+:root .nav .hl { background: rgb(23 21 15 / .07); }
+:root[data-theme="dark"] .nav .hl { background: rgb(255 255 255 / .08); }
+.nav-row { position: relative; z-index: 1; display: flex; align-items: center; gap: 10px; height: 32px; padding: 0 10px; border: 0; background: none; width: 100%;
+  font: 13.5px var(--font-sans); color: var(--ink2); cursor: pointer; border-radius: 8px; text-align: left; }
+.nav-row:hover { color: var(--ink); }
+.nav-row.on { color: var(--ink); font-weight: 600; }
+.nav-row svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+.nav-group { font: 600 10.5px var(--font-sans); letter-spacing: .07em; text-transform: uppercase; color: var(--muted); margin: 10px 10px 3px; }
+.side-foot { margin-top: auto; }
+.win .sky > .appMain { position: absolute; inset: 0; flex-direction: column; text-align: left; }
+.topbar { height: 38px; flex: none; display: flex; align-items: center; justify-content: flex-end; gap: 10px; padding: 0 14px; }
+.chip { display: flex; align-items: center; gap: 6px; font-size: 11.5px; padding: 4px 10px; border-radius: 999px; box-shadow: 0 0 0 .5px var(--hair); background: var(--card); color: var(--ink); }
+.chip i { width: 6px; height: 6px; border-radius: 50%; background: var(--moss); }
+.page { flex: 1; overflow: auto; padding: 14px 34px 30px; }
+.pg-head { display: flex; align-items: center; gap: 10px; }
+.pg-title { font: 600 27px/1.15 var(--font-sans); letter-spacing: -.02em; margin: 0; color: var(--ink); }
+.pg-head .btn { width: auto; height: 32px; padding: 0 12px; font-size: 12.5px; margin-left: auto; background: var(--ink); color: var(--paper); }
+.pg-sub { color: var(--muted); font-size: 13px; margin: 3px 0 16px; }
+.pg-gap { height: 16px; }
+.banner { border-radius: 14px; padding: 24px 26px; margin-bottom: 14px; color: #f6efe8; display: grid; grid-template-columns: 1fr auto; gap: 20px; align-items: center;
+  background: radial-gradient(90% 140% at 88% 70%, #b8471f 0%, #6a2c18 38%, #2b221e 72%); }
+.banner h3 { font: 400 25px/1.15 var(--serif); margin: 0 0 8px; letter-spacing: -.01em; }
+.banner p { margin: 0; font-size: 13px; line-height: 1.5; opacity: .88; max-width: 360px; }
+.banner .btn { width: auto; height: 30px; margin-top: 14px; padding: 0 12px; background: #f6efe8; color: #2b221e; font-size: 12.5px; }
+.orbs { display: grid; grid-template-columns: repeat(4, 34px); gap: 10px; }
+.orbs span { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: rgb(255 255 255 / .1); box-shadow: inset 0 0 0 1px rgb(255 255 255 / .12); }
+.orbs span b { width: 18px; height: 18px; border-radius: 5px; }
+.card { background: var(--card); border-radius: 14px; box-shadow: 0 0 0 .5px var(--hair); padding: 16px 18px; margin-bottom: 14px; }
+.stats { display: grid; grid-template-columns: 200px 1fr; gap: 20px; }
+.big { font: 400 42px/1 var(--serif); letter-spacing: -.02em; color: var(--ink); }
+.cap2 { font-size: 12.5px; color: var(--muted); margin-top: 4px; }
+.minis { display: flex; gap: 22px; margin-top: 16px; } .minis b { display: block; font: 400 22px/1 var(--serif); color: var(--ink); }
+.minis span { font-size: 11.5px; color: var(--muted); }
+.chart { display: flex; align-items: flex-end; gap: 10px; height: 120px; padding-top: 6px; }
+.chart .col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; height: 100%; justify-content: flex-end; }
+.chart .bar { width: 100%; max-width: 34px; border-radius: 4px; background: repeating-linear-gradient(0deg, var(--hair) 0 4px, transparent 4px 7px); transform-origin: bottom; }
+.chart .bar.fill { background: repeating-linear-gradient(0deg, #8a877f 0 4px, transparent 4px 7px); }
+.chart .bar.today { background: repeating-linear-gradient(0deg, var(--ember) 0 4px, transparent 4px 7px); }
+.chart .col span { font-size: 10.5px; color: var(--muted); letter-spacing: .04em; }
+.chart.thin { gap: 4px; } .chart.thin .bar { max-width: none; }
+.sec { display: flex; align-items: center; gap: 10px; margin: 6px 0 10px; font-weight: 600; font-size: 15px; color: var(--ink); }
+.sec small { font-weight: 500; font-size: 11px; color: var(--muted); padding: 3px 9px; border-radius: 999px; box-shadow: 0 0 0 .5px var(--hair); }
+.list { padding: 0; } .li { display: grid; grid-template-columns: 70px 1fr auto; gap: 14px; padding: 12px 18px; font-size: 13px; color: var(--ink); align-items: center; }
+.li + .li { border-top: .5px solid var(--hair); } .li .t { color: var(--muted); font-size: 12px; } .li .m { color: var(--muted); font-size: 11.5px; }
+.dict { grid-template-columns: 1fr 24px 1fr auto 40px; } .dict .ar { color: var(--muted); }
+.badge { font-size: 11px; color: var(--moss); padding: 2px 8px; border-radius: 999px; background: rgb(47 158 98 / .12); }
+.tiles4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; padding: 0; }
+.tiles4 > div { padding: 16px 18px; } .tiles4 > div + div { border-left: .5px solid var(--hair); }
+.seg { display: inline-flex; padding: 3px; border-radius: 9px; background: var(--row-bg); gap: 2px; }
+.seg span { padding: 6px 14px; border-radius: 7px; font-size: 12.5px; color: var(--muted); } .seg span.on { background: var(--card); color: var(--ink); box-shadow: 0 0 0 .5px var(--hair); }
+.row2 { display: flex; align-items: center; gap: 16px; } .row2 > div { flex: 1; } .row2 b { display: block; font-size: 13.5px; color: var(--ink); margin-bottom: 3px; } .row2 p { margin: 0; font-size: 12.5px; color: var(--muted); }
+.tones { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.tones > div { background: var(--card); border-radius: 12px; box-shadow: 0 0 0 .5px var(--hair); padding: 14px 16px; font-size: 12.5px; color: var(--muted); line-height: 1.5; }
+.tones > div.on { box-shadow: 0 0 0 1.5px var(--ink); }
+.tones b { display: block; color: var(--ink); font-size: 13.5px; margin-bottom: 4px; } .tones q { display: block; margin-top: 10px; color: var(--ink); quotes: none; }
+.agents { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+.agents > div { display: flex; align-items: center; gap: 12px; background: var(--card); border-radius: 12px; box-shadow: 0 0 0 .5px var(--hair); padding: 14px 16px; }
+.agents i { width: 34px; height: 34px; border-radius: 9px; flex: none; } .agents b { display: block; font-size: 13.5px; color: var(--ink); } .agents span { font-size: 12px; color: var(--muted); }
+.hintpill { position: absolute; left: 50%; bottom: 6px; transform: translateX(-50%); z-index: 45; display: none; }
+.motion { display: inline-flex; border-radius: 999px; background: rgb(255 255 255 / .4); padding: 2px; gap: 2px; align-items: center; }
+.motion span { font: 500 12px var(--font-sans); color: #17150f; padding: 0 6px 0 10px; opacity: .7; }
+.controls .motion button { background: transparent; padding: 5px 10px; }
+.controls .motion button[aria-pressed="true"] { background: #17150f; color: #fff; }
+
+@media (max-width: 720px) {
+  .win, .win[data-layout] { grid-template-columns: 1fr; grid-template-areas: "sky" "form"; height: auto; }
+  .win .sky { min-height: 300px; }
+  .win[data-layout="center"] .form { position: static; transform: none; width: auto; padding: 24px; }
+  .form { padding: 88px 24px 72px; } .brand { left: 24px; } .fine { left: 24px; right: 24px; }
+}
+/* ── After sign-in: who you are, then the switches, with no step to click. */
+:root { --row-bg: rgb(23 21 15 / .045); --card: #fff; --moss: #2f9e62; }
+:root[data-theme="dark"] { --row-bg: rgb(255 255 255 / .05); --card: #1d1c1b; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --row-bg: rgb(255 255 255 / .05); --card: #1d1c1b; } }
+.access { display: none; flex-direction: column; }
+.form[data-phase="access"] .mid, .form[data-phase="access"] .fine { display: none; }
+.form[data-phase="access"] .access { display: flex; }
+.form[data-phase="access"] { padding-top: 70px; padding-bottom: 70px; }
+.access h2 { font: 500 26px/1.1 var(--font-display); letter-spacing: -.04em; margin: 0 0 8px; }
+.access .lead { margin: 0 0 16px; color: var(--muted); font-size: 13px; line-height: 1.5; }
+.perms { list-style: none; margin: 0 -10px; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.row { display: grid; grid-template-columns: 30px 1fr 20px; gap: 12px; align-items: start; padding: 8px 10px; border-radius: 10px; transition: background .35s; }
+.row[data-state="current"] { background: var(--row-bg); }
+.tile { width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; transition: opacity .35s, filter .35s; }
+.row[data-state="todo"] .tile { opacity: .5; filter: saturate(.4); }
+.tile svg { width: 17px; height: 17px; stroke: #fff; fill: #fff; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.line { display: flex; align-items: center; gap: 8px; min-height: 30px; }
+.line b { font-weight: 600; font-size: 13.5px; }
+.row[data-state="todo"] .line b { color: var(--muted); font-weight: 500; }
+.line small { font-size: 11px; color: var(--muted); }
+.more { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .45s cubic-bezier(.2,.8,.2,1); }
+.more > div { overflow: hidden; }
+.row[data-state="current"] .more { grid-template-rows: 1fr; }
+.more p { margin: 0 0 10px; font-size: 12.5px; color: var(--ink2); line-height: 1.45; }
+.act { display: flex; align-items: center; gap: 14px; padding-bottom: 4px; }
+.btn.sm { height: 32px; width: auto; padding: 0 14px; font-size: 12.5px; border-radius: 8px; }
+.btn.primary { background: var(--ink); color: var(--paper); }
+.link { border: 0; background: none; color: var(--muted); font: 12.5px var(--font-sans); cursor: pointer; padding: 0; }
+.link:hover { color: var(--ink); }
+.st { width: 20px; height: 20px; border-radius: 50%; margin-top: 5px; display: grid; place-items: center; }
+.st svg { width: 20px; height: 20px; opacity: 0; }
+.row[data-state="done"] .st { background: var(--moss); animation: tickpop .45s cubic-bezier(.3,1.6,.5,1); }
+.row[data-state="done"] .st svg { opacity: 1; }
+.row[data-state="skipped"] .st { box-shadow: inset 0 0 0 1.5px var(--hair); }
+@keyframes tickpop { from { transform: scale(.3); } to { transform: none; } }
+.acct { position: absolute; left: 40px; right: 40px; bottom: 22px; display: none; align-items: center; gap: 10px;
+  padding-top: 14px; border-top: .5px solid var(--hair); }
+.form[data-phase="access"] .acct { display: flex; }
+.acct .av { width: 28px; height: 28px; border-radius: 50%; background: var(--ember); color: #fff; display: grid; place-items: center; font: 600 12.5px var(--font-display); flex: none; }
+.acct b { display: block; font-size: 12.5px; font-weight: 600; } .acct small { color: var(--muted); font-size: 11.5px; }
+.acct .ok { margin-left: auto; font-size: 11px; color: var(--moss); display: flex; align-items: center; gap: 5px; }
+.acct .ok::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--moss); }
+
+/* The sky shows what each switch is for. */
+.ill { position: absolute; inset: 0; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 26px; padding: 40px; text-align: center; }
+.sky[data-mode="access"] .ill { display: flex; }
+.sky[data-mode="access"] .balloon-slot, .sky[data-mode="access"] h1, .sky[data-mode="access"] .sub { display: none; }
+.ill .cap { font: 500 24px/1.15 var(--font-display); letter-spacing: -.035em; color: var(--ink); max-width: 330px; margin: 0; }
+.ill .cap em { font-style: normal; color: var(--ember); }
+.ill .small { font-size: 13px; color: var(--ink2); max-width: 300px; margin: -16px 0 0; line-height: 1.5; }
+.ill .pill { animation: none; font-size: 13.5px; padding: 11px 18px; }
+.ill .pill.ok .bars b { animation: none; transform: scaleY(.3); }
+.doc { width: 290px; background: var(--card); border-radius: 12px; text-align: left; overflow: hidden;
+  box-shadow: 0 0 0 .5px var(--hair), 0 14px 36px rgb(23 21 15 / .14); }
+.doc .tb { height: 24px; display: flex; gap: 6px; align-items: center; padding: 0 10px; border-bottom: .5px solid var(--hair); }
+.doc .tb i { width: 8px; height: 8px; border-radius: 50%; background: var(--hair); }
+.doc .tx { padding: 14px 16px 18px; font-size: 14px; line-height: 1.6; color: var(--ink); min-height: 88px; }
+.doc .tx .old { color: var(--muted); font-weight: 600; font-size: 12.5px; }
+.caret { display: inline-block; width: 1.5px; height: 1.05em; background: var(--accent); vertical-align: -3px; margin-left: 1px; animation: b 1s steps(2) infinite; }
+@keyframes b { 50% { opacity: 0; } }
+.keywrap { position: relative; height: 178px; width: 240px; display: flex; align-items: flex-end; justify-content: center; }
+.key { position: relative; width: 92px; height: 92px; border-radius: 16px; background: var(--card); color: var(--ink);
+  box-shadow: 0 0 0 .5px var(--hair), 0 4px 0 rgb(23 21 15 / .12), 0 14px 30px rgb(23 21 15 / .12); transition: transform .12s, box-shadow .12s; }
+.key.down { transform: translateY(3px); box-shadow: 0 0 0 .5px var(--hair), 0 1px 0 rgb(23 21 15 / .12), 0 6px 14px rgb(23 21 15 / .1); }
+.key .fn { position: absolute; top: 12px; right: 14px; font: 500 15px var(--font-sans); }
+.key svg { position: absolute; left: 13px; bottom: 13px; width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.6; }
+.key .badge { position: absolute; top: -8px; right: -8px; width: 24px; height: 24px; border-radius: 50%; background: var(--moss); display: none; animation: tickpop .45s cubic-bezier(.3,1.6,.5,1); }
+.key.ok .badge { display: block; }
+.ring { position: absolute; bottom: 0; left: 50%; width: 92px; height: 92px; margin-left: -46px; border-radius: 16px; pointer-events: none; }
+.ring.go { animation: ring .9s ease-out; }
+@keyframes ring { from { box-shadow: 0 0 0 0 rgb(212 73 28 / .35); } to { box-shadow: 0 0 0 22px rgb(212 73 28 / 0); } }
+.keywrap .pill { position: absolute; top: 0; left: 50%; transform: translateX(-50%); opacity: 0; transition: opacity .2s; padding: 8px 13px; font-size: 12px; }
+.keywrap .pill.on { opacity: 1; }
+.picker { position: absolute; top: 0; left: 50%; transform: translateX(-50%); display: grid; grid-template-columns: repeat(4, 28px); gap: 4px;
+  padding: 8px; border-radius: 10px; background: var(--card); box-shadow: 0 0 0 .5px var(--hair), 0 10px 26px rgb(23 21 15 / .16);
+  font-size: 18px; opacity: 0; transition: opacity .18s, transform .18s; }
+.picker.on { opacity: 1; transform: translateX(-50%) translateY(-4px); }
+
+/* Stand-ins for what macOS shows: its own prompt, and the Settings pane. */
+.helpers { position: absolute; inset: 0; pointer-events: none; z-index: 50; }
+.helpers > * { pointer-events: auto; }
+.mac-alert { position: absolute; left: 50%; top: 50%; width: 260px; margin: -120px 0 0 -130px; padding: 20px 16px 16px; border-radius: 14px;
+  background: rgb(240 240 240 / .97); color: #1d1d1f; text-align: center; font: 13px -apple-system, system-ui, sans-serif;
+  box-shadow: 0 0 0 .5px rgb(0 0 0 / .2), 0 20px 60px rgb(0 0 0 / .35); animation: pop .3s cubic-bezier(.3,1.4,.5,1) both; }
+.mac-alert .icon { width: 56px; height: 56px; margin: 0 auto 10px; border-radius: 13px; background: #fafaf8; display: grid; place-items: center;
+  box-shadow: 0 0 0 .5px rgb(0 0 0 / .12), 0 2px 6px rgb(0 0 0 / .12); }
+.mac-alert .icon svg { width: 44px; height: 44px; }
+.mac-alert b { display: block; font-weight: 700; line-height: 1.3; margin-bottom: 6px; }
+.mac-alert p { margin: 0 0 16px; font-size: 11.5px; line-height: 1.4; color: #3c3c43; }
+.mac-alert .bt { display: flex; gap: 8px; }
+.mac-alert button { flex: 1; height: 28px; border-radius: 7px; border: 0; font: 500 13px -apple-system, system-ui, sans-serif; background: rgb(0 0 0 / .08); color: #1d1d1f; cursor: pointer; }
+.mac-alert button.def { background: #0a84ff; color: #fff; }
+.mac-set { position: absolute; left: calc(50% + 130px); top: calc(50% + 70px); width: 330px; border-radius: 12px; overflow: hidden;
+  background: #f5f5f7; color: #1d1d1f; font: 13px -apple-system, system-ui, sans-serif;
+  box-shadow: 0 0 0 .5px rgb(0 0 0 / .22), 0 24px 70px rgb(0 0 0 / .35); animation: pop .35s cubic-bezier(.3,1.3,.5,1) both; }
+.mac-set .hd { height: 38px; display: flex; align-items: center; gap: 8px; padding: 0 12px; background: #ececee; border-bottom: .5px solid rgb(0 0 0 / .1); }
+.mac-set .hd i { width: 11px; height: 11px; border-radius: 50%; background: #ff5f57; } .mac-set .hd i:nth-child(2) { background: #febc2e; } .mac-set .hd i:nth-child(3) { background: #28c840; margin-right: 8px; }
+.mac-set .hd span { color: #86868b; } .mac-set .hd b { font-weight: 600; }
+.mac-set .bd { padding: 12px 14px 14px; }
+.mac-set .bd p { margin: 0 0 10px; font-size: 11.5px; color: #6e6e73; line-height: 1.4; }
+.mac-set .list { background: #fff; border-radius: 8px; box-shadow: 0 0 0 .5px rgb(0 0 0 / .1); }
+.mac-set .it { display: flex; align-items: center; gap: 10px; height: 40px; padding: 0 10px; }
+.mac-set .it + .it { border-top: .5px solid rgb(0 0 0 / .08); }
+.mac-set .it .ic { width: 22px; height: 22px; border-radius: 5px; background: #fafaf8; box-shadow: 0 0 0 .5px rgb(0 0 0 / .15); display: grid; place-items: center; }
+.mac-set .it .ic.term { background: #1d1d1f; color: #fff; font: 600 9px ui-monospace, monospace; }
+.mac-set .it .ic svg { width: 17px; height: 17px; }
+.mac-set .it > span:not(.ic) { flex: 1; }
+.sw { width: 34px; height: 20px; border-radius: 10px; border: 0; background: rgb(0 0 0 / .14); position: relative; cursor: pointer; transition: background .2s; padding: 0; }
+.sw::after { content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgb(0 0 0 / .3); transition: transform .2s; }
+.sw[aria-pressed="true"] { background: #0a84ff; } .sw[aria-pressed="true"]::after { transform: translateX(14px); }
+.sw.hint, .mac-set select.hint { animation: hint 1.4s ease-out infinite; }
+@keyframes hint { 0% { box-shadow: 0 0 0 0 rgb(212 73 28 / .55); } 100% { box-shadow: 0 0 0 10px rgb(212 73 28 / 0); } }
+.mac-set select { font: 12.5px -apple-system, system-ui, sans-serif; border-radius: 6px; border: .5px solid rgb(0 0 0 / .2); padding: 3px 6px; background: #fff; color: #1d1d1f; }
+.win.blink { transition: opacity .25s, transform .25s; opacity: 0; transform: scale(.97); }
+
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; } }
+</style>
+</head>
+<body>
+
+<div class="controls" role="toolbar" aria-label="Demo controls">
+  <button id="replay">Replay first launch</button>
+  <button id="jump">Jump to the app</button>
+  <span class="motion" role="group" aria-label="Page motion"><span>Page motion</span><button data-motion="subtle" aria-pressed="true">Subtle</button><button data-motion="expressive" aria-pressed="false">Expressive</button><button data-motion="off" aria-pressed="false">Off (today)</button></span>
+  <button id="theme">Light / dark</button>
+  <button id="reset">Sign out</button>
+</div>
+
+<div class="desk" id="desk">
+<button class="play" id="play"><i>▶</i>Play the first launch<small>Sound on</small></button>
+<div class="ipill" id="ipill" aria-hidden="true"><span class="bars" id="ibars"></span><span class="words" id="iwords"></span></div>
+<div class="helpers" id="helpers"></div>
+<div class="hintpill" id="hintpill"><div class="pill" style="animation:none"><span class="bars" id="hbars"></span>Hold fn and talk</div></div>
+<div class="win" id="win" data-layout="left">
+  <div class="shell" id="shell"></div>
+  <button class="skip-corner" id="skipBtn">Skip for now →</button>
+  <div class="traffic" aria-hidden="true"><i></i><i></i><i></i></div>
+
+  <section class="sky" aria-label="What SayControl does">
+    <div class="glow"></div>
+    <div class="grid" id="grid"></div>
+    <svg class="mark" viewBox="0 0 256 256" role="img" aria-label="SayControl">
+      <g stroke-linecap="round" stroke-width="24" fill="none">
+        <line class="bar" x1="50" x2="50" y1="90.5" y2="165.5"/>
+        <line class="bar" x1="88" x2="88" y1="63.5" y2="192.5"/>
+        <line class="bar" x1="126" x2="126" y1="44" y2="212"/>
+      </g>
+      <polygon points="158,71 158,185 206,128" stroke-width="12" stroke-linejoin="round"/>
+    </svg>
+    <div class="balloon-slot" id="slot" aria-hidden="true"></div>
+    <h1><span id="h1a" style="display:block">Dictation that</span><span class="phrase" id="phrase"><span>does</span><span>what</span><span>you</span><span>say.</span></span></h1>
+    <p class="sub">Hold fn, talk, let go. Your words land in any Mac app, and commands happen where you said them.</p>
+    <div class="ill" id="ill" aria-live="polite"></div>
+    <div class="appMain" id="appMain"><div class="topbar"><span class="chip"><i></i>MacBook Pro Microphone</span></div><div class="page" id="page"></div></div>
+  </section>
+
+  <section class="form" aria-label="Sign in">
+    <div class="brand">
+      <svg viewBox="0 0 256 256" aria-hidden="true"><g stroke-linecap="round" stroke-width="24" stroke="currentColor"><line x1="50" x2="50" y1="90.5" y2="165.5"/><line x1="88" x2="88" y1="63.5" y2="192.5"/><line x1="126" x2="126" y1="44" y2="212"/></g><polygon points="158,71 158,185 206,128" fill="var(--ember)" stroke="var(--ember)" stroke-width="12" stroke-linejoin="round"/></svg>
+      <span>Say<span class="ctl">Control</span></span>
+    </div>
+    <div class="mid">
+    <div class="lede">
+      <h2>Welcome</h2>
+      <p>Sign in to start dictating. What you say, your dictionary and your history stay on this Mac.</p>
+    </div>
+
+    <div class="signin">
+      <button class="btn google" id="google">
+        <svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.6l6.7-6.7C35.6 2.4 30.2 0 24 0 14.6 0 6.6 5.4 2.7 13.3l7.8 6C12.4 13.6 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.1 24.6c0-1.6-.1-3.1-.4-4.6H24v9h12.4c-.5 2.9-2.2 5.3-4.6 6.9l7.4 5.8c4.3-4 6.9-9.9 6.9-17.1z"/><path fill="#FBBC05" d="M10.5 28.7c-.5-1.4-.8-3-.8-4.7s.3-3.2.8-4.7l-7.8-6C1 16.6 0 20.2 0 24s1 7.4 2.7 10.7l7.8-6z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.8-5.8l-7.4-5.8c-2.1 1.4-4.8 2.3-8.4 2.3-6.3 0-11.6-4.2-13.5-9.9l-7.8 6C6.6 42.6 14.6 48 24 48z"/></svg>
+        Continue with Google
+      </button>
+      <div class="or" style="margin: 12px 0">or</div>
+      <form class="email" id="emailForm" novalidate>
+        <input id="email" type="email" placeholder="you@example.com" aria-label="Email address" autocomplete="off">
+        <button class="btn quiet" aria-label="Continue with email">→</button>
+      </form>
+      <div class="err" id="err" role="alert"></div>
+    </div>
+
+    <div class="who" id="who"><div class="av" id="av">S</div><div><b id="name">Signed in</b><small id="mail"></small></div></div>
+    </div>
+
+    <div class="access" id="access">
+      <h2 id="accH">Let it hear you.</h2>
+      <p class="lead" id="accP">And type for you. macOS asks once for each, and you can turn any of them off later.</p>
+      <ol class="perms" id="perms"></ol>
+    </div>
+    <div class="appSide" id="appSide"></div>
+    <div class="acct" id="acct"><div class="av" id="acAv">S</div><div><b id="acName"></b><small id="acMail"></small></div><span class="ok">Signed in</span></div>
+
+    <p class="fine">By continuing you agree to the <a href="#">terms</a> and <a href="#">privacy policy</a>. Free includes 2,000 cloud words a week.</p>
+  </section>
+</div>
+</div>
+
+<script>
+// Tiles as the site draws them: a fixed pattern, a few filled.
+const SH = [0,3,1,0,2,0,0,3,0,1,0,2,0,1,0,0,2,0,3,1,0,0,2,0,0,3,0,2,0,0,3,0,0,1,0,0,3,0,1,3,0,1,0,0,2,0,0,2,0,1,0,0,1,0,3,0,0,1,0,0,3,0,0];
+document.getElementById('grid').innerHTML = SH.map(s => `<span class="${s >= 2 ? 'f' : ''}"></span>`).join('');
+
+// The headline's phrases, verbatim from SayCtrl-Web hero-headline.tsx.
+const STEPS = [
+  { say: 'take a screenshot', does: 'takes the screenshot.' },
+  { say: 'attach the PDF from downloads', does: 'attaches the PDF.' },
+  { say: 'copy the file path', does: 'pastes the file path.' },
+  { say: 'my email address', does: 'types your email.' },
+  { say: 'so um, we should, uh, ship it', does: 'drops the ums.' },
+  { say: 'polish it', does: 'polishes your draft.' },
+  { say: 'send it', does: 'hits send.' },
+  { does: 'does what you say.' },
+];
+const slot = document.getElementById('slot'), phrase = document.getElementById('phrase');
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const bars = [.45,.75,1,.62,.88,.5,.72,.95,.55,.8,.42]
+  .map((h, i) => `<b style="height:${h*100}%;opacity:${.22+.62*h};animation-delay:${i*.07}s"></b>`).join('');
+
+function setPhrase(text) {
+  phrase.classList.add('out');
+  setTimeout(() => {
+    phrase.classList.remove('out');
+    phrase.innerHTML = text.split(' ').map((w, i) => `<span style="animation-delay:${i*55}ms">${w}</span>`).join('');
+  }, 280);
+}
+let i = -1, cycle = [];
+const later = (fn, ms) => cycle.push(setTimeout(fn, ms));
+function stopCycle() { cycle.forEach(clearTimeout); cycle = []; i = -1; slot.innerHTML = ''; }
+function startCycle(after) { stopCycle(); if (!reduced) later(tick, after); }
+function tick() {
+  i = (i + 1) % STEPS.length;
+  const s = STEPS[i];
+  if (s.say) {
+    slot.innerHTML = `<div class="pill"><span class="bars">${bars}</span>“${s.say}”</div>`;
+    later(() => setPhrase(s.does), 520);
+    later(() => slot.firstChild && slot.firstChild.classList.add('out'), 1900);
+    later(tick, 2600);
+  } else {
+    slot.innerHTML = '';
+    setPhrase(s.does);
+    later(tick, 4200);
+  }
+}
+
+// Demo controls.
+const win = document.getElementById('win');
+document.getElementById('theme').addEventListener('click', () => {
+  const root = document.documentElement;
+  const dark = root.dataset.theme ? root.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+  root.dataset.theme = dark ? 'light' : 'dark';
+});
+
+function signIn(name, mail) {
+  document.getElementById('name').textContent = name;
+  document.getElementById('mail').textContent = mail;
+  document.getElementById('av').textContent = name[0].toUpperCase();
+  win.classList.add('signed');
+  signedIn(name, mail);
+}
+document.getElementById('google').addEventListener('click', () => signIn('Sorower Hossan', 'sorower@example.com'));
+const email = document.getElementById('email'), err = document.getElementById('err');
+email.addEventListener('input', () => err.textContent = '');
+document.getElementById('emailForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const v = email.value.trim();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) { err.textContent = 'Enter an email address first.'; return; }
+  signIn(v.split('@')[0], v);
+});
+document.getElementById('reset').addEventListener('click', () => { signOut(); startCycle(1200); });
+
+// ── The sound, synthesised so it can be tuned here and then rendered to a
+// WAV for the app: a pop as the pill opens, a rising note per word, and a
+// warm chord with a breath of air as the pill opens into the window.
+let AC, bus;
+function audio() {
+  if (AC) return AC.resume();
+  AC = new (window.AudioContext || window.webkitAudioContext)();
+  const master = AC.createGain(); master.gain.value = .7; master.connect(AC.destination);
+  const verb = AC.createConvolver(), n = AC.sampleRate * 2.4, ir = AC.createBuffer(2, n, AC.sampleRate);
+  for (let c = 0; c < 2; c++) { const d = ir.getChannelData(c); for (let k = 0; k < n; k++) d[k] = (Math.random() * 2 - 1) * Math.pow(1 - k / n, 3); }
+  verb.buffer = ir;
+  const wet = AC.createGain(); wet.gain.value = .32; verb.connect(wet).connect(master);
+  bus = AC.createGain(); bus.connect(master); bus.connect(verb);
+}
+function voice(type, f, t, a, peak, d, f2) {
+  const o = AC.createOscillator(), g = AC.createGain();
+  o.type = type; o.frequency.setValueAtTime(f, t);
+  if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + .09);
+  g.gain.setValueAtTime(.0001, t);
+  g.gain.exponentialRampToValueAtTime(peak, t + a);
+  g.gain.exponentialRampToValueAtTime(.0001, t + a + d);
+  o.connect(g).connect(bus); o.start(t); o.stop(t + a + d + .05);
+}
+const sfx = {
+  pop(t) { voice('sine', 880, t, .004, .26, .22, 600); voice('triangle', 1760, t, .002, .04, .07); },
+  word(t, f) { voice('sine', f, t, .003, .09, .16); voice('triangle', f * 2, t, .002, .02, .06); },
+  bloom(t) {
+    [[130.81, .09], [261.63, .1], [392.00, .08], [659.25, .07], [987.77, .05]]
+      .forEach(([f, g], k) => { voice('sine', f, t + k * .04, .05, g, 2.6); voice('triangle', f, t + k * .04, .06, g * .25, 1.4); });
+    const len = AC.sampleRate, buf = AC.createBuffer(1, len, AC.sampleRate), d = buf.getChannelData(0);
+    for (let k = 0; k < len; k++) d[k] = Math.random() * 2 - 1;
+    const src = AC.createBufferSource(), bp = AC.createBiquadFilter(), g = AC.createGain();
+    src.buffer = buf; bp.type = 'bandpass'; bp.Q.value = .8;
+    bp.frequency.setValueAtTime(300, t); bp.frequency.exponentialRampToValueAtTime(2600, t + .7);
+    g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.05, t + .3); g.gain.exponentialRampToValueAtTime(.0001, t + .9);
+    src.connect(bp).connect(g).connect(bus); src.start(t); src.stop(t + 1);
+  },
+};
+
+// ── The entrance.
+const desk = document.getElementById('desk'), ipill = document.getElementById('ipill');
+const ibars = document.getElementById('ibars'), iwords = document.getElementById('iwords');
+const shell = document.getElementById('shell'), playBtn = document.getElementById('play');
+ibars.innerHTML = bars;
+const EASE = 'cubic-bezier(.2,.8,.2,1)';
+let run = [];
+const at = (ms, fn) => run.push(setTimeout(fn, ms));
+const rise = (el, delay, dur = 620) => el && el.animate(
+  [{ opacity: 0, transform: 'translateY(10px)', filter: 'blur(6px)' }, { opacity: 1, transform: 'none', filter: 'blur(0)' }],
+  { duration: dur, delay, easing: EASE, fill: 'both' });
+const fade = (el, delay, dur) => el && el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: dur, delay, easing: 'ease-out', fill: 'both' });
+
+function reset() {
+  run.forEach(clearTimeout); run = [];
+  signOut();
+  stopCycle();
+  document.getAnimations().forEach(a => { if (!a.animationName) a.cancel(); });
+  desk.classList.remove('live');
+  win.style.clipPath = ''; shell.style.opacity = 0;
+  ipill.style.display = 'none'; ipill.classList.remove('still'); iwords.innerHTML = '';
+  setPhrase('does what you say.');
+}
+
+function addWord(w) {
+  const from = ipill.offsetWidth;
+  const s = document.createElement('span'); s.textContent = w; iwords.append(s);
+  const to = ipill.offsetWidth;
+  ipill.animate([{ width: from + 'px' }, { width: to + 'px' }], { duration: 260, easing: EASE });
+  s.animate([{ opacity: 0, filter: 'blur(5px)', transform: 'translateY(3px)' }, { opacity: 1, filter: 'blur(0)', transform: 'none' }], { duration: 300, easing: EASE });
+}
+
+// Where everything on the page comes in, in reading order.
+function contentPieces() {
+  const q = s => win.querySelector(s);
+  return [
+    [q('.sky .glow'), 0, 'fade', 1300], [q('.sky .grid'), 250, 'fade', 1500],
+    [q('.brand'), 60], [q('.lede h2'), 140], [q('.lede p'), 210],
+    [q('.signin .google'), 290], [q('.signin .or'), 350], [q('.signin .email'), 400], [q('.who'), 290], [q('.next'), 360],
+    [q('#h1a'), 330], [q('#phrase'), 470], [q('.sky .sub'), 640], [q('.fine'), 700],
+  ];
+}
+
+function playEntrance(withSound) {
+  reset();
+  playBtn.style.display = 'none';
+  if (withSound) audio();
+  const T = AC && withSound ? AC.currentTime + .05 : null;
+  const s = (ms, fn) => T !== null && fn(T + ms / 1000);
+
+  if (reduced) {  // Reduce Motion: keep the chord, skip the movement.
+    s(0, sfx.bloom); desk.classList.add('live'); startCycle(1800); return;
+  }
+
+  // 1. The pill appears, listening.
+  ipill.style.display = 'flex';
+  ipill.animate([{ opacity: 0, transform: 'translate(-50%,-50%) scale(.6)' }, { opacity: 1, transform: 'translate(-50%,-50%) scale(1)' }],
+                { duration: 420, easing: 'cubic-bezier(.3,1.6,.5,1)' });
+  s(0, sfx.pop);
+
+  // 2. It hears "Welcome to SayControl", a word at a time.
+  [['Welcome', 520, 659.25], ['to', 820, 783.99], ['SayControl', 1120, 987.77]].forEach(([w, ms, f]) => {
+    at(ms, () => addWord(w)); s(ms, t => sfx.word(t, f));
+  });
+  at(1620, () => ipill.classList.add('still'));
+
+  // 3. The pill opens into the window.
+  at(1880, () => {
+    const W = win.getBoundingClientRect();
+    desk.classList.add('live');
+    const P = ipill.getBoundingClientRect();
+    const r = P.height / 2;
+    const from = `inset(${P.top - W.top}px ${W.right - P.right}px ${W.bottom - P.bottom}px ${P.left - W.left}px round ${r}px)`;
+    shell.style.opacity = 1;
+    contentPieces().forEach(([el]) => el && (el.style.opacity = 0));
+    win.style.boxShadow = 'none';
+    ipill.style.display = 'none';
+    const open = win.animate([{ clipPath: from }, { clipPath: 'inset(0px 0px 0px 0px round 12px)' }], { duration: 760, easing: 'cubic-bezier(.65,0,.15,1)' });
+    open.onfinish = () => {
+      win.style.clipPath = '';
+      win.style.boxShadow = '';
+      win.animate([{ boxShadow: '0 0 0 .5px rgb(0 0 0 / 0), 0 24px 70px rgb(0 0 0 / 0)' },
+                   { boxShadow: '0 0 0 .5px rgb(0 0 0 / .25), 0 24px 70px rgb(0 0 0 / .35)' }], { duration: 500, easing: 'ease-out' });
+    };
+    shell.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 520, delay: 300, easing: 'ease-in-out', fill: 'forwards' });
+  });
+  s(1900, sfx.bloom);
+
+  // 4. The page arrives, and the headline starts talking.
+  at(2400, () => contentPieces().forEach(([el, d, kind, dur]) => {
+    if (!el) return;
+    el.style.opacity = '';
+    kind === 'fade' ? fade(el, d, dur) : rise(el, d);
+  }));
+  at(2400, () => startCycle(2800));
+}
+
+// ── Signed in: say who, then move straight on to the switches.
+const form = win.querySelector('.form'), sky = win.querySelector('.sky');
+const accessEl = document.getElementById('access'), acct = document.getElementById('acct');
+const permsEl = document.getElementById('perms'), ill = document.getElementById('ill');
+const helpers = document.getElementById('helpers');
+const accH = document.getElementById('accH'), accP = document.getElementById('accP');
+const lede = win.querySelector('.lede');
+const LEDE = [lede.querySelector('h2').textContent, lede.querySelector('p').textContent];
+const ACC = [accH.textContent, accP.textContent];
+let flow = [], illTimers = [];
+const step = (ms, fn) => flow.push(setTimeout(fn, ms));
+const sound = fn => { if (AC) fn(AC.currentTime + .02); };
+const bell = (t, f) => { voice('sine', f, t, .004, .11, 1.3); voice('triangle', f * 2, t, .003, .025, .4); };
+const out = (el, d = 0) => el && el.animate(
+  [{ opacity: 1, transform: 'none', filter: 'blur(0)' }, { opacity: 0, transform: 'translateY(-10px)', filter: 'blur(6px)' }],
+  { duration: 360, delay: d, easing: 'ease-in', fill: 'forwards' });
+
+function signedIn(name, mail) {
+  audio();
+  sound(t => { sfx.word(t, 783.99); sfx.word(t + .11, 1046.5); });
+  lede.querySelector('h2').textContent = `Welcome, ${name.split(' ')[0]}.`;
+  lede.querySelector('p').textContent = "You're signed in. Setting up this Mac…";
+  rise(document.getElementById('who'), 0, 480);
+  document.getElementById('acAv').textContent = name[0].toUpperCase();
+  document.getElementById('acName').textContent = name;
+  document.getElementById('acMail').textContent = mail;
+  step(1600, goAccess);
+}
+
+function goAccess() {
+  out(form.querySelector('.mid')); out(form.querySelector('.fine'));
+  stopCycle();
+  [slot, sky.querySelector('h1'), sky.querySelector('.sub')].forEach(el => out(el));
+  step(420, () => {
+    form.dataset.phase = 'access'; sky.dataset.mode = 'access';
+    renderPerms();
+    setCurrent(0);
+    rise(accH, 0); rise(accP, 70);
+    [...permsEl.children].forEach((r, k) => rise(r, 150 + k * 70));
+    rise(acct, 420);
+  });
+}
+
+function signOut() {
+  flow.forEach(clearTimeout); flow = [];
+  illTimers.forEach(clearTimeout); illTimers = [];
+  helpers.innerHTML = '';
+  delete form.dataset.phase; delete sky.dataset.mode;
+  win.classList.remove('signed', 'blink', 'can-skip');
+  [lede.querySelector('h2').textContent, lede.querySelector('p').textContent] = LEDE;
+  [accH.textContent, accP.textContent] = ACC;
+  document.getAnimations().forEach(a => { if (!a.animationName && a.effect && a.effect.target && win.contains(a.effect.target)) a.cancel(); });
+  email.value = '';
+  state = {};
+  accessEl.classList.remove('can-open');
+  closeApp();
+}
+
+// ── The switches.
+const ICON = {
+  mic: '<svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21" fill="none"/></svg>',
+  ax: '<svg viewBox="0 0 24 24"><circle cx="12" cy="4.6" r="2.1"/><path d="M4.5 8.5l7.5 1.6 7.5-1.6M12 10.1v4.6l-3.2 6.3M12 14.7l3.2 6.3" fill="none"/></svg>',
+  kb: '<svg viewBox="0 0 24 24"><rect x="2.8" y="6" width="18.4" height="12" rx="2.6" fill="none"/><path d="M7 10h.01M10.3 10h.01M13.7 10h.01M17 10h.01M8 14h8" fill="none" stroke-width="2.4"/></svg>',
+  globe: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.6" fill="none"/><ellipse cx="12" cy="12" rx="3.7" ry="8.6" fill="none"/><path d="M3.4 12h17.2" fill="none"/></svg>',
+};
+const TICK = '<svg viewBox="0 0 20 20"><path d="M5.5 10.5l3 3 6-7" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const MARK = '<svg viewBox="0 0 256 256"><g stroke-linecap="round" stroke-width="24" stroke="#17150f"><line x1="50" x2="50" y1="90.5" y2="165.5"/><line x1="88" x2="88" y1="63.5" y2="192.5"/><line x1="126" x2="126" y1="44" y2="212"/></g><polygon points="158,71 158,185 206,128" fill="#d4491c" stroke="#d4491c" stroke-width="12" stroke-linejoin="round"/></svg>';
+const PERMS = [
+  { id: 'mic', icon: 'mic', hue: '#e5484d', name: 'Microphone', need: 'Required',
+    why: 'So it can hear you while you hold fn.', btn: 'Allow', note: 523.25 },
+  { id: 'ax', icon: 'ax', hue: '#2c6fe0', name: 'Accessibility', need: 'Required',
+    why: 'So your words land wherever the cursor is.', btn: 'Open Settings', note: 659.25 },
+  { id: 'input', icon: 'kb', hue: '#7c5cf0', name: 'Input Monitoring', need: 'Recommended',
+    why: 'So fn works in every app, every time.', btn: 'Open Settings', note: 783.99, skip: true },
+  { id: 'globe', icon: 'globe', hue: '#7c5cf0', name: 'Globe key', need: 'Recommended',
+    why: 'Set it to Do Nothing, so a tap of fn doesn’t open the emoji picker.', btn: 'Open Settings', note: 987.77, skip: true },
+];
+let state = {}, current = -1;
+
+function renderPerms() {
+  permsEl.innerHTML = PERMS.map(p => `
+    <li class="row" data-id="${p.id}" data-state="todo">
+      <span class="tile" style="background:${p.hue}">${ICON[p.icon]}</span>
+      <div class="txt">
+        <div class="line"><b>${p.name}</b><small>${p.need}</small></div>
+        <div class="more"><div><p>${p.why}</p><div class="act">
+          <button class="btn sm primary" data-go="${p.id}">${p.btn}</button>
+        </div></div></div>
+      </div>
+      <span class="st" aria-hidden="true">${TICK}</span>
+    </li>`).join('');
+}
+permsEl.addEventListener('click', e => {
+  const go = e.target.closest('[data-go]'), sk = e.target.closest('[data-skip]');
+  if (go) ask(go.dataset.go);
+  if (sk) { markRow(sk.dataset.skip, 'skipped'); advance(0); }
+});
+function markRow(id, s) {
+  state[id] = s;
+  const row = permsEl.querySelector(`[data-id="${id}"]`);
+  row.dataset.state = s;
+  if (s === 'skipped') row.querySelector('small').textContent = 'Later';
+}
+function setCurrent(k) {
+  current = k;
+  PERMS.forEach((p, j) => {
+    const row = permsEl.querySelector(`[data-id="${p.id}"]`);
+    if (!state[p.id]) row.dataset.state = j === k ? 'current' : 'todo';
+  });
+  showIll(k < 0 ? 'done' : PERMS[k].id);
+}
+function advance(delay) {
+  step(delay, () => {
+    const k = PERMS.findIndex(p => !state[p.id]);
+    if (k >= 0) { setCurrent(k); return offerOpen(); }
+    setCurrent(-1);
+    sound(sfx.bloom);
+    swap(accH, "You're all set.");
+    swap(accP, 'Hold fn anywhere and talk.');
+    offerOpen();
+    // Everything on: nothing left to decide, so the app opens by itself.
+    if (!PERMS.some(p => state[p.id] === 'skipped')) step(2200, openApp);
+  });
+}
+/** Microphone and Accessibility are all dictation needs. Once both are on,
+    the app can open; the other two stay here, and a nudge in the app
+    remembers them. */
+function offerOpen() {
+  if (state.mic !== 'done' || state.ax !== 'done' || accessEl.classList.contains('can-open')) return;
+  accessEl.classList.add('can-open');
+  if (PERMS.some(p => !state[p.id])) {
+    win.classList.add('can-skip');
+    fade(document.getElementById('skipBtn'), 300, 500);
+    swap(accH, 'Ready to talk.');
+    swap(accP, 'That’s all it needs. The two below are optional.');
+  }
+}
+document.getElementById('skipBtn').addEventListener('click', () => {
+  PERMS.forEach(p => { if (!state[p.id]) markRow(p.id, 'skipped'); });
+  openApp();
+});
+function swap(el, text) {
+  el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 180, fill: 'forwards' }).onfinish = () => { el.textContent = text; rise(el, 0, 420); };
+}
+function grant(id) {
+  helpers.innerHTML = '';
+  markRow(id, 'done');
+  sound(t => bell(t, PERMS.find(p => p.id === id).note));
+  const key = ill.querySelector('.key'); if (key) key.classList.add('ok');
+  if (id === 'mic') {   // The mic checks itself before moving on.
+    const pill = ill.querySelector('.pill');
+    if (pill) { pill.lastChild.textContent = 'Heard you'; pill.classList.add('ok'); }
+    return advance(1500);
+  }
+  advance(800);
+}
+
+// What macOS shows at each step, played by stand-ins.
+function ask(id) {
+  helpers.innerHTML = '';
+  if (id === 'mic') return alertBox('“SayControl” would like to access the microphone.',
+    'SayControl records your voice so it can transcribe what you say and paste it for you.',
+    [["Don't Allow", () => helpers.innerHTML = ''], ['Allow', () => grant('mic'), true]]);
+  if (id === 'ax') return settings('Accessibility', 'Allow the applications below to control your computer.', () => grant('ax'));
+  if (id === 'input') return settings('Input Monitoring', 'Allow the applications below to monitor input from your keyboard even while using other applications.', () =>
+    alertBox('“SayControl” will not be able to monitor input from your keyboard until it is quit.', '',
+      [['Later', () => grant('input')], ['Quit & Reopen', reopen, true]]));
+  if (id === 'globe') return keyboard();
+}
+function alertBox(title, text, buttons) {
+  helpers.innerHTML = `<div class="mac-alert" role="alertdialog"><div class="icon">${MARK}</div><b>${title}</b>${text ? `<p>${text}</p>` : '<p></p>'}<div class="bt"></div></div>`;
+  const bt = helpers.querySelector('.bt');
+  buttons.forEach(([label, fn, def]) => {
+    const b = document.createElement('button'); b.textContent = label; if (def) b.className = 'def';
+    b.onclick = fn; bt.append(b);
+  });
+}
+function settings(title, text, done) {
+  helpers.innerHTML = `<div class="mac-set"><div class="hd"><i></i><i></i><i></i><span>Privacy &amp; Security ›</span><b>${title}</b></div>
+    <div class="bd"><p>${text}</p><div class="list">
+      <div class="it"><span class="ic term">&gt;_</span><span>Terminal</span><button class="sw" aria-pressed="true" aria-label="Terminal"></button></div>
+      <div class="it"><span class="ic">${MARK}</span><span>SayControl</span><button class="sw hint" id="swOn" aria-pressed="false" aria-label="SayControl"></button></div>
+    </div></div></div>`;
+  const sw = document.getElementById('swOn');
+  sw.onclick = () => { sw.setAttribute('aria-pressed', 'true'); sw.classList.remove('hint'); step(450, done); };
+}
+function keyboard() {
+  helpers.innerHTML = `<div class="mac-set"><div class="hd"><i></i><i></i><i></i><b>Keyboard</b></div>
+    <div class="bd"><div class="list"><div class="it"><span>Press 🌐 key to</span>
+      <select class="hint" id="globeSel"><option>Show Emoji &amp; Symbols</option><option>Change Input Source</option><option>Start Dictation</option><option>Do Nothing</option></select>
+    </div></div></div></div>`;
+  document.getElementById('globeSel').onchange = e => { if (e.target.value === 'Do Nothing') { e.target.classList.remove('hint'); step(450, () => grant('globe')); } };
+}
+function reopen() {   // macOS quits the app; the setup comes back where it was.
+  helpers.innerHTML = '';
+  win.classList.add('blink');
+  step(900, () => { win.classList.remove('blink'); sound(sfx.pop); grant('input'); });
+}
+
+// The sky: a picture of what the current switch is for.
+const GLOBE_SVG = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.6"/><ellipse cx="12" cy="12" rx="3.7" ry="8.6"/><path d="M3.4 12h17.2"/></svg>';
+function showIll(id) {
+  illTimers.forEach(clearTimeout); illTimers = [];
+  const t = (ms, fn) => illTimers.push(setTimeout(fn, ms));
+  const key = extra => `<div class="keywrap">${extra}<div class="ring" id="ring"></div><div class="key" id="fnKey"><span class="fn">fn</span>${GLOBE_SVG}<span class="badge">${TICK}</span></div></div>`;
+  const done = state[id] === 'done' ? ' ok' : '';
+  const html = {
+    mic: `<div class="pill${done}"><span class="bars">${bars}</span><span>Listening…</span></div>
+          <p class="cap">It listens <em>while you hold fn.</em></p><p class="small">Let go, and the mic is off.</p>`,
+    ax: `<div class="doc"><div class="tb"><i></i><i></i><i></i></div><div class="tx"><span class="old">Notes for Thursday</span><br><span id="axT"></span><span class="caret"></span></div></div>
+         <p class="cap">Your words land <em>where the cursor is.</em></p><p class="small">In Mail, Slack, Notes, anywhere you can type.</p>`,
+    input: `${key('<div class="pill"><span class="bars">' + bars + '</span><span>Listening…</span></div>')}
+            <p class="cap">fn works <em>in every app.</em></p><p class="small">Even while the screen is switching between apps.</p>`,
+    globe: `${key('<div class="picker" id="picker"><span>😀</span><span>🎉</span><span>👍</span><span>❤️</span><span>😂</span><span>🙏</span><span>🔥</span><span>✨</span></div>')}
+            <p class="cap">A tap of fn <em>stays quiet.</em></p><p class="small">No emoji picker popping up while you talk.</p>`,
+    done: `<div style="width:72px;height:72px;color:var(--ink)">${MARK.replace('<svg ', '<svg width="72" height="72" ').replace('stroke="#17150f"', 'stroke="currentColor"')}</div>
+           <p class="cap">Hold fn, <em>and talk.</em></p><p class="small">Anywhere on your Mac. Your first words are a second away.</p>`,
+  }[id];
+  ill.innerHTML = html;
+  [...ill.children].forEach((c, k) => rise(c, k * 90, 560));
+  if (id === 'ax') {
+    const line = 'Meet at noon, and bring the deck.';
+    const typeIt = () => {
+      const el = document.getElementById('axT'); if (!el) return;
+      el.textContent = '';
+      [...line].forEach((ch, k) => t(400 + k * 42, () => el.textContent += ch));
+      t(400 + line.length * 42 + 1800, typeIt);
+    };
+    typeIt();
+  }
+  if (id === 'input' || id === 'globe') {
+    const press = () => {
+      const k = document.getElementById('fnKey'), r = document.getElementById('ring'); if (!k) return;
+      const extra = ill.querySelector('.keywrap > .pill, .picker');
+      k.classList.add('down'); r.classList.remove('go'); void r.offsetWidth; r.classList.add('go');
+      const quiet = id === 'globe' && state.globe === 'done';
+      if (extra && !quiet) extra.classList.add('on');
+      t(id === 'input' ? 1100 : 250, () => k.classList.remove('down'));
+      t(id === 'input' ? 1200 : 1100, () => extra && extra.classList.remove('on'));
+      t(2200, press);
+    };
+    t(700, press);
+  }
+}
+
+// ── Opening the app: the setup window grows into the real one.
+const appSide = document.getElementById('appSide'), page = document.getElementById('page');
+const hintpill = document.getElementById('hintpill');
+document.getElementById('hbars').innerHTML = bars;
+sfx.open = t => { voice('sine', 392, t, .01, .07, 1.1); voice('sine', 587.33, t + .1, .01, .07, 1.4); voice('triangle', 1174.66, t + .1, .004, .015, .5); };
+const NAV_ICON = {
+  overview: '<rect x="4" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.5"/>',
+  insights: '<rect x="4" y="10" width="4" height="10" rx="1"/><rect x="10" y="5" width="4" height="15" rx="1"/><rect x="16" y="12" width="4" height="8" rx="1"/>',
+  dictionary: '<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h4"/>',
+  phrases: '<path d="M4 6h16M4 12h9M4 18h16M16 10l3 2-3 2"/>',
+  tones: '<path d="M6 4v16M12 4v16M18 4v16"/><circle cx="6" cy="9" r="2" fill="var(--side)"/><circle cx="12" cy="15" r="2" fill="var(--side)"/><circle cx="18" cy="7" r="2" fill="var(--side)"/>',
+  agents: '<path d="M12 3.5l1.9 5.1 5.1 1.9-5.1 1.9L12 17.5l-1.9-5.1L5 10.5l5.1-1.9z"/><path d="M18.5 16v4M16.5 18h4"/>',
+  howto: '<path d="M9.5 18h5M10.5 21h3M12 3a6 6 0 0 0-3.5 10.9V16h7v-2.1A6 6 0 0 0 12 3z"/>',
+};
+const NAV_NAME = { overview: 'Overview', insights: 'Insights', dictionary: 'Dictionary', phrases: 'Phrases', tones: 'Tones', agents: 'Agents', howto: 'How it works' };
+const ORDER = ['overview', 'insights', 'dictionary', 'phrases', 'tones', 'agents'];
+const navRow = k => `<button class="nav-row" data-key="${k}"><svg viewBox="0 0 24 24">${NAV_ICON[k]}</svg>${NAV_NAME[k]}</button>`;
+
+function openApp() {
+  if (win.dataset.mode === 'app') return;
+  flow.forEach(clearTimeout); flow = [];
+  illTimers.forEach(clearTimeout); illTimers = [];
+  helpers.innerHTML = '';
+  win.classList.remove('can-skip');
+  sound(sfx.open);
+  out(accessEl);
+  [...ill.children].forEach(c => out(c));
+  step(300, () => {
+    win.classList.add('morph');
+    [sky.querySelector('.glow'), sky.querySelector('.grid')].forEach(el =>
+      el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 650, easing: 'ease-out', fill: 'forwards' }));
+    win.dataset.mode = 'app';
+    acct.querySelector('.ok').textContent = 'Free';
+    buildSide();
+    [...appSide.children].forEach(c => c.style.opacity = 0);
+    page.innerHTML = '';
+  });
+  step(950, () => {
+    [...appSide.children].forEach((c, k) => { c.style.opacity = ''; rise(c, k * 70, 520); });
+    showPage('overview', true);
+  });
+  step(1250, () => win.classList.remove('morph'));
+  // The pill says hello once, where it will always be.
+  step(2100, () => {
+    hintpill.style.display = 'block';
+    hintpill.animate([{ opacity: 0, transform: 'translateX(-50%) translateY(14px) scale(.8)' }, { opacity: 1, transform: 'translateX(-50%)' }],
+                     { duration: 420, easing: 'cubic-bezier(.3,1.5,.5,1)', fill: 'both' });
+    sound(sfx.pop);
+  });
+  step(5600, () => hintpill.animate([{ opacity: 1 }, { opacity: 0, transform: 'translateX(-50%) translateY(10px)' }], { duration: 300, fill: 'forwards' })
+    .onfinish = () => hintpill.style.display = 'none');
+}
+function closeApp() {
+  delete win.dataset.mode;
+  win.classList.remove('morph');
+  appSide.innerHTML = ''; page.innerHTML = ''; pageKey = null;
+  hintpill.style.display = 'none';
+  hintpill.getAnimations().forEach(a => a.cancel());
+  acct.querySelector('.ok').textContent = 'Signed in';
+}
+function buildSide() {
+  const nudge = state.input === 'skipped' ? 'fn may miss in some apps'
+              : state.globe === 'skipped' ? 'A tap of fn opens emoji' : '';
+  appSide.innerHTML = `
+    <div class="ready">
+      <div class="st1"><span class="dot ping"></span>Ready</div>
+      <div class="kv">Hold <kbd>fn</kbd><span>to dictate</span></div>
+      <div class="kv"><kbd>fn</kbd><kbd>⌥</kbd><span>hands-free</span></div>
+      ${nudge ? `<div class="nudge"><span>${nudge}</span><button id="fix">Fix</button></div>` : ''}
+    </div>
+    <nav class="nav" id="nav"><div class="hl" id="hl"></div>
+      ${navRow('overview')}${navRow('insights')}<div class="nav-group">Voice</div>
+      ${navRow('dictionary')}${navRow('phrases')}${navRow('tones')}<div class="nav-group">Coding</div>${navRow('agents')}
+    </nav>
+    <div class="side-foot">${navRow('howto')}</div>`;
+  appSide.querySelectorAll('.nav .nav-row').forEach(b => b.onclick = () => showPage(b.dataset.key));
+  const fix = document.getElementById('fix');
+  if (fix) fix.onclick = () => { fix.parentElement.firstChild.textContent = 'Opens Settings › Permissions'; fix.remove(); };
+}
+
+// ── The pages, close to the real ones (sample numbers).
+const hour = new Date().getHours();
+const greet = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+const day = new Date().toLocaleDateString('en', { weekday: 'long' });
+const orbs = ['#3b82f6', '#f5c542', '#34c759', '#ff9f0a', '#e5484d', '#8e8e93', '#1d1d1f', '#5e5ce6']
+  .map(c => `<span><b style="background:${c}"></b></span>`).join('');
+const chart = (vals, labels, today) => `<div class="chart${labels ? '' : ' thin'}">${vals.map((v, k) =>
+  `<div class="col"><div class="bar ${k === vals.length - 1 && today ? 'today' : v ? 'fill' : ''}" data-grow style="height:${Math.max(6, v)}%"></div>${labels ? `<span>${labels[k]}</span>` : ''}</div>`).join('')}</div>`;
+const title = (t, add) => `<div class="pg-head"><div class="pg-title" role="heading" aria-level="1">${t}</div>${add ? `<button class="btn">+ ${add}</button>` : ''}</div>`;
+const banner = (h, p, extra = '', right = '') => `<div class="banner"><div><h3>${h}</h3><p>${p}</p>${extra}</div>${right}</div>`;
+const PAGES = {
+  overview: () => {
+    const first = (document.getElementById('acName').textContent || 'there').split(' ')[0];
+    return `${title(`${greet}, ${first}`)}<p class="pg-sub">${day} · the week so far</p>
+    ${banner('Talk anywhere you type', 'Hold fn in Slack, Mail, your editor or a terminal, and what you say lands at the cursor, cleaned up.', '<button class="btn">How it works</button>', `<div class="orbs">${orbs}</div>`)}
+    <div class="card stats"><div><div class="big" data-count="3763">3,763</div><div class="cap2">words this week</div>
+      <div class="minis"><div><b data-count="3763">3,763</b><span>all time</span></div><div><b data-count="107">107</b><span>wpm pace</span></div><div><b data-count="173">173</b><span>fixes</span></div></div></div>
+      ${chart([0, 16, 34, 12, 0, 46, 100], ['THU', 'FRI', 'SAT', 'SUN', 'MON', 'TUE', 'TODAY'], true)}</div>
+    <div class="sec">Recent <small>Kept on this Mac</small></div>
+    <div class="card list">
+      <div class="li"><span class="t">4:05 pm</span><span>Can we move the design review to Thursday? I want to try the new onboarding first.</span><span class="m">18 words · 0:07</span></div>
+      <div class="li"><span class="t">3:01 pm</span><span>Ship the welcome window behind a flag, then test it with five people.</span><span class="m">13 words · 0:05</span></div>
+      <div class="li"><span class="t">2:12 pm</span><span>Remind me to reply about the lease tonight.</span><span class="m">8 words · 0:03</span></div>
+    </div>`;
+  },
+  insights: () => `${title('Insights')}<div class="pg-gap"></div>
+    <div class="card tiles4"><div><div class="big" data-count="35" data-suffix="m">35m</div><div class="cap2">Time dictating</div></div>
+      <div><div class="big" data-count="3763">3,763</div><div class="cap2">Words spoken</div></div>
+      <div><div class="big" data-count="107">107</div><div class="cap2">Words per minute</div></div>
+      <div><div class="big" data-count="12" data-suffix="/30">12/30</div><div class="cap2">Days used</div></div></div>
+    <div class="card"><div class="sec" style="margin-top:0">Last 30 days</div>
+      ${chart([0,0,8,14,0,22,30,0,12,18,0,0,26,40,8,0,0,34,20,0,16,0,28,44,12,0,0,38,56,100], null, true)}</div>`,
+  dictionary: () => `${title('Dictionary', 'Add new')}<div class="pg-gap"></div>
+    ${banner('Fix a word once. It stays fixed.', 'Correct a word by hand right after it lands, and SayControl learns it.')}
+    <div class="card list">${[['Cloud Code', 'Claude Code', 1, 3], ['Tenstack', 'TanStack', 0, 2], ['Seiko Troll', 'SayControl', 0, 2], ['paraquette', 'parakeet', 1, 1], ['art browser', 'Arc browser', 0, 1]]
+      .map(([a, b, l, n]) => `<div class="li dict"><span>${a}</span><span class="ar">→</span><b style="font-weight:600">${b}</b>${l ? '<span class="badge">Learned</span>' : '<span></span>'}<span class="m">${n}×</span></div>`).join('')}</div>`,
+  phrases: () => `${title('Phrases', 'Add new')}<div class="pg-gap"></div>
+    ${banner('Say a phrase. Get the whole thing.', 'Short phrases you say that turn into the text you type all the time.')}
+    <div class="card list">${[['my email address', 'you@example.com'], ['my calendar link', 'cal.com/you/30min'], ['my address', '221B Baker Street, London']]
+      .map(([a, b]) => `<div class="li dict"><span>“${a}”</span><span class="ar">→</span><b style="font-weight:600">${b}</b><span></span><span></span></div>`).join('')}</div>`,
+  tones: () => `${title('Tones')}<div class="pg-gap"></div>
+    ${banner('The right tone in every app', 'Where you dictate sets the tone. Choose how each kind of place reads.')}
+    <div class="card row2"><div><b>Auto cleanup</b><p>None pastes what was heard. Light takes the ums and stutters. Moderate drops false starts too.</p></div>
+      <div class="seg" style="flex:none"><span>None</span><span class="on">Light</span><span>Moderate</span></div></div>
+    <div class="tones"><div class="on"><b>Casual</b>Talks the way you text.<q>hey so I was thinking maybe we could grab dinner tomorrow</q></div>
+      <div><b>Balanced</b>Ordinary sentences, still relaxed.<q>Hey, so I was thinking maybe we could grab dinner tomorrow.</q></div>
+      <div><b>Polished</b>Careful punctuation and breaks.<q>Hey, I was thinking we could grab dinner tomorrow.</q></div></div>`,
+  agents: () => `${title('Agents')}<div class="pg-gap"></div>
+    ${banner('Your coding agents, by voice', 'Talk to Claude Code, Codex, Cursor and OpenCode, and hear them back.')}
+    <div class="agents">${[['Claude Code', '#d97757', 'Connected'], ['Codex', '#1d1d1f', 'Connected'], ['Cursor', '#5e5ce6', 'Not set up'], ['OpenCode', '#8e8e93', 'Not set up']]
+      .map(([n, c, st]) => `<div><i style="background:${c}"></i><div><b>${n}</b><span>${st}</span></div></div>`).join('')}</div>`,
+};
+
+// ── Page motion: the three options to compare.
+let motion = 'subtle', pageKey = null, navToken = 0;
+const MOTION = {
+  subtle:     { outMs: 110, dist: 10, dur: 380, stagger: 40, blur: 0, scale: 1 },
+  expressive: { outMs: 170, dist: 22, dur: 560, stagger: 70, blur: 6, scale: .985 },
+};
+function moveHighlight(key) {
+  const nav = document.getElementById('nav'), hl = document.getElementById('hl');
+  if (!nav) return;
+  const row = nav.querySelector(`[data-key="${key}"]`);
+  nav.querySelectorAll('.nav-row').forEach(r => r.classList.toggle('on', r === row));
+  const spring = motion === 'expressive' ? 'transform .42s cubic-bezier(.3,1.45,.45,1)' : 'transform .3s cubic-bezier(.3,1.2,.5,1)';
+  hl.style.transition = motion === 'off' || !pageKey ? 'none' : spring;
+  hl.style.transform = `translateY(${row.offsetTop}px)`;
+}
+function showPage(key, first = false) {
+  if (key === pageKey && !first) return;
+  const token = ++navToken;
+  const dir = pageKey && ORDER.indexOf(key) < ORDER.indexOf(pageKey) ? -1 : 1;
+  moveHighlight(key);
+  const hadPage = !!pageKey;
+  pageKey = key;
+  const render = () => {
+    if (token !== navToken) return;
+    page.getAnimations({ subtree: true }).forEach(a => a.cancel());
+    page.innerHTML = PAGES[key]();
+    page.scrollTop = 0;
+    enter(dir, first);
+  };
+  if (motion === 'off' || !hadPage) return render();
+  const m = MOTION[motion];
+  page.getAnimations().forEach(a => a.cancel());
+  page.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: `translateY(${-4 * dir}px)` }],
+               { duration: m.outMs, easing: 'ease-in', fill: 'forwards' }).onfinish = render;
+}
+function enter(dir, first) {
+  const counts = page.querySelectorAll('[data-count]');
+  if (motion === 'off') return;
+  const m = MOTION[motion];
+  [...page.children].forEach((el, k) => el.animate(
+    [{ opacity: 0, transform: `translateY(${m.dist * dir}px) scale(${m.scale})`, filter: `blur(${m.blur}px)` },
+     { opacity: 1, transform: 'none', filter: 'blur(0)' }],
+    { duration: m.dur, delay: k * m.stagger + (first ? 120 : 0), easing: EASE, fill: 'both' }));
+  page.querySelectorAll('[data-grow]').forEach((b, k) => b.animate(
+    [{ transform: 'scaleY(0)' }, { transform: 'scaleY(1)' }],
+    { duration: m.dur + 160, delay: 160 + k * (motion === 'expressive' ? 30 : 18) + (first ? 120 : 0), easing: EASE, fill: 'both' }));
+  counts.forEach(el => {
+    const to = +el.dataset.count, suffix = el.dataset.suffix || '', start = performance.now() + 120, len = motion === 'expressive' ? 900 : 650;
+    const f = now => {
+      if (!el.isConnected) return;
+      const k = Math.min(1, Math.max(0, (now - start) / len)), e = 1 - Math.pow(1 - k, 3);
+      el.textContent = Math.round(to * e).toLocaleString('en') + suffix;
+      if (k < 1) requestAnimationFrame(f);
+    };
+    requestAnimationFrame(f);
+  });
+}
+document.querySelectorAll('[data-motion]').forEach(b => b.addEventListener('click', () => {
+  motion = b.dataset.motion;
+  document.querySelectorAll('[data-motion]').forEach(x => x.setAttribute('aria-pressed', x === b));
+}));
+
+// ── Straight to the app, for looking at page motion.
+document.getElementById('jump').addEventListener('click', () => {
+  audio();
+  reset();
+  playBtn.style.display = 'none';
+  desk.classList.add('live');
+  document.getElementById('acAv').textContent = 'S';
+  document.getElementById('acName').textContent = 'Sorower Hossan';
+  document.getElementById('acMail').textContent = 'sorower@example.com';
+  win.classList.add('signed');
+  form.dataset.phase = 'access'; sky.dataset.mode = 'access';
+  renderPerms();
+  PERMS.forEach(p => markRow(p.id, 'done'));
+  openApp();
+});
+
+playBtn.addEventListener('click', () => playEntrance(true));
+document.getElementById('replay').addEventListener('click', () => playEntrance(true));
+</script>
+</body>
+</html>

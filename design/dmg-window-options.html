@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DMG window options</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap">
+<style>
+/* The install window a downloaded DMG opens to. Finder shows a 660 x 400
+   picture with the two icons laid on it at fixed points (app 180,175,
+   Applications 480,175, centres, 128 px), and draws the names under them
+   itself: black in Light Mode, WHITE in Dark Mode. Whatever sits behind a
+   name has to read in both. The bottom ~28 px is covered by Finder's bar. */
+:root {
+  --paper: #faf8f3; --ink: #1e1b16; --muted: #7a7368; --ember: #c4451a; --ember-hot: #e5501f;
+  --page: #ece9e3;
+}
+* { box-sizing: border-box; margin: 0; }
+body { font: 14px/1.5 -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif; color: var(--ink);
+       background: var(--page); padding: 32px 16px 64px; }
+header { max-width: 1440px; margin: 0 auto 24px; }
+h1 { font: 600 26px/1.2 Fraunces, Georgia, serif; letter-spacing: -.01em; }
+header p { color: #5d574e; max-width: 760px; margin-top: 6px; }
+.modes { display: inline-flex; gap: 4px; margin-top: 14px; background: #fff; border-radius: 999px; padding: 4px;
+         box-shadow: 0 0 0 1px #ddd8cf; }
+.modes button { border: 0; background: none; font: inherit; padding: 6px 14px; border-radius: 999px; cursor: pointer; color: #5d574e; }
+.modes button[aria-pressed=true] { background: var(--ink); color: #fff; }
+.grid { max-width: 1440px; margin: 0 auto; display: grid; gap: 36px 28px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 680px), 1fr)); }
+figure { display: grid; gap: 12px; justify-items: center; }
+figcaption { max-width: 660px; width: 100%; }
+figcaption b { font-size: 15px; }
+figcaption span { color: #5d574e; display: block; margin-top: 2px; }
+
+/* The Finder window: scaled down on a narrow screen, never wider than it. */
+.win-wrap { width: min(100%, 660px); aspect-ratio: 660 / 428; position: relative; }
+.win { position: absolute; left: 0; top: 0; width: 660px; height: 428px; transform-origin: 0 0;
+       border-radius: 12px; overflow: hidden; background: #fff;
+       box-shadow: 0 0 0 .5px rgb(0 0 0 / .25), 0 22px 60px rgb(20 18 14 / .28), 0 4px 12px rgb(20 18 14 / .12); }
+.bar { height: 28px; display: flex; align-items: center; gap: 8px; padding: 0 12px; background: #f6f5f3;
+       border-bottom: .5px solid rgb(0 0 0 / .12); font: 600 13px -apple-system, sans-serif; color: #3a3833; }
+.dots { display: flex; gap: 8px; margin-right: 6px; }
+.dots i { width: 12px; height: 12px; border-radius: 50%; display: block; }
+.dots i:nth-child(1) { background: #ff5f57; } .dots i:nth-child(2) { background: #febc2e; } .dots i:nth-child(3) { background: #28c840; }
+.bar img { width: 16px; height: 16px; }
+.content { position: relative; width: 660px; height: 400px; overflow: hidden; }
+.foot { position: absolute; left: 0; right: 0; bottom: 0; height: 28px; background: rgb(246 245 243 / .92);
+        border-top: .5px solid rgb(0 0 0 / .12); display: flex; align-items: center; gap: 6px; padding: 0 12px;
+        font-size: 12px; color: #6b675f; }
+.foot img { width: 14px; height: 14px; }
+.dark .bar { background: #2b2a28; color: #e8e6e1; border-bottom-color: rgb(255 255 255 / .1); }
+.dark .foot { background: rgb(43 42 40 / .92); color: #a9a59d; border-top-color: rgb(255 255 255 / .1); }
+.dark .win { background: #1f1e1c; }
+
+/* Finder's own icons and names, laid where dmgbuild puts them. */
+.icon { position: absolute; width: 128px; height: 128px; transform: translate(-50%, -50%); z-index: 3; }
+.icon img { width: 128px; height: 128px; display: block; }
+.app-icon { left: 180px; top: 175px; } .folder-icon { left: 480px; top: 175px; }
+.icon .alias { position: absolute; left: 6px; bottom: 6px; width: 30px; height: 30px; border-radius: 50%; background: #f2f2f2;
+               box-shadow: 0 1px 2px rgb(0 0 0 / .35); display: grid; place-items: center; font: 700 15px sans-serif; color: #222; }
+.name { position: absolute; top: 247px; transform: translateX(-50%); z-index: 3; font: 13px -apple-system, sans-serif;
+        color: #000; white-space: nowrap; }
+.app-name { left: 180px; } .folder-name { left: 480px; }
+.dark .name { color: #fff; }
+.art { position: absolute; inset: 0; }
+svg.art { width: 660px; height: 400px; }
+
+/* ---------- A: Paper, drawn path ---------- */
+.a div.art { background: radial-gradient(120% 90% at 50% 0%, #fffdf8 0%, #f7f2e9 60%, #efe7da 100%); }
+.a .pad { position: absolute; width: 196px; height: 196px; border-radius: 48px; transform: translate(-50%, -50%);
+          top: 192px; background: linear-gradient(180deg, #fff, #fbf7f0); box-shadow: 0 0 0 1px rgb(30 27 22 / .07), 0 22px 44px -20px rgb(120 70 30 / .45), 0 2px 6px rgb(120 70 30 / .08); }
+.a .pad.l { left: 180px; } .a .pad.r { left: 480px; }
+.a .tag { position: absolute; top: 243px; height: 22px; transform: translateX(-50%); border-radius: 999px; background: #8f8577; }
+.a .tag.l { left: 180px; width: 96px; } .a .tag.r { left: 480px; width: 96px; }
+.a .title { position: absolute; top: 300px; width: 100%; text-align: center; font: 600 23px/1.2 Fraunces, Georgia, serif; color: var(--ink); letter-spacing: -.01em; }
+.a .sub { position: absolute; top: 334px; width: 100%; text-align: center; font-size: 12.5px; color: var(--muted); }
+
+/* ---------- B: Dusk, like the website ---------- */
+.b div.art { background:
+  radial-gradient(90% 70% at 50% 110%, rgb(255 255 255 / .18), transparent 60%),
+  linear-gradient(180deg, #fbe3cf 0%, #f4b48c 42%, #dc7c52 72%, #b8582f 100%); }
+.b .pad { position: absolute; width: 184px; height: 212px; border-radius: 34px; transform: translateX(-50%); top: 98px;
+          background: rgb(255 255 255 / .34); backdrop-filter: blur(2px);
+          box-shadow: inset 0 0 0 1px rgb(255 255 255 / .55), 0 24px 50px -24px rgb(90 30 10 / .55); }
+.b .pad.l { left: 180px; } .b .pad.r { left: 480px; }
+.b .title { position: absolute; top: 32px; width: 100%; text-align: center; font: 600 24px/1.2 Fraunces, Georgia, serif; color: #2a1a12; letter-spacing: -.01em; }
+.b .sub { position: absolute; top: 334px; width: 100%; text-align: center; font-size: 12.5px; color: rgb(255 248 240 / .92); }
+
+/* ---------- C: Ember band ---------- */
+.c div.art { background: var(--paper); }
+.c .band { position: absolute; left: 0; right: 0; top: 92px; height: 196px;
+           background: linear-gradient(90deg, #a83a14 0%, #c4451a 45%, #d8602e 100%); }
+.c .band::after { content: ""; position: absolute; inset: 0;
+  background: radial-gradient(60% 120% at 50% 50%, rgb(255 255 255 / .12), transparent 70%); }
+.c .title { position: absolute; top: 30px; width: 100%; text-align: center; font: 600 23px/1.2 Fraunces, Georgia, serif; color: var(--ink); letter-spacing: -.01em; }
+.c .steps { position: absolute; top: 318px; width: 100%; display: flex; justify-content: center; gap: 26px; font-size: 12.5px; color: var(--muted); }
+.c .steps b { display: inline-grid; place-items: center; width: 19px; height: 19px; border-radius: 50%; background: var(--ink); color: #fff;
+              font-size: 11px; margin-right: 7px; vertical-align: 1px; }
+
+/* ---------- Today, for comparison ---------- */
+.t div.art { background: var(--paper); }
+.t .title { position: absolute; top: 326px; width: 100%; text-align: center; font: 600 20px/1.2 Fraunces, Georgia, serif; }
+</style>
+</head>
+<body>
+<header>
+  <h1>The install window: three options</h1>
+  <p>What a downloaded <code>SayControl.dmg</code> opens to. Finder lays the two icons on a fixed picture and writes their names itself, black in Light Mode and <strong>white in Dark Mode</strong>, so each option is shown in both. Everything here can be drawn by <code>dmg_background.swift</code>: no motion, nothing to click but the icons.</p>
+  <div class="modes" role="group" aria-label="Finder appearance">
+    <button type="button" data-mode="light" aria-pressed="true">Light Mode</button>
+    <button type="button" data-mode="dark" aria-pressed="false">Dark Mode</button>
+  </div>
+</header>
+
+<div class="grid">
+
+  <figure>
+    <div class="win-wrap"><div class="win a" data-win>
+      <div class="bar"><span class="dots"><i></i><i></i><i></i></span><img src="dmg/app-icon.png" alt="">SayControl</div>
+      <div class="content">
+        <div class="art"></div>
+        <div class="pad l"></div><div class="pad r"></div>
+        <div class="tag l"></div><div class="tag r"></div>
+        <svg class="art" viewBox="0 0 660 400" aria-hidden="true">
+          <defs><linearGradient id="ga" x1="0" x2="1"><stop offset="0" stop-color="#e5501f" stop-opacity=".35"/><stop offset="1" stop-color="#c4451a"/></linearGradient></defs>
+          <path d="M 284 160 C 330 104, 384 104, 410 146" fill="none" stroke="url(#ga)" stroke-width="4" stroke-linecap="round" stroke-dasharray="0.1 11"/>
+          <path d="M 410 128 L 411 147 L 393 140" fill="none" stroke="#c4451a" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <div class="icon app-icon"><img src="dmg/app-icon.png" alt="SayControl"></div>
+        <div class="icon folder-icon"><img src="dmg/applications.png" alt="Applications"><span class="alias">↗</span></div>
+        <div class="name app-name">SayControl</div><div class="name folder-name">Applications</div>
+        <div class="title">Drag SayControl into Applications</div>
+        <div class="sub">Then open it from Applications. It walks you through the rest.</div>
+        <div class="foot"><img src="dmg/app-icon.png" alt="">SayControl</div>
+      </div>
+    </div></div>
+    <figcaption><b>A · Paper, drawn path</b><span>Today's warm paper, made finished: each icon on a soft raised pad, a dotted ember path arcing from the app into the folder, the title moved up clear of Finder's bar. A quiet taupe tag sits behind each name, part of the picture, so black names (Light Mode) and white ones (Dark Mode) both read.</span></figcaption>
+  </figure>
+
+  <figure>
+    <div class="win-wrap"><div class="win b" data-win>
+      <div class="bar"><span class="dots"><i></i><i></i><i></i></span><img src="dmg/app-icon.png" alt="">SayControl</div>
+      <div class="content">
+        <div class="art"></div>
+        <div class="title">Drag SayControl into Applications</div>
+        <div class="pad l"></div><div class="pad r"></div>
+        <svg class="art" viewBox="0 0 660 400" aria-hidden="true">
+          <g fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M 300 160 L 314 175 L 300 190" opacity=".35"/>
+            <path d="M 322 160 L 336 175 L 322 190" opacity=".65"/>
+            <path d="M 344 160 L 358 175 L 344 190"/>
+          </g>
+        </svg>
+        <div class="icon app-icon"><img src="dmg/app-icon.png" alt="SayControl"></div>
+        <div class="icon folder-icon"><img src="dmg/applications.png" alt="Applications"><span class="alias">↗</span></div>
+        <div class="name app-name">SayControl</div><div class="name folder-name">Applications</div>
+        <div class="sub">Then open it from Applications. It walks you through the rest.</div>
+        <div class="foot"><img src="dmg/app-icon.png" alt="">SayControl</div>
+      </div>
+    </div></div>
+    <figcaption><b>B · Dusk, like the website</b><span>The site's warm dusk wallpaper, light at the top for the title and deepening toward the names, so black and white names both read with no tags. Frosted glass pads hold the icons; three white chevrons point the way.</span></figcaption>
+  </figure>
+
+  <figure>
+    <div class="win-wrap"><div class="win c" data-win>
+      <div class="bar"><span class="dots"><i></i><i></i><i></i></span><img src="dmg/app-icon.png" alt="">SayControl</div>
+      <div class="content">
+        <div class="art"></div>
+        <div class="title">Drag SayControl into Applications</div>
+        <div class="band"></div>
+        <svg class="art" viewBox="0 0 660 400" aria-hidden="true">
+          <path d="M 268 175 L 384 175" stroke="#fff" stroke-width="5" stroke-linecap="round" opacity=".9"/>
+          <path d="M 372 161 L 392 175 L 372 189" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <div class="icon app-icon"><img src="dmg/app-icon.png" alt="SayControl"></div>
+        <div class="icon folder-icon"><img src="dmg/applications.png" alt="Applications"><span class="alias">↗</span></div>
+        <div class="name app-name">SayControl</div><div class="name folder-name">Applications</div>
+        <div class="steps"><span><b>1</b>Drag it in</span><span><b>2</b>Open it from Applications</span></div>
+        <div class="foot"><img src="dmg/app-icon.png" alt="">SayControl</div>
+      </div>
+    </div></div>
+    <figcaption><b>C · Ember band</b><span>A bold strip of the brand's ember runs through the icon row, with a clean white arrow. Black names read on it in Light Mode and white ones in Dark Mode. Two numbered steps underneath say what comes after the drag.</span></figcaption>
+  </figure>
+
+  <figure>
+    <div class="win-wrap"><div class="win t" data-win>
+      <div class="bar"><span class="dots"><i></i><i></i><i></i></span><img src="dmg/app-icon.png" alt="">SayControl</div>
+      <div class="content">
+        <div class="art"></div>
+        <svg class="art" viewBox="0 0 660 400" aria-hidden="true">
+          <path d="M 258 175 L 384 175" stroke="#c4451a" stroke-width="5" stroke-linecap="round"/>
+          <path d="M 402 175 L 378 161 L 378 189 Z" fill="#c4451a"/>
+        </svg>
+        <div class="icon app-icon"><img src="dmg/app-icon.png" alt="SayControl"></div>
+        <div class="icon folder-icon"><img src="dmg/applications.png" alt="Applications"><span class="alias">↗</span></div>
+        <div class="name app-name">SayControl</div><div class="name folder-name">Applications</div>
+        <div class="title">Drag SayControl into Applications</div>
+        <div class="foot"><img src="dmg/app-icon.png" alt="">SayControl</div>
+      </div>
+    </div></div>
+    <figcaption><b>Today (with the icon fixed)</b><span>For comparison: the plain arrow, the title half under Finder's bar, and in Dark Mode white names on cream.</span></figcaption>
+  </figure>
+
+</div>
+
+<script>
+// Fit each 660 px window to its column.
+function fit() {
+  document.querySelectorAll('.win-wrap').forEach(w => {
+    const s = w.clientWidth / 660
+    w.querySelector('.win').style.transform = `scale(${s})`
+  })
+}
+addEventListener('resize', fit); fit()
+// Light / Dark: only Finder's chrome and its name colour change, as they do on a Mac.
+const buttons = document.querySelectorAll('.modes button')
+function mode(m) {
+  buttons.forEach(b => b.setAttribute('aria-pressed', String(b.dataset.mode === m)))
+  document.querySelectorAll('[data-win]').forEach(w => { w.classList.toggle('dark', m === 'dark'); w.classList.toggle('light', m === 'light') })
+  document.querySelectorAll('[data-darkonly]').forEach(t => { t.style.display = m === 'dark' ? '' : 'none' })
+}
+buttons.forEach(b => b.addEventListener('click', () => mode(b.dataset.mode)))
+mode('light')
+</script>
+</body>
+</html>
