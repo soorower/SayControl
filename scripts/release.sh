@@ -41,7 +41,7 @@ if [ "$LOCAL" = "0" ] && [ -n "$(git status --porcelain)" ]; then
 fi
 
 VERSION=$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" Info.plist)
-BUILD=$(git rev-list --count HEAD)
+BUILD=$(./scripts/build_number.sh)
 COMMIT=$(git rev-parse --short HEAD)
 TAG="v$VERSION"
 CDN="${SAYCTRL_CDN:-https://cdn.sayctrl.com}"
@@ -73,6 +73,18 @@ case "$PREVIOUS" in
   "Developer ID Application"*)
     if [ "$PREVIOUS" != "$SIGN_IDENTITY" ] && [ "${SAYCTRL_ALLOW_IDENTITY_CHANGE:-0}" != "1" ]; then
       fail "the live release is signed by '$PREVIOUS', this one would be '$SIGN_IDENTITY'. Users would lose their permissions. SAYCTRL_ALLOW_IDENTITY_CHANGE=1 to do it anyway."
+    fi ;;
+esac
+# Sparkle installs only a higher build, so one at or below the live release
+# would reach no one, with no error anywhere. The same build is allowed only
+# as a re-run of the same version.
+LIVE_BUILD=$(printf '%s' "$LIVE_JSON" | plutil -extract build raw -o - - 2>/dev/null || true)
+LIVE_VERSION=$(printf '%s' "$LIVE_JSON" | plutil -extract version raw -o - - 2>/dev/null || true)
+case "$LIVE_BUILD" in
+  ''|*[!0-9]*) ;;
+  *)
+    if [ "$BUILD" -lt "$LIVE_BUILD" ] || { [ "$BUILD" -eq "$LIVE_BUILD" ] && [ "$LIVE_VERSION" != "$VERSION" ]; }; then
+      fail "this is build $BUILD and the live release ($LIVE_VERSION) is build $LIVE_BUILD. The updater only installs a higher build: raise HISTORY in scripts/build_number.sh."
     fi ;;
 esac
 if [ "$LOCAL" = "0" ]; then

@@ -71,12 +71,10 @@ lipo -create build/SayCtrl-arm64 build/SayCtrl-x86_64 -output "$APP/Contents/Mac
 echo "Universal binary: $(lipo -archs "$APP/Contents/MacOS/SayCtrl")"
 
 cp Info.plist "$APP/Contents/Info.plist"
-# CFBundleVersion is the build number Sparkle compares, so it has to climb on
-# every release without anyone remembering to bump it. The commit count does
-# that on its own: main only ever grows, and the production clone carries the
-# same commits, so the two folders agree. CFBundleShortVersionString (the
-# "2.2" people see) stays a hand-set value in Info.plist.
-BUILD_NUMBER=$(git rev-list --count HEAD 2>/dev/null || echo 1)
+# CFBundleVersion is the build number Sparkle compares; build_number.sh says
+# how it climbs on its own. CFBundleShortVersionString (the "0.1.8" people
+# see) stays a hand-set value in Info.plist.
+BUILD_NUMBER=$(./scripts/build_number.sh)
 /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $BUILD_NUMBER" "$APP/Contents/Info.plist"
 echo "Build number: $BUILD_NUMBER"
 if [ "$DEV" = "1" ]; then
