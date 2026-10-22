@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Site hero options</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700&display=swap">
+<style>
+/* The top of saycontrol.com once the app is open source: the motto, the X
+   demo, and "more than dictation". Two options, A and B, from the bar at the
+   top; light and dark too. Colours, type and radii are SayCtrl-Web's
+   src/styles.css. Every spoken phrase is a real accepted phrasing from
+   SayCtrl-Web/src/data/controls.ts; the video is the X demo v2 on the CDN. */
+:root {
+  --paper: #fafaf8; --surface: #fff; --sunk: #f3f2ef; --hairline: #e5e3de;
+  --ink: #17150f; --ink2: #3b3830; --muted: #6b675f; --faint: #9f9a91;
+  --ember: #d4491c; --ember-soft: rgb(212 73 28 / .1); --ember-ring: rgb(212 73 28 / .32);
+  --moss: #3f7a50; --moss-soft: rgb(63 122 80 / .12);
+  --sky1: #fff3ea; --sky2: #fbe3d3;
+  --shadow-soft: 0 1px 2px rgb(23 21 15 / .04), 0 4px 14px rgb(23 21 15 / .05);
+  --shadow-deep: 0 4px 8px rgb(23 21 15 / .08), 0 30px 80px rgb(23 21 15 / .18);
+  --ease: cubic-bezier(.2,.8,.2,1);
+  --font-display: 'Bricolage Grotesque', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Inter, system-ui, sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, monospace;
+  color-scheme: light;
+}
+:root[data-theme="dark"] {
+  --paper: #121110; --surface: #1b1a18; --sunk: #181715; --hairline: #2c2a26;
+  --ink: #f1efea; --ink2: #cfcbc3; --muted: #9c978e; --faint: #6c6861;
+  --ember: #f2693c; --ember-soft: rgb(242 105 60 / .14); --ember-ring: rgb(242 105 60 / .4);
+  --moss: #6fa07b; --moss-soft: rgb(111 160 123 / .14);
+  --sky1: #16130f; --sky2: #0f0d0b;
+  --shadow-soft: 0 1px 2px rgb(0 0 0 / .3), 0 4px 14px rgb(0 0 0 / .3);
+  --shadow-deep: 0 4px 8px rgb(0 0 0 / .3), 0 30px 80px rgb(0 0 0 / .5);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--paper); color: var(--ink); font: 16px/1.55 var(--font-sans); -webkit-font-smoothing: antialiased; }
+a { color: inherit; text-decoration: none; }
+.display { font-family: var(--font-display); font-weight: 600; letter-spacing: -0.035em; line-height: 1.02; }
+.shell { width: min(1120px, 100% - 32px); margin: 0 auto; }
+
+/* The demo bar: not part of the site. */
+.bar { position: sticky; top: 0; z-index: 50; display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; padding: 10px 16px; background: #23211d; color: #f1efea; font-size: 13px; }
+.bar b { font-weight: 600; }
+.seg { display: inline-flex; background: rgb(255 255 255 / .08); border-radius: 9px; padding: 3px; }
+.seg button { border: 0; background: transparent; color: #cfcbc3; font: 500 13px var(--font-sans); padding: 5px 12px; border-radius: 7px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: #f1efea; color: #17150f; }
+.bar .note { color: #9c978e; flex: 1 1 320px; }
+
+/* Site header */
+header.site { display: flex; align-items: center; justify-content: space-between; height: 64px; }
+.logo { display: inline-flex; align-items: center; gap: 8px; font: 650 19px var(--font-display); letter-spacing: -0.02em; }
+.logo i { font-style: normal; color: var(--ember); }
+.logo svg { width: 20px; height: 20px; }
+nav.top { display: flex; align-items: center; gap: 26px; font-size: 14.5px; color: var(--ink2); }
+.gh { display: inline-flex; align-items: center; gap: 7px; height: 34px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--hairline); background: var(--surface); font-weight: 550; color: var(--ink); }
+.gh svg { width: 16px; height: 16px; }
+.gh .stars { padding-left: 8px; margin-left: 2px; border-left: 1px solid var(--hairline); color: var(--muted); font-weight: 500; }
+@media (max-width: 720px) { nav.top .hide-sm { display: none; } }
+
+/* Hero */
+.hero { position: relative; overflow: hidden; background: radial-gradient(120% 80% at 50% 0%, var(--sky1), var(--paper) 70%); }
+:root[data-theme="dark"] .hero { background: radial-gradient(120% 80% at 50% 0%, #1c1712, var(--paper) 70%); }
+.hero .dots { position: absolute; inset: 0; background-image: radial-gradient(rgb(127 120 110 / .18) 1px, transparent 1px); background-size: 22px 22px; mask-image: linear-gradient(to bottom, #000 30%, transparent 85%); pointer-events: none; }
+.hero-inner { position: relative; text-align: center; padding: 56px 0 40px; }
+.pill-os { display: inline-flex; align-items: center; gap: 8px; height: 34px; padding: 0 14px 0 6px; border-radius: 999px; background: var(--surface); border: 1px solid var(--hairline); box-shadow: var(--shadow-soft); font-size: 14px; color: var(--ink2); }
+.pill-os .tag { display: inline-flex; align-items: center; height: 24px; padding: 0 9px; border-radius: 999px; background: var(--moss-soft); color: var(--moss); font-weight: 650; font-size: 12.5px; letter-spacing: .01em; }
+.pill-os svg { width: 15px; height: 15px; }
+h1.big { font-size: clamp(2.6rem, 6.6vw, 4.9rem); margin: 22px auto 0; max-width: 15ch; }
+h1.big .act { display: block; color: var(--ember); min-height: 1.04em; }
+h1.big .act span { display: inline-block; animation: rise .5s var(--ease) both; }
+@keyframes rise { from { opacity: 0; transform: translateY(.25em); filter: blur(6px); } to { opacity: 1; transform: none; filter: none; } }
+.sub { max-width: 41rem; margin: 20px auto 0; font-size: 1.16rem; line-height: 1.6; color: var(--ink2); text-wrap: balance; }
+.cta { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin-top: 30px; }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; height: 52px; padding: 0 24px; border-radius: 13px; font-weight: 600; font-size: 1rem; letter-spacing: -.01em; transition: transform .2s var(--ease); }
+.btn:hover { transform: translateY(-1px); }
+.btn svg { width: 17px; height: 17px; }
+.btn.primary { background: var(--ink); color: var(--paper); box-shadow: var(--shadow-deep); }
+.btn.ghost { background: var(--surface); color: var(--ink); border: 1px solid var(--hairline); }
+.btn .small { font-weight: 500; color: var(--muted); font-size: .86rem; }
+.fine { margin-top: 14px; font-size: 13px; color: var(--faint); }
+.balloon { display: inline-flex; align-items: center; gap: 10px; height: 38px; padding: 0 16px 0 12px; border-radius: 999px; background: #1d1b18; color: #f1efea; font-size: 14px; box-shadow: var(--shadow-soft); }
+.balloon .wave { display: inline-flex; gap: 2px; align-items: center; }
+.balloon .wave i { width: 2px; border-radius: 1px; background: #f2693c; animation: wav 1s ease-in-out infinite; }
+@keyframes wav { 0%,100% { height: 6px; } 50% { height: 14px; } }
+.balloon-row { height: 46px; display: flex; justify-content: center; align-items: flex-end; margin-top: 18px; }
+
+/* Video */
+.video-card { position: relative; margin: 8px auto 0; max-width: 980px; border-radius: 22px; overflow: hidden; box-shadow: var(--shadow-deep); border: 1px solid var(--hairline); background: #000; aspect-ratio: 16/9; }
+.video-card video { width: 100%; height: 100%; display: block; }
+.video-cap { text-align: center; margin: 14px 0 0; color: var(--muted); font-size: 14px; }
+
+/* Types it / does it (option B) */
+.vs { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; max-width: 900px; margin: 0 auto; }
+.vs .col { border-radius: 18px; padding: 22px; background: var(--surface); border: 1px solid var(--hairline); box-shadow: var(--shadow-soft); text-align: left; }
+.vs .col.us { border-color: var(--ember-ring); box-shadow: 0 0 0 4px var(--ember-soft), var(--shadow-soft); }
+.vs .who { font: 600 14px var(--font-sans); color: var(--muted); }
+.vs .us .who { color: var(--ember); }
+.vs .box { margin-top: 12px; border-radius: 12px; border: 1px solid var(--hairline); background: var(--paper); padding: 14px; min-height: 92px; font-size: 15px; }
+.vs .box .shot { display: inline-block; width: 74px; height: 46px; border-radius: 6px; vertical-align: middle; margin-right: 8px; background: linear-gradient(135deg, #fadcc3, #f0a578); border: 1px solid var(--hairline); }
+.vs .squig { text-decoration: underline wavy #d4491c; text-underline-offset: 3px; }
+.vs .verdict { font: 650 1.9rem var(--font-display); letter-spacing: -.03em; margin-top: 14px; color: var(--faint); }
+.vs .us .verdict { color: var(--ember); }
+@media (max-width: 680px) { .vs { grid-template-columns: 1fr; } }
+
+/* Sections */
+section.band { padding: 84px 0; }
+.kicker { font: 650 12.5px var(--font-sans); letter-spacing: .12em; text-transform: uppercase; color: var(--ember); text-align: center; }
+h2.title { font-size: clamp(2rem, 4.2vw, 3.1rem); text-align: center; margin: 12px auto 0; max-width: 20ch; }
+.lede { text-align: center; max-width: 40rem; margin: 16px auto 0; color: var(--ink2); font-size: 1.08rem; text-wrap: balance; }
+.grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: 44px; }
+@media (max-width: 980px) { .grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 520px) { .grid { grid-template-columns: 1fr; } }
+.card { border-radius: 16px; background: var(--surface); border: 1px solid var(--hairline); box-shadow: var(--shadow-soft); padding: 18px; transition: transform .25s var(--ease), box-shadow .25s var(--ease); }
+.card:hover { transform: translateY(-2px); box-shadow: var(--shadow-deep); }
+.card .ico { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; background: var(--ember-soft); color: var(--ember); }
+.card .ico svg { width: 18px; height: 18px; }
+.card .say { margin-top: 14px; font-weight: 650; font-size: 15px; letter-spacing: -.01em; }
+.card .say::before { content: "“"; color: var(--faint); }
+.card .say::after { content: "”"; color: var(--faint); }
+.card .does { margin-top: 4px; color: var(--muted); font-size: 14px; line-height: 1.5; }
+.more { text-align: center; margin-top: 26px; font-size: 15px; }
+.more a { color: var(--ember); font-weight: 600; }
+
+.ways { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 44px; }
+@media (max-width: 860px) { .ways { grid-template-columns: 1fr; } }
+.way { border-radius: 18px; background: var(--surface); border: 1px solid var(--hairline); padding: 22px; box-shadow: var(--shadow-soft); }
+.way h3 { margin: 12px 0 4px; font: 650 1.25rem var(--font-display); letter-spacing: -.02em; }
+.way p { margin: 0; color: var(--muted); font-size: 14.5px; }
+.way .price { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--hairline); font-size: 14px; color: var(--ink2); }
+.way .price b { color: var(--ink); }
+.osline { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px 22px; margin-top: 28px; color: var(--muted); font-size: 14.5px; }
+.osline span::before { content: "✓ "; color: var(--moss); font-weight: 700; }
+
+.opt { display: none; }
+body[data-opt="A"] .opt.A, body[data-opt="B"] .opt.B { display: block; }
+.notes { max-width: 980px; margin: 0 auto; padding: 36px 16px 80px; color: var(--muted); font-size: 14px; }
+.notes h3 { color: var(--ink); font: 650 16px var(--font-sans); margin: 22px 0 6px; }
+.notes li { margin: 4px 0; }
+</style>
+</head>
+<body data-opt="A">
+
+<div class="bar">
+  <b>saycontrol.com: open-source top</b>
+  <span class="seg" id="opts"><button data-v="A" aria-pressed="true">A · Badge + video (recommended)</button><button data-v="B" aria-pressed="false">B · Open source in the headline</button></span>
+  <span class="seg" id="theme"><button data-v="light" aria-pressed="true">Light</button><button data-v="dark" aria-pressed="false">Dark</button></span>
+  <span class="note">Everything below the bar is the site. The video is the real X demo from the CDN.</span>
+</div>
+
+<!-- ============ HERO ============ -->
+<section class="hero">
+  <div class="dots"></div>
+  <div class="shell">
+    <header class="site">
+      <a class="logo" href="#"><svg viewBox="0 0 20 20" aria-hidden="true"><g stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="2.5" y1="7" x2="2.5" y2="13"/><line x1="6.5" y1="4" x2="6.5" y2="16"/><line x1="10.5" y1="2.5" x2="10.5" y2="17.5"/></g><polygon points="13.5,4.5 19,10 13.5,15.5" fill="#d4491c"/></svg><span>Say<i>Control</i></span></a>
+      <nav class="top">
+        <a class="hide-sm" href="#">Agents</a><a class="hide-sm" href="#">Features</a><a class="hide-sm" href="#">Pricing</a>
+        <a class="gh" href="https://github.com/soorower/SayControl"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>GitHub<span class="stars">★ Star</span></a>
+      </nav>
+    </header>
+
+    <!-- Option A: the headline stays; open source rides above it. -->
+    <div class="hero-inner opt A">
+      <a class="pill-os" href="https://github.com/soorower/SayControl"><span class="tag">Open source</span>MIT licence · read every line on GitHub <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 4l4 4-4 4"/></svg></a>
+      <div class="balloon-row"><span class="balloon js-balloon"><span class="wave"><i style="animation-delay:0s"></i><i style="animation-delay:.15s"></i><i style="animation-delay:.3s"></i><i style="animation-delay:.45s"></i></span><span class="js-say">“take a screenshot”</span></span></div>
+      <h1 class="display big" style="margin-top:14px">Dictation that<span class="act js-act"><span>takes the screenshot.</span></span></h1>
+      <p class="sub">The open-source Mac app that types what you say, and does what you ask: screenshots, links, files, apps, the terminal, ChatGPT. In any app, by voice.</p>
+      <div class="cta">
+        <a class="btn primary" href="https://cdn.sayctrl.com/SayControl.dmg"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M16.37 12.52c-.02-2.16 1.77-3.2 1.85-3.25-1-1.47-2.57-1.67-3.13-1.7-1.33-.13-2.6.79-3.28.79-.68 0-1.72-.77-2.83-.75-1.45.02-2.8.85-3.55 2.15-1.52 2.63-.39 6.52 1.09 8.66.72 1.04 1.58 2.21 2.71 2.17 1.09-.04 1.5-.7 2.82-.7 1.31 0 1.68.7 2.83.68 1.17-.02 1.91-1.06 2.62-2.11.83-1.21 1.17-2.38 1.19-2.44-.03-.01-2.28-.87-2.32-3.5zM14.2 6.17c.6-.73 1-1.73.89-2.74-.86.04-1.9.58-2.52 1.3-.55.64-1.04 1.67-.91 2.65.96.07 1.94-.49 2.54-1.21z"/></svg>Download for Mac <span class="small">v0.2.0</span></a>
+        <a class="btn ghost" href="https://github.com/soorower/SayControl"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 .2a8 8 0 00-2.53 15.59c.4.07.55-.17.55-.38v-1.4c-2.23.48-2.7-1.07-2.7-1.07-.36-.92-.89-1.17-.89-1.17-.73-.5.06-.49.06-.49.8.06 1.23.83 1.23.83.71 1.22 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.6 7.6 0 014 0c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.28.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48v2.2c0 .21.15.46.55.38A8 8 0 008 .2z"/></svg>View the code</a>
+      </div>
+      <p class="fine">Free account · macOS 13+ · Apple silicon and Intel · Models on your Mac and your own keys cost nothing</p>
+    </div>
+
+    <!-- Option B: open source is the headline. -->
+    <div class="hero-inner opt B">
+      <a class="pill-os" href="https://github.com/soorower/SayControl"><span class="tag">MIT</span>Free and open source on GitHub <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 4l4 4-4 4"/></svg></a>
+      <h1 class="display big">The open-source Mac app that<span class="act js-act"><span>takes the screenshot.</span></span></h1>
+      <p class="sub">Other dictation apps type your words. SayControl also does what you say: screenshots, links, files, apps, the terminal, ChatGPT. In any app, by voice.</p>
+      <div class="cta">
+        <a class="btn primary" href="https://cdn.sayctrl.com/SayControl.dmg"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M16.37 12.52c-.02-2.16 1.77-3.2 1.85-3.25-1-1.47-2.57-1.67-3.13-1.7-1.33-.13-2.6.79-3.28.79-.68 0-1.72-.77-2.83-.75-1.45.02-2.8.85-3.55 2.15-1.52 2.63-.39 6.52 1.09 8.66.72 1.04 1.58 2.21 2.71 2.17 1.09-.04 1.5-.7 2.82-.7 1.31 0 1.68.7 2.83.68 1.17-.02 1.91-1.06 2.62-2.11.83-1.21 1.17-2.38 1.19-2.44-.03-.01-2.28-.87-2.32-3.5zM14.2 6.17c.6-.73 1-1.73.89-2.74-.86.04-1.9.58-2.52 1.3-.55.64-1.04 1.67-.91 2.65.96.07 1.94-.49 2.54-1.21z"/></svg>Download for Mac <span class="small">v0.2.0</span></a>
+        <a class="btn ghost" href="https://github.com/soorower/SayControl"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 .2a8 8 0 00-2.53 15.59c.4.07.55-.17.55-.38v-1.4c-2.23.48-2.7-1.07-2.7-1.07-.36-.92-.89-1.17-.89-1.17-.73-.5.06-.49.06-.49.8.06 1.23.83 1.23.83.71 1.22 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.6 7.6 0 014 0c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.28.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48v2.2c0 .21.15.46.55.38A8 8 0 008 .2z"/></svg>Star on GitHub</a>
+      </div>
+      <p class="fine">Free account · macOS 13+ · Apple silicon and Intel</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ VIDEO ============ -->
+<section style="padding: 8px 0 24px">
+  <div class="shell">
+    <div class="video-card">
+      <video controls playsinline preload="metadata" poster="https://cdn.sayctrl.com/film/saycontrol-demo-poster.jpg">
+        <source src="https://cdn.sayctrl.com/film/saycontrol-demo.mp4" type="video/mp4">
+      </video>
+    </div>
+    <p class="video-cap">50 seconds, with sound: a screenshot and a link into Claude, a file attached by name, ChatGPT asked, a message scratched, an agent answered.</p>
+  </div>
+</section>
+
+<!-- ============ MORE THAN DICTATION (both) ============ -->
+<section class="band">
+  <div class="shell">
+    <div class="kicker">More than dictation</div>
+    <h2 class="display title">Say it mid-sentence. It happens right there.</h2>
+    <p class="lede">Hold fn and talk. Your words are typed, and these phrases do the job instead of typing themselves.</p>
+    <div class="grid">
+      <div class="card"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="12" cy="12" r="3"/></svg></div><div class="say">take a screenshot</div><div class="does">A picture of your screen, pasted mid-sentence.</div></div>
+      <div class="card"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 007 0l3-3a5 5 0 00-7-7l-1 1"/><path d="M14 11a5 5 0 00-7 0l-3 3a5 5 0 007 7l1-1"/></svg></div><div class="say">copy the link</div><div class="does">The address of the tab in front of you.</div></div>
+      <div class="card"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12l-8.5 8.5a6 6 0 01-8.5-8.5L13 3a4 4 0 016 6l-9 9a2 2 0 01-3-3l8-8"/></svg></div><div class="say">attach the PDF from downloads</div><div class="does">The newest match, attached for real.</div></div>
+      <div class="card"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7h6l2 2h10v10H3z"/></svg></div><div class="say">copy the file path</div><div class="does">Whatever Finder has selected, as a full path.</div></div>
+      <div class="card"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9l3 3-3 3M13 15h4"/></svg></div><div class="say">open terminal in the downloads folder</div><div class="does">A terminal, already standing in that folder.</div></div>
+      <div class="card"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a8 8 0 01-11.8 7L3 21l2-6.2A8 8 0 1121 12z"/></svg></div><div class="say">ask ChatGPT how to center a div</div><div class="does">The question opens in ChatGPT, already asked. Claude, Grok and Perplexity too.</div></div>
+      <div class="card"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 14L4 9l5-5"/><path d="M4 9h11a5 5 0 010 10h-3"/></svg></div><div class="say">scratch that</div><div class="does">Takes back the last paste.</div></div>
+      <div class="card"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg></div><div class="say">send it</div><div class="does">Presses Return for you.</div></div>
+    </div>
+    <p class="more">Plus command mode, terminal commands and agents that talk back. <a href="#">See every spoken control →</a></p>
+  </div>
+</section>
+
+<!-- ============ OPEN SOURCE + THREE WAYS (both) ============ -->
+<section class="band" style="padding-top: 20px">
+  <div class="shell">
+    <div class="kicker">Open source</div>
+    <h2 class="display title">Read every line. Run it your way.</h2>
+    <p class="lede">The whole Mac app is on GitHub under the MIT licence. Pick where your words are written in Settings › Models.</p>
+    <div class="ways">
+      <div class="way"><div class="ico" style="width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:var(--ember-soft);color:var(--ember)">☁︎</div><h3>SayControl Cloud</h3><p>The most accurate live models we’ve measured, picked for you. Nothing to set up.</p><div class="price"><b>Free</b> 2,000 words a week · <b>Pro</b> $12 a month, unlimited</div></div>
+      <div class="way"><div class="ico" style="width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:var(--moss-soft);color:var(--moss)">⌘</div><h3>On your Mac</h3><p>Open models run on the Mac itself. Works offline; your voice never leaves it.</p><div class="price"><b>Free</b> · spoken controls and Ask included</div></div>
+      <div class="way"><div class="ico" style="width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:var(--sunk);color:var(--ink2)">⚿</div><h3>Your own key</h3><p>OpenAI, Google, ElevenLabs, Claude and more. Your provider bills you.</p><div class="price"><b>Free</b> · spoken controls and command mode included</div></div>
+    </div>
+    <div class="osline"><span>MIT licence</span><span>No closed parts in the app</span><span>Signed and notarized builds</span><span>Updates install themselves</span></div>
+  </div>
+</section>
+
+<div class="notes">
+  <h3>What each option costs</h3>
+  <ul>
+    <li><b>A (recommended):</b> the headline people already know stays, with its balloons cycling the real commands. Open source sits right above it as a badge, and "View the code" sits next to Download. The film right under the hero becomes the X demo. Smallest change, same rhythm as today.</li>
+    <li><b>B:</b> "open source" goes into the headline itself ("The open-source Mac app that takes the screenshot."), and the line under it says what other dictation apps don't do. Louder about open source, but the headline is two lines longer and the cycling actions have less room on phones.</li>
+  </ul>
+  <h3>Either way</h3>
+  <ul>
+    <li>A GitHub button in the header, "Open source" in the footer, and the X demo replaces the 1-minute film.</li>
+    <li>New "More than dictation" grid and "Read every line. Run it your way." section (three ways to run it, priced).</li>
+    <li>Pricing, FAQ, llms.txt, search descriptions and the nine comparison pages already being corrected for 0.2.0: works offline on your Mac, your own keys, nothing locked off the cloud, open source.</li>
+    <li>It all goes live together with the repo going public.</li>
+  </ul>
+</div>
+
+<script>
+// The cycling action: the site's HeroHeadline steps, plus Ask and scratch that.
+const steps = [
+  ['take a screenshot', 'takes the screenshot.'],
+  ['attach the PDF from downloads', 'attaches the PDF.'],
+  ['copy the file path', 'pastes the file path.'],
+  ['ask ChatGPT how to center a div', 'asks ChatGPT for you.'],
+  ['scratch that', 'takes it back.'],
+  ['send it', 'hits send.'],
+  [null, 'does what you say.'],
+];
+let i = 0;
+function tick() {
+  const [say, does] = steps[i % steps.length];
+  document.querySelectorAll('.js-act').forEach(el => { el.innerHTML = '<span>' + does + '</span>'; });
+  document.querySelectorAll('.js-balloon').forEach(b => { b.style.visibility = say ? 'visible' : 'hidden'; });
+  document.querySelectorAll('.js-say').forEach(s => { if (say) s.textContent = '“' + say + '”'; });
+  i++;
+}
+tick(); setInterval(tick, 2600);
+function wire(id, fn) {
+  const seg = document.getElementById(id);
+  seg.addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    seg.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+    fn(b.dataset.v);
+  });
+}
+wire('opts', v => { document.body.dataset.opt = v; });
+wire('theme', v => { document.documentElement.dataset.theme = v; });
+// ?opt=B&theme=dark opens on that state, for screenshots.
+const q = new URLSearchParams(location.search);
+if (q.get('opt')) document.querySelector('#opts [data-v="' + q.get('opt') + '"]').click();
+if (q.get('still')) document.head.insertAdjacentHTML('beforeend', '<style>*{animation:none!important}</style>');
+if (q.get('theme')) document.querySelector('#theme [data-v="' + q.get('theme') + '"]').click();
+</script>
+</body>
+</html>
