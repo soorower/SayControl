@@ -31,10 +31,10 @@ run in one of these places:
   Connect checks a key with its provider before saving it, and your provider
   bills you.
 
-**Where this stands today:** the release on saycontrol.com runs on SayControl
-Cloud and asks you to sign in. The Models page, with This Mac and your own
-key, is in the dev build (see [Building](#building)), which also asks you to
-sign in for now.
+All three are in the release on saycontrol.com (0.2.0 and later), and every
+one asks you to sign in to a SayControl account. Plans are for the cloud: on
+a model on this Mac or your own key, command mode, the spoken controls and Ask
+are free and nothing counts against the weekly allowance.
 
 ## What it does
 
