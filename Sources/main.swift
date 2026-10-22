@@ -1,4 +1,4 @@
-// SayCtrl — local Wispr Flow alternative.
+// SayControl: dictation and spoken controls for the Mac.
 // fn (hold or tap) -> record mic -> transcribe -> paste at cursor.
 //
 // Two ways to transcribe: upload the finished clip (OpenRouter or OpenAI), or
